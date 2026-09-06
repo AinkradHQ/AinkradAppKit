@@ -24,6 +24,10 @@ public extension EnvironmentValues {
     /// Host/plugins set this at their root; SDK components read this
     /// instead of the platform accessibility environment value.
     @Entry var ainkradReduceMotion: Bool = false
+    /// How fast decorative motion may run right now — see `AinkradMotionBudget`.
+    /// Default `.full` so previews and un-hosted components animate normally.
+    /// The host installs a live source once with `.ainkradMotionBudgetSource()`.
+    @Entry var ainkradMotionBudget: AinkradMotionBudget = .full
     /// The user's overlay-translucency preference, as an override for the
     /// background opacity a panel asks for.
     ///
