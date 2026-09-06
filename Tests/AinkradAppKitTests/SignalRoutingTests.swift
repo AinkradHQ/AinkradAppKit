@@ -315,4 +315,59 @@ struct SignalRoutingTests {
         #expect(run == other)
         #expect(run.contains(.banner))
     }
+
+    // MARK: - "Never silent" has to mean audible
+
+    @Test("an urgent event makes a sound, even at info severity")
+    func urgentIsAudible() {
+        // Rune's agent-attention notification exactly: an agent BLOCKED on the
+        // user, which the emitter marks `.urgent` while its severity is only
+        // `.info` because nothing has gone wrong. The severity table gives
+        // sound to `.failure` alone, so without the urgent branch adding it
+        // this is a silent interruption -- which is what shipped: the toast
+        // appeared and nothing was heard.
+        let channels = route(event(.info, source: .app(appID: "rune"),
+                                   kind: "terminal.agent-attention", importance: .urgent),
+                             rules: RoutingRules(), context: frontmost)
+        #expect(channels.contains(.sound))
+        #expect(channels.contains(.toast))
+    }
+
+    @Test("an urgent event is audible when the user is away, too")
+    func urgentIsAudibleWhenAway() {
+        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
+                             rules: RoutingRules(), context: away)
+        #expect(channels.contains(.sound))
+        #expect(channels.contains(.banner))
+    }
+
+    @Test("urgent does NOT chime through quiet hours")
+    func urgentStaysQuietDuringSuppression() {
+        // The whole point of ordering suppression after the default channels:
+        // urgency decides what the event deserves, the user's own schedule
+        // still gets the last word.
+        var rules = RoutingRules()
+        let now = Date()
+        rules.suppression = SuppressionWindow(mode: .everything,
+                                              snoozedUntil: now.addingTimeInterval(3600))
+        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
+                             rules: rules, context: frontmost, now: now)
+        #expect(!channels.contains(.sound))
+    }
+
+    @Test("urgent does NOT chime through Focus")
+    func urgentStaysQuietDuringFocus() {
+        let focus = DeliveryContext(hostIsFrontmost: true, visibleAppIDs: [],
+                                    systemDoNotDisturb: false, hostFocusMode: true)
+        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
+                             rules: RoutingRules(), context: focus)
+        #expect(!channels.contains(.sound))
+    }
+
+    @Test("a background event stays silent no matter what")
+    func backgroundStaysSilent() {
+        let channels = route(event(.failure, source: .app(appID: "rune"), importance: .background),
+                             rules: RoutingRules(), context: frontmost)
+        #expect(!channels.contains(.sound))
+    }
 }
