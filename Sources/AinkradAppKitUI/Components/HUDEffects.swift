@@ -20,9 +20,9 @@ private struct ScanlineOverlayModifier: ViewModifier {
                 Canvas { context, size in Self.drawStaticLines(context, size) }
                     .opacity(0.05)
             } else {
-                TimelineView(.animation) { timeline in
+                BudgetedTimelineView { date in
                     Canvas { context, size in
-                        Self.drawMovingBand(context, size, time: timeline.date.timeIntervalSinceReferenceDate)
+                        Self.drawMovingBand(context, size, time: date.timeIntervalSinceReferenceDate)
                     }
                 }
                 .opacity(0.08)

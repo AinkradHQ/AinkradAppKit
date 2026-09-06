@@ -115,7 +115,7 @@ public func spinnerPulseOpacity(date: Date, period: TimeInterval = 1.2) -> Doubl
 /// Custom rotating arc "reactor ring" — the Cardinal HUD stand-in for
 /// `ProgressView`'s spinner.
 ///
-/// Drives the rotation from `TimelineView(.animation)`'s per-frame `context.date`
+/// Drives the rotation from `BudgetedTimelineView`'s per-frame `date`
 /// via `spinnerTimelineAngle(date:period:)` rather than a `@State` toggle
 /// matched with `.animation(_:value:).repeatForever(...)` — that pattern did
 /// not reliably start spinning on this toolchain (SwiftUI sometimes never
@@ -126,7 +126,7 @@ public func spinnerPulseOpacity(date: Date, period: TimeInterval = 1.2) -> Doubl
 /// Under Reduce Motion, rotation stops (no spinning arc) but the spinner must
 /// still read as "loading" rather than a frozen, dead ring — so it instead
 /// pulses the accent arc's opacity gently via `spinnerPulseOpacity(date:period:)`,
-/// also driven by `TimelineView(.animation)`. No position changes, only
+/// also driven by `BudgetedTimelineView`. No position changes, only
 /// opacity — this satisfies Reduce Motion while still conveying activity.
 public struct AinkradSpinner: View {
     private let size: CGFloat
@@ -155,15 +155,11 @@ public struct AinkradSpinner: View {
     private var arcColor: Color { tint ?? theme.accentSecondary }
 
     public var body: some View {
-        Group {
+        BudgetedTimelineView { date in
             if reduceMotion {
-                TimelineView(.animation) { context in
-                    ring(angle: .zero, arcOpacity: spinnerPulseOpacity(date: context.date))
-                }
+                ring(angle: .zero, arcOpacity: spinnerPulseOpacity(date: date))
             } else {
-                TimelineView(.animation) { context in
-                    ring(angle: .degrees(spinnerTimelineAngle(date: context.date)), arcOpacity: 1.0)
-                }
+                ring(angle: .degrees(spinnerTimelineAngle(date: date)), arcOpacity: 1.0)
             }
         }
         .frame(width: size, height: size)
