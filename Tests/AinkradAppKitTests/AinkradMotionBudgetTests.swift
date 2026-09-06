@@ -18,10 +18,13 @@ struct AinkradMotionBudgetTests {
     }
 
     @Test func invisibilityBeatsEveryOtherInput() {
-        // Even the most permissive other flags cannot un-freeze a hidden window.
-        let budget = AinkradMotionBudget(isAppActive: true, isWindowVisible: false,
-                                         isLowPower: false, reduceMotion: false)
+        // Every other flag at its most conflicting value: inactive would say 1/5,
+        // low power and reduce motion would each say 1/10. Invisibility outranks
+        // all three and must still freeze completely.
+        let budget = AinkradMotionBudget(isAppActive: false, isWindowVisible: false,
+                                         isLowPower: true, reduceMotion: true)
         #expect(budget.minimumInterval == nil)
+        #expect(!budget.isAnimating)
     }
 
     @Test func aBackgroundedButVisibleWindowDropsToFiveFPS() {

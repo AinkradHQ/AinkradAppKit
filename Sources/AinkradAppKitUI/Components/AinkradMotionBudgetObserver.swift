@@ -55,6 +55,17 @@ private struct MotionBudgetSourceModifier: ViewModifier {
 
 public extension View {
     /// Installs the live motion-budget source. Apply once, at the app root.
+    ///
+    /// ORDERING MATTERS. This reads `\.ainkradReduceMotion` from the environment,
+    /// so it must be applied BELOW (inside) wherever the host injects that value:
+    ///
+    ///     content
+    ///         .environment(\.ainkradReduceMotion, settings.reduceMotion)
+    ///         .ainkradMotionBudgetSource()   // must come after
+    ///
+    /// Applied in the other order it will silently see `reduceMotion == false`
+    /// for the process lifetime — the budget still works, it just never honours
+    /// Reduce Motion, and nothing reports the mistake.
     func ainkradMotionBudgetSource() -> some View {
         modifier(MotionBudgetSourceModifier())
     }
