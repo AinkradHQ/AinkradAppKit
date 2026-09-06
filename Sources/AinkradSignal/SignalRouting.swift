@@ -214,6 +214,19 @@ private func defaultChannels(for event: SignalEvent,
         // here, on the system if they are not.
         channels.insert(context.hostIsFrontmost ? .toast : .banner)
         channels.insert(.badge)
+        // The sound is the half of "never silent" that was missing, and it is
+        // the half that works when the user is not looking at the screen.
+        // Only `.failure` earns a sound from the severity table, and an agent
+        // blocked on the user is `.info` severity -- nothing has gone wrong,
+        // it just cannot continue. So Rune's agent-attention notification
+        // raised a toast and made no sound at all, which is precisely the
+        // interruption that needed to be heard.
+        //
+        // Safe to add unconditionally here: Focus, Do Not Disturb and quiet
+        // hours all strip `.sound` AFTER this runs, so urgency decides what
+        // the event deserves and the user's own schedule still has the last
+        // word.
+        channels.insert(.sound)
     case .background:
         // Recorded, never interrupting — for the chatter an app wants kept but
         // does not want the user pulled away for.
