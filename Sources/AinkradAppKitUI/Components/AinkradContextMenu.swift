@@ -171,6 +171,8 @@ private struct AinkradContextMenuModifier: ViewModifier {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
+    @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
     @State private var controller = AinkradFloatingPanelController()
 
     func body(content: Content) -> some View {
@@ -186,14 +188,17 @@ private struct AinkradContextMenuModifier: ViewModifier {
         let theme = theme
         let typo = typo
         let statusColors = statusColors
+        let surfaceOpacity = surfaceOpacity
+        let surfaceBlur = surfaceBlur
         controller.present(
             maxHeight: 320,
             anchorScreenRectOverride: CGRect(origin: screenPoint, size: .zero)
         ) {
             AinkradContextMenuList(items: items, dismiss: { controller.dismiss() })
-                .environment(\.ainkradTheme, theme)
-                .environment(\.ainkradTypography, typo)
-                .environment(\.ainkradStatusColors, statusColors)
+                .ainkradMenuEnvironment(theme: theme, typography: typo,
+                                        statusColors: statusColors,
+                                        surfaceOpacity: surfaceOpacity,
+                                        surfaceBlur: surfaceBlur)
         } onDismiss: {}
     }
 }
@@ -207,5 +212,68 @@ public extension View {
     /// the right-click point instead of below a fixed trigger view.
     func ainkradContextMenu(_ items: [AinkradMenuItem]) -> some View {
         modifier(AinkradContextMenuModifier(items: items))
+    }
+}
+
+private extension View {
+    /// Carries the design environment across a window boundary.
+    ///
+    /// Every menu here is drawn in a floating panel, which is its OWN
+    /// `NSPanel`. SwiftUI's environment does not cross that boundary, so a
+    /// value the app set at its root is simply absent inside the menu: without
+    /// this the menu falls back to the neutral dark fallback theme and, since
+    /// the surface settings landed, ignores Appearance -> Overlays while every
+    /// panel around it obeys.
+    func ainkradMenuEnvironment(theme: HostThemeTokens,
+                                typography: AinkradTypography,
+                                statusColors: AinkradStatusColors,
+                                surfaceOpacity: Double?,
+                                surfaceBlur: Bool) -> some View {
+        self.environment(\.ainkradTheme, theme)
+            .environment(\.ainkradTypography, typography)
+            .environment(\.ainkradStatusColors, statusColors)
+            .environment(\.ainkradSurfaceOpacity, surfaceOpacity)
+            .environment(\.ainkradSurfaceBlur, surfaceBlur)
+    }
+}
+
+/// A pull-down menu opened by LEFT-clicking its own label, drawn with the same
+/// chamfered list, hover scan and glass backing as `.ainkradContextMenu(_:)`.
+///
+/// Exists because SwiftUI's `Menu` renders a stock AppKit menu — grey, system
+/// corner radius, system highlight — which lands in the middle of an Ainkrad
+/// HUD looking like it belongs to a different application. The kit already
+/// drew a correct menu; it was just reachable only by right-click, so any
+/// surface needing a click-to-open menu had no option but the native one.
+public struct AinkradMenuButton<Label: View>: View {
+    private let items: [AinkradMenuItem]
+    private let maxHeight: CGFloat
+    private let label: Label
+
+    @State private var isPresented = false
+    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradTypography) private var typo
+    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
+    @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
+
+    public init(items: [AinkradMenuItem],
+                maxHeight: CGFloat = 320,
+                @ViewBuilder label: () -> Label) {
+        self.items = items
+        self.maxHeight = maxHeight
+        self.label = label()
+    }
+
+    public var body: some View {
+        Button { isPresented.toggle() } label: { label }
+            .buttonStyle(.plain)
+            .ainkradFloatingPanel(isPresented: $isPresented, maxHeight: maxHeight) {
+                AinkradContextMenuList(items: items, dismiss: { isPresented = false })
+                    .ainkradMenuEnvironment(theme: theme, typography: typo,
+                                            statusColors: statusColors,
+                                            surfaceOpacity: surfaceOpacity,
+                                            surfaceBlur: surfaceBlur)
+            }
     }
 }

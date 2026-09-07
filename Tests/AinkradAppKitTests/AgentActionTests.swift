@@ -46,8 +46,8 @@ struct AgentActionTests {
         #expect(result == nil)
     }
 
-    @Test("apiVersion is 8")
+    @Test("the action API shipped in generation 8 and is still present")
     func apiVersionBumped() {
-        #expect(AinkradAppKit.apiVersion == 8)
+        #expect(AinkradAppKit.apiVersion >= 8)
     }
 }

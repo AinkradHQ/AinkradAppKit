@@ -55,6 +55,20 @@ public struct AinkradStepper: View {
         .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.5)))
         .overlay(ChamferShape(cut: 6).strokeBorder(theme.accentPrimary.opacity(0.3), lineWidth: 1.25))
         .animation(AinkradMotion.hover, value: value)
+        // One adjustable control, not two unnamed glyph buttons either side of
+        // a loose number — which is what "minus, button, 30, plus, button"
+        // amounted to. `.ignore` on purpose: a stepper is conventionally a
+        // single element whose value is adjusted, and separately focusing the
+        // two glyphs gains a listener nothing.
+        .accessibilityElement(children: .ignore)
+        .accessibilityValue("\(value)")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: value = steppedClamp(value + step, in: bounds, step: step)
+            case .decrement: value = steppedClamp(value - step, in: bounds, step: step)
+            @unknown default: break
+            }
+        }
     }
 
     private func stepButton(systemName: String, enabled: Bool, action: @escaping () -> Void) -> some View {

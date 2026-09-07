@@ -14,7 +14,11 @@ public struct AinkradCaptionedRow<Content: View>: View {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
 
-    private let caption: String
+    /// Internal rather than private so a test can assert the row still carries
+    /// the string it uses as its accessibility label. The modifiers themselves
+    /// are not inspectable from a unit test; this at least fails if the caption
+    /// stops being stored.
+    let caption: String
     private let content: Content
 
     public static var captionColumnWidth: CGFloat { 86 }
@@ -30,11 +34,25 @@ public struct AinkradCaptionedRow<Content: View>: View {
                 .font(AinkradFontResolver.font(.caption, weight: .medium, typography: typo))
                 .foregroundStyle(theme.foreground.opacity(0.45))
                 .frame(width: Self.captionColumnWidth, alignment: .leading)
-                // The control below carries the real label; a visible caption
-                // read out again is duplicate noise.
+                // Hidden as its own element, but NOT discarded — it becomes the
+                // label of the group below.
                 .accessibilityHidden(true)
             content
             Spacer(minLength: 0)
         }
+        // The caption names the row, so the row is a named group.
+        //
+        // It used to be hidden outright, on the reasoning that "the control
+        // below carries the real label". None of the kit's form controls
+        // actually do: `AinkradSegmentedPicker` renders bare buttons, and
+        // `AinkradSelect` and `AinkradToggle` carry no label either. The result
+        // was a settings pane of anonymous controls — five identical
+        // "Alert / Quiet / Off" pickers in a row with nothing to say which
+        // source each belonged to.
+        //
+        // `.contain` rather than `.combine`: the segments and toggles must stay
+        // separately focusable and operable. This only gives the group a name.
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(caption)
     }
 }

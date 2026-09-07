@@ -45,6 +45,10 @@ public struct AinkradSegmentedPicker<T: Hashable>: View {
                 .contentShape(ChamferShape(cut: 5))
         }
         .buttonStyle(.plain)
+        // Selection is carried entirely by fill, weight and glow — all
+        // invisible to a listener, who otherwise hears three identical buttons
+        // and cannot tell which one is currently set.
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .animation(AinkradMotion.hover, value: hovered)
         .onHover { hovering in hoveredItem = hovering ? item : (hoveredItem == item ? nil : hoveredItem) }
     }

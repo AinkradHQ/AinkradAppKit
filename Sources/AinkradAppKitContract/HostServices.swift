@@ -37,6 +37,11 @@ import Observation
     /// Lets this app read/override its own presentation (pane vs overlay).
     /// The change applies on next open. Added v5.
     var presentation: PluginPresentationControl { get }
+    /// Lets this app record events in the host's Signal feed. Write-only with
+    /// respect to other apps: the emitter is bound to this app's id, so an app
+    /// cannot attribute an event to another. Reading the aggregated feed is not
+    /// part of this generation. Added v9.
+    var signals: PluginSignalEmitter { get }
 }
 
 /// Observable wrapper over `HostThemeTokens`. The host mutates it on a theme

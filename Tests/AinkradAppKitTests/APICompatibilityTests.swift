@@ -4,9 +4,10 @@ import Testing
 @testable import AinkradAppKitUI
 
 struct APICompatibilityTests {
-    @Test("current SDK reports API version 8")
+    @Test("the SDK reports a generation at or beyond 8")
     func currentVersion() {
-        #expect(AinkradAppKit.apiVersion == 8)
+        // The exact number is pinned once, in `Generation9Tests`.
+        #expect(AinkradAppKit.apiVersion >= 8)
     }
 
     @Test("a version inside the supported range is compatible")

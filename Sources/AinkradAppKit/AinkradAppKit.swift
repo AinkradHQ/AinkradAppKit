@@ -23,3 +23,8 @@
 @_exported import AinkradAppKitContract
 @_exported import AinkradAppKitUI
 @_exported import AinkradAppKitHome
+// AinkradSignal ships inside the same dynamic image. It is a dependency of
+// this umbrella rather than a standalone target for a concrete reason: a
+// target that belongs to no product and is nobody's dependency is invisible
+// to consumers of the package, so the host could not have imported it at all.
+@_exported import AinkradSignal

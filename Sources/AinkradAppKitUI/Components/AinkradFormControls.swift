@@ -27,6 +27,11 @@ public struct AinkradToggle: View {
             .contentShape(ChamferShape(cut: 6, corners: .all))
         }
         .buttonStyle(.plain)
+        // It is a `Button`, never a native `Toggle`, so nothing announces that
+        // it HAS a state — a listener heard "button" and could not tell on from
+        // off. On/off is carried entirely by fill and glow.
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(isOn ? "on" : "off")
         .animation(AinkradMotion.hover, value: isOn)
         .animation(AinkradMotion.hover, value: hovering)
         .onHover { hovering = $0 }
@@ -488,6 +493,31 @@ public struct AinkradSlider: View {
         .padding(.vertical, AinkradSpacing.xs)
         .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.3)))
         .overlay(ChamferShape(cut: 6).strokeBorder(theme.accentPrimary.opacity(0.2), lineWidth: 1))
+        // The control was a bare `DragGesture` with no accessibility of any
+        // kind: no value, no action, and a drag is a pointer gesture. It was
+        // therefore not merely unlabelled but INOPERABLE without a mouse —
+        // the notification volume could not be changed at all.
+        .accessibilityElement()
+        .accessibilityValue(Self.spokenValue(value, in: bounds))
+        .accessibilityAdjustableAction { direction in
+            // Twentieths, so a full sweep is twenty presses rather than a
+            // hundred, and each press moves audibly.
+            let stepSize = span / 20
+            switch direction {
+            case .increment: value = min(value + stepSize, bounds.upperBound)
+            case .decrement: value = max(value - stepSize, bounds.lowerBound)
+            @unknown default: break
+            }
+        }
+    }
+
+    /// Spoken as a percentage of the range. Pure, so the wording is testable
+    /// without rendering — a slider that announces "0.62" tells the listener
+    /// nothing about how far along it is.
+    static func spokenValue(_ value: Double, in bounds: ClosedRange<Double>) -> String {
+        let span = max(bounds.upperBound - bounds.lowerBound, .leastNonzeroMagnitude)
+        let fraction = (value - bounds.lowerBound) / span
+        return "\(Int((min(max(fraction, 0), 1) * 100).rounded()))%"
     }
 }
 

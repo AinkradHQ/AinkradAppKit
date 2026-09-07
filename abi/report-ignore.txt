@@ -1,5 +1,7 @@
 # Reviewed, non-breaking digester findings. Extended regexes, one per line.
 #
+# Shared by BOTH checks: AinkradAppKitContract and AinkradSignal.
+#
 # Everything NOT matched here fails `make abi-check`. Keep this list short and
 # justify every entry — it is the only thing standing between an added protocol
 # requirement and every installed plugin failing to load.
@@ -9,3 +11,20 @@
 # every newly-added declaration this way. Purely additive, and additions are
 # safe under library evolution.
 is a new API without '@available'
+
+# HostServices.signals (generation 9). A new protocol requirement, which the
+# digester rightly flags — this is the break library evolution does NOT cover.
+#
+# It cannot stop an installed plugin from LOADING: nothing outside the host
+# conforms to HostServices in production. Verified rather than assumed, because
+# the freeze test used to claim the host was the ONLY conformer and that was
+# wrong — Raven, Rune and GitMage each fake one in their test support, and all
+# three are updated in this generation. Plugins CONSUME HostServices; they do
+# not implement it, so a compiled bundle keeps loading while those repos' test
+# suites need a one-line addition.
+#
+# Deliberately here and not in breakage-allowlist.txt, which is for accepted ABI
+# breaks. And deliberately not silenced by regenerating the baseline: that would
+# hide the NEXT added requirement too, which is the one that might genuinely
+# break something.
+Var HostServices.signals has been added as a protocol requirement

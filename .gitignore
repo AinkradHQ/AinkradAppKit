@@ -9,3 +9,4 @@ build/
 
 # ABI digester scratch output (baseline itself is committed)
 abi/report.txt
+abi/report-signal.txt

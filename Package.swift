@@ -25,9 +25,19 @@ let package = Package(
         .library(name: "AinkradAppKit", type: .dynamic, targets: ["AinkradAppKit"]),
     ],
     targets: [
+        // The Signal event envelope, routing and store. Pure Swift: no
+        // SwiftUI, no AppKit, no host imports — so routing and retention are
+        // testable headless. Deliberately NOT inside AinkradAppKitContract:
+        // the host consumes it in M1, a full milestone before any plugin-facing
+        // API exists, and the contract must not grow a dependency it does not
+        // yet use.
+        .target(name: "AinkradSignal", swiftSettings: resilient),
+
         // The ABI-frozen plugin contract. Held to a strict standard by
         // `make abi-check`; see Sources/AinkradAppKit/AinkradAppKit.swift.
-        .target(name: "AinkradAppKitContract", swiftSettings: resilient),
+        .target(name: "AinkradAppKitContract",
+                dependencies: ["AinkradSignal"],
+                swiftSettings: resilient),
 
         // The Cardinal HUD component kit. Depends on the contract (for
         // `HostThemeTokens`); the contract must never depend on this.
@@ -46,7 +56,8 @@ let package = Package(
         // the host and all five plugins.
         .target(
             name: "AinkradAppKit",
-            dependencies: ["AinkradAppKitContract", "AinkradAppKitUI", "AinkradAppKitHome"],
+            dependencies: ["AinkradAppKitContract", "AinkradAppKitUI", "AinkradAppKitHome",
+                           "AinkradSignal"],
             swiftSettings: resilient
         ),
 
@@ -55,7 +66,8 @@ let package = Package(
             // Depends on the sub-targets directly: `@testable` reaches internal
             // symbols per MODULE, and after the split those live in
             // Contract/UI rather than in the umbrella.
-            dependencies: ["AinkradAppKit", "AinkradAppKitContract", "AinkradAppKitUI", "AinkradAppKitHome"]
+            dependencies: ["AinkradAppKit", "AinkradAppKitContract", "AinkradAppKitUI", "AinkradAppKitHome",
+                           "AinkradSignal"]
         ),
     ]
 )

@@ -24,6 +24,24 @@ public extension EnvironmentValues {
     /// Host/plugins set this at their root; SDK components read this
     /// instead of the platform accessibility environment value.
     @Entry var ainkradReduceMotion: Bool = false
+    /// How fast decorative motion may run right now — see `AinkradMotionBudget`.
+    /// Default `.full` so previews and un-hosted components animate normally.
+    /// The host installs a live source once with `.ainkradMotionBudgetSource()`.
+    @Entry var ainkradMotionBudget: AinkradMotionBudget = .full
+    /// The user's overlay-translucency preference, as an override for the
+    /// background opacity a panel asks for.
+    ///
+    /// `nil` — the default — means "whatever the call site chose", so an
+    /// un-hosted preview and any panel with a deliberate opacity keep looking
+    /// exactly as they did. The host sets this once at its root from
+    /// Settings → Appearance → Overlays, which is how a HUD surface anywhere
+    /// in the app (or in a plugin) starts obeying that slider without every
+    /// call site having to thread it through.
+    @Entry var ainkradSurfaceOpacity: Double? = nil
+    /// Whether HUD surfaces blur what is behind them. Host-driven, same
+    /// source as `ainkradSurfaceOpacity`; default true = blur, which is the
+    /// behaviour every surface had before this existed.
+    @Entry var ainkradSurfaceBlur: Bool = true
 }
 
 

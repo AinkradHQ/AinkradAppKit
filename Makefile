@@ -14,6 +14,17 @@ TARGET := arm64-apple-macosx14.0
 DIGESTER := xcrun swift-api-digester
 MODULES := .build/release
 ABI := abi/AinkradAppKitContract.abi.json
+# AinkradSignal is checked too, as of generation 9.
+#
+# It was not, and the gap was real: `HostServices.signals` puts
+# `PluginSignalEmitter` in the contract, whose signature is made of
+# `SignalEvent`/`SignalSeverity`/`SignalAction` — so `AinkradSignal` became part
+# of the plugin surface without becoming part of the check. Removing a public
+# stored property from `RoutingRules` passed cleanly, not because it was safe
+# but because the digester was never pointed at the module. That is the
+# generation-8 failure shape exactly: a check that passes because it cannot see
+# the thing that broke.
+ABI_SIGNAL := abi/AinkradSignal.abi.json
 ALLOWLIST := abi/breakage-allowlist.txt
 
 .PHONY: build abi-baseline abi-check test
@@ -32,6 +43,8 @@ build:
 abi-baseline: build
 	$(DIGESTER) -dump-sdk -abi -module AinkradAppKitContract \
 	  -o $(ABI) -I $(MODULES) -sdk $(SDK) -target $(TARGET)
+	$(DIGESTER) -dump-sdk -abi -module AinkradSignal \
+	  -o $(ABI_SIGNAL) -I $(MODULES) -sdk $(SDK) -target $(TARGET)
 
 # Fail if the current module has an ABI break vs. the committed baseline.
 # The pass/fail decision lives in scripts/abi-check.sh — see the comment there
@@ -88,6 +101,10 @@ else
 	  -baseline-path $(ABI) -I $(MODULES) -sdk $(SDK) -target $(TARGET) \
 	  -breakage-allowlist-path $(ALLOWLIST) -o abi/report.txt
 	@./scripts/abi-check.sh abi/report.txt
+	$(DIGESTER) -diagnose-sdk -abi -module AinkradSignal \
+	  -baseline-path $(ABI_SIGNAL) -I $(MODULES) -sdk $(SDK) -target $(TARGET) \
+	  -breakage-allowlist-path $(ALLOWLIST) -o abi/report-signal.txt
+	@./scripts/abi-check.sh abi/report-signal.txt
 endif
 
 test:

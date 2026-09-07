@@ -34,8 +34,8 @@ struct AgentContextTests {
         #expect(reg.snapshots().isEmpty)
     }
 
-    @Test("apiVersion is 8")
+    @Test("the context API shipped in generation 8 and is still present")
     func apiVersionBumped() {
-        #expect(AinkradAppKit.apiVersion == 8)
+        #expect(AinkradAppKit.apiVersion >= 8)
     }
 }

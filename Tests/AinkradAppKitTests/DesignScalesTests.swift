@@ -89,11 +89,13 @@ struct AinkradMotionMaterializeTests {
     }
 }
 
-@Suite("AinkradAppKit v7")
+@Suite("AinkradAppKit generation")
 struct AinkradAppKitVersionTests {
-    @Test("scales shipped in the v8 API")
-    func versionIsSeven() {
-        #expect(AinkradAppKit.apiVersion == 8)
+    @Test("the design scales shipped in generation 8 and are still present")
+    func scalesStillShipped() {
+        // Not `== 8`: this test is about the scales, and pinning the exact
+        // generation here made every bump edit an unrelated file.
+        #expect(AinkradAppKit.apiVersion >= 8)
     }
 
     @Test("v4 plugins remain loadable under a v7 host (additive bump)")

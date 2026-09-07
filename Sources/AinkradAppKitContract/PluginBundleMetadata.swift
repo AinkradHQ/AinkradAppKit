@@ -15,6 +15,16 @@ public enum PluginInfoKey {
     /// missing these still parses/loads, but fails `StorePolicy` review.
     public static let author = "AinkradAuthor"
     public static let description = "description"
+
+    /// Declared cross-app subscriptions (generation 10): an array of
+    /// `<source>/<kindPattern>` strings — see `SignalSubscription`.
+    ///
+    /// Read directly from the Info.plist for the same reason `author` and
+    /// `description` are, and it matters more here: folding it into the frozen
+    /// `PluginBundleMetadata.parse` would make every generation-9 bundle —
+    /// which cannot possibly carry this key — fail to parse, and a
+    /// notification feature would have uninstalled the user's apps.
+    public static let signalSubscriptions = "AinkradSignalSubscriptions"
 }
 
 /// How a plugin's window should be presented by the host. Defaults to `.pane`
