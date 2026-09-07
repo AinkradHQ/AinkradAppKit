@@ -1,0 +1,34 @@
+# Surfaces that pair ScrollView with ForEach over a BOUNDED collection.
+# Each entry needs a reason. A Lazy* wrapper defers layout and is a pure loss on
+# a list that cannot grow, so these are exemptions by design, not debt.
+# Matched on path suffix. Derived from the Plan E triage (2026-09-06).
+
+# Bounded by the tiling layout / by how many things a user opens.
+Core/Windowing/FocusTabStrip.swift
+Features/Hoard/View/HoardTabStrip.swift
+# Bounded by filesystem path depth.
+Features/Hoard/View/HoardBreadcrumbBar.swift
+# Fixed compile-time lists.
+Features/Setup/Views/SetupAssistantStepView.swift
+Features/Setup/Views/SetupYouStepView.swift
+Features/Setup/Views/SetupHomeStepView.swift
+# Bounded per catalog listing (screenshots, metadata keys).
+Core/AppStore/AppStoreDetailView.swift
+# A handful of badges per row.
+Components/AinkradFormControls.swift
+# Already capped by construction -- the collection is literally named `shown`.
+Views/TagChipRow.swift
+# A fixed command list.
+GitMageFeature/GitMageSettingsView.swift
+# User-created but realistically dozens; revisit if that stops being true.
+Views/LeylineRootView.swift
+# AinkradSegmentedPicker: a segmented CONTROL. Its items are the segments, which
+# are a handful by definition -- the horizontal ScrollView exists only to stop
+# overflow clipping, not to scroll a list.
+# NOTE: the same FILE also contains AinkradCombobox.optionsPanel, which renders
+# `filtered` in a plain VStack with NO ScrollView at all. That is a real problem
+# for a combobox fed a large list (the model picker passes a provider's full
+# model list), but it is a DIFFERENT problem -- an unbounded panel with no scroll,
+# not a missing Lazy container -- and fixing it changes the panel's appearance
+# (scrollbar plus a height cap) on a shared component. Recorded, not bundled in.
+Components/AinkradPickers.swift
