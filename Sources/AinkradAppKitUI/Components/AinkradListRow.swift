@@ -39,18 +39,31 @@ public struct AinkradListRow<Leading: View, Trailing: View>: View {
     public var body: some View {
         HStack(spacing: AinkradSpacing.md) {
             leading
+            // A row is a fixed-height object: one line of title, one of
+            // subtitle. Without these limits a long value — a filesystem path
+            // is the usual one — wraps, and a list whose row heights depend on
+            // how long a string happens to be is as disorienting as a list
+            // that reorders. Worse, the wrapping text also claims the row's
+            // width, which starves `trailing`: a compressed badge does not
+            // clip, it wraps one character per line and draws as a tall
+            // stripe. `layoutPriority` settles that contest the other way, so
+            // trailing accessories keep their intrinsic size and the title
+            // column truncates instead.
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(AinkradFontResolver.font(.body, weight: .medium, typography: typo))
                     .foregroundStyle(theme.foreground)
+                    .lineLimit(1)
                 if let subtitle {
                     Text(subtitle)
                         .font(AinkradFontResolver.font(.caption, typography: typo))
                         .foregroundStyle(theme.foreground.opacity(0.55))
+                        .lineLimit(1)
                 }
             }
             Spacer(minLength: AinkradSpacing.sm)
             trailing
+                .layoutPriority(1)
         }
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
