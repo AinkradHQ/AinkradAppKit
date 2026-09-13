@@ -133,6 +133,12 @@ public struct AinkradDataTable<Row: Identifiable>: View {
                 Text(column.cell(row))
                     .font(AinkradFontResolver.font(.body, typography: typo))
                     .foregroundStyle(theme.foreground.opacity(0.9))
+                    // One line, truncated in the middle. A wrapping cell makes
+                    // its row as tall as its longest value — image names broke
+                    // mid-word onto three lines — and middle truncation keeps
+                    // both ends of an identifier, such as the tag in `name:latest`.
+                    .lineLimit(1)
+                    .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
             }
         }
