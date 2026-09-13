@@ -85,7 +85,11 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: AinkradSpacing.xs) {
             header
-            VStack(spacing: 2) {
+            // Lazy, so a table inside a `ScrollView` builds only the rows on
+            // screen. The eager `VStack` built every row: Thrall had to fold
+            // 135 volumes into disclosure groups just to keep its storage
+            // area openable.
+            LazyVStack(spacing: 2) {
                 ForEach(displayedRows) { row in rowView(row) }
             }
         }
