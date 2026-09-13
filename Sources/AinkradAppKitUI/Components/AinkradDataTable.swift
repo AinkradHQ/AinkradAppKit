@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import AinkradAppKitContract
 
 /// A single column of an `AinkradDataTable`: text cells, or — through
@@ -90,23 +91,68 @@ public func nextSort(current: AinkradTableSort?, column: String) -> AinkradTable
     return AinkradTableSort(columnID: column, ascending: !current.ascending)
 }
 
+/// How a click changes a table's selection: a plain click, a ⌘-click that
+/// toggles, or a ⇧-click that extends a range.
+enum AinkradSelectionGesture { case plain, toggle, extend }
+
+/// The selection — and the anchor a later ⇧-click extends from — after
+/// `gesture` on `clicked`, given the IDs in the order rows are *shown*. A range
+/// is taken from that order, so it respects the current sort. A ⇧-click with
+/// no anchor, or one no longer shown, acts as a plain click. Pure —
+/// unit-testable without a view.
+func nextSelection<ID: Hashable>(
+    current: Set<ID>, anchor: ID?, clicked: ID, in orderedIDs: [ID], gesture: AinkradSelectionGesture
+) -> (selection: Set<ID>, anchor: ID?) {
+    switch gesture {
+    case .plain:
+        return ([clicked], clicked)
+    case .toggle:
+        return (current.symmetricDifference([clicked]), clicked)
+    case .extend:
+        guard let anchor, let from = orderedIDs.firstIndex(of: anchor),
+              let to = orderedIDs.firstIndex(of: clicked) else { return ([clicked], clicked) }
+        return (Set(orderedIDs[min(from, to)...max(from, to)]), anchor)
+    }
+}
+
 /// Cardinal HUD data table — chamfer header row (uppercase/tracked, optional
 /// click-to-sort), zebra-free rows (no divider lines; separation via spacing
-/// + a subtle hover fill). Cells are text, or views through an accessory column.
+/// + a subtle hover fill). Cells are text, or views through an accessory column;
+/// rows are optionally selectable.
 public struct AinkradDataTable<Row: Identifiable>: View {
     private let rows: [Row]
     private let columns: [AinkradTableColumn<Row>]
     private let sort: Binding<AinkradTableSort?>?
+    private let selection: Binding<Set<Row.ID>>?
 
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hoveredRowID: Row.ID?
+    /// Where a ⇧-click range starts. View state, not the caller's: the caller
+    /// owns which rows are selected, not how the user got there.
+    @State private var selectionAnchor: Row.ID?
 
     public init(rows: [Row], columns: [AinkradTableColumn<Row>], sort: Binding<AinkradTableSort?>? = nil) {
         self.rows = rows
         self.columns = columns
         self.sort = sort
+        self.selection = nil
+    }
+
+    /// A selectable table: a click selects a row, ⌘-click toggles one, and
+    /// ⇧-click selects the range from the last click, in the order rows are
+    /// shown. Selection is keyed by row ID, so it survives a re-sort.
+    ///
+    /// A second initializer, not a defaulted parameter on the first: adding a
+    /// parameter changes the initializer's mangled name, and a plugin built
+    /// against the old one would then fail to load.
+    public init(rows: [Row], columns: [AinkradTableColumn<Row>], sort: Binding<AinkradTableSort?>? = nil,
+                selection: Binding<Set<Row.ID>>) {
+        self.rows = rows
+        self.columns = columns
+        self.sort = sort
+        self.selection = selection
     }
 
     private var displayedRows: [Row] {
@@ -184,10 +230,40 @@ public struct AinkradDataTable<Row: Identifiable>: View {
         }
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
-        .background(ChamferShape(cut: 4).fill(hoveredRowID == row.id ? theme.surfaceElevated.opacity(0.4) : .clear))
+        .background(ChamferShape(cut: 4).fill(rowFill(row.id)))
+        // Selection reads like `AinkradListRow`'s — an accent fill and a lit
+        // leading bar — so a selected table row and a selected list row match.
+        .overlay(alignment: .leading) {
+            Rectangle()
+                .fill(theme.accentSecondary)
+                .frame(width: isSelected(row.id) ? 2 : 0)
+                .shadow(color: theme.accentSecondary.opacity(0.6), radius: 3)
+        }
         .contentShape(Rectangle())
+        .onTapGesture { click(row.id) }
         .onHover { isHovering in hoveredRowID = isHovering ? row.id : (hoveredRowID == row.id ? nil : hoveredRowID) }
+        .accessibilityAddTraits(isSelected(row.id) ? .isSelected : [])
         .animation(reduceMotion ? nil : AinkradMotion.hover, value: hoveredRowID)
+    }
+
+    private func isSelected(_ id: Row.ID) -> Bool { selection?.wrappedValue.contains(id) ?? false }
+
+    private func rowFill(_ id: Row.ID) -> Color {
+        if isSelected(id) { return theme.accentPrimary.opacity(0.16) }
+        if hoveredRowID == id { return theme.surfaceElevated.opacity(0.4) }
+        return .clear
+    }
+
+    /// A no-op without a selection binding, so a plain table ignores clicks.
+    private func click(_ id: Row.ID) {
+        guard let selection else { return }
+        let flags = NSEvent.modifierFlags
+        let gesture: AinkradSelectionGesture = flags.contains(.command) ? .toggle
+            : flags.contains(.shift) ? .extend : .plain
+        let next = nextSelection(current: selection.wrappedValue, anchor: selectionAnchor, clicked: id,
+                                 in: displayedRows.map(\.id), gesture: gesture)
+        selection.wrappedValue = next.selection
+        selectionAnchor = next.anchor
     }
 
     private func alignmentFor(_ alignment: HorizontalAlignment) -> Alignment {
