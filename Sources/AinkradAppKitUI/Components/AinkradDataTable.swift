@@ -1,20 +1,52 @@
 import SwiftUI
 import AinkradAppKitContract
 
-/// A single column of an `AinkradDataTable` — v1 supports text cells only.
-/// `id` identifies the column for sort tracking (`AinkradTableSort.columnID`)
-/// independent of its display `title`.
+/// A single column of an `AinkradDataTable`: text cells, or — through
+/// `accessory(id:title:alignment:content:)` — views such as a per-row button,
+/// a badge or a spinner. `id` identifies the column for sort tracking
+/// (`AinkradTableSort.columnID`) independent of its display `title`.
 public struct AinkradTableColumn<Row: Identifiable> {
     public let id: String
     public let title: String
     public let alignment: HorizontalAlignment
+    /// The cell's text, and the value the column sorts by. Empty for an
+    /// accessory column, which does not sort.
     public let cell: (Row) -> String
+    /// Set only for an accessory column. Internal, so the public surface grows
+    /// by one factory and nothing else.
+    let accessory: (@MainActor (Row) -> AnyView)?
 
     public init(id: String, title: String, alignment: HorizontalAlignment = .leading, cell: @escaping (Row) -> String) {
         self.id = id
         self.title = title
         self.alignment = alignment
         self.cell = cell
+        self.accessory = nil
+    }
+
+    private init(id: String, title: String, alignment: HorizontalAlignment,
+                 accessory: @escaping @MainActor (Row) -> AnyView) {
+        self.id = id
+        self.title = title
+        self.alignment = alignment
+        self.cell = { _ in "" }
+        self.accessory = accessory
+    }
+
+    /// A column whose cells are views — per-row verbs, badges, spinners —
+    /// rather than text. It has no sort value, so its header does not sort.
+    ///
+    /// A static factory, not a second type: the table takes one
+    /// `[AinkradTableColumn<Row>]`, and a separate accessory type could not
+    /// share that array without type erasure at every call site.
+    public static func accessory<Content: View>(
+        id: String,
+        title: String = "",
+        alignment: HorizontalAlignment = .trailing,
+        @ViewBuilder content: @escaping @MainActor (Row) -> Content
+    ) -> AinkradTableColumn<Row> {
+        AinkradTableColumn(id: id, title: title, alignment: alignment,
+                           accessory: { @MainActor row in AnyView(content(row)) })
     }
 }
 
@@ -31,7 +63,7 @@ public struct AinkradTableSort: Equatable, Sendable {
 /// `rows` sorted by the text value of the column matching `columnID`
 /// (via `localizedStandardCompare`, so numeric-looking text sorts naturally),
 /// ascending or descending per `ascending`. An unknown `columnID` (not present
-/// in `columns`) returns `rows` unchanged. `Array.sorted(by:)` is a stable
+/// in `columns`), or an accessory column's, returns `rows` unchanged. `Array.sorted(by:)` is a stable
 /// sort, so equal cell values preserve their original relative order. Pure —
 /// unit-testable without a view.
 public func sortedRows<Row: Identifiable>(
@@ -40,7 +72,7 @@ public func sortedRows<Row: Identifiable>(
     column columnID: String,
     ascending: Bool
 ) -> [Row] {
-    guard let column = columns.first(where: { $0.id == columnID }) else { return rows }
+    guard let column = columns.first(where: { $0.id == columnID }), column.accessory == nil else { return rows }
     return rows.sorted { lhs, rhs in
         let comparison = column.cell(lhs).localizedStandardCompare(column.cell(rhs))
         return ascending ? comparison == .orderedAscending : comparison == .orderedDescending
@@ -60,7 +92,7 @@ public func nextSort(current: AinkradTableSort?, column: String) -> AinkradTable
 
 /// Cardinal HUD data table — chamfer header row (uppercase/tracked, optional
 /// click-to-sort), zebra-free rows (no divider lines; separation via spacing
-/// + a subtle hover fill). v1 supports text cells only.
+/// + a subtle hover fill). Cells are text, or views through an accessory column.
 public struct AinkradDataTable<Row: Identifiable>: View {
     private let rows: [Row]
     private let columns: [AinkradTableColumn<Row>]
@@ -108,7 +140,10 @@ public struct AinkradDataTable<Row: Identifiable>: View {
 
     private func headerCell(_ column: AinkradTableColumn<Row>) -> some View {
         Button {
-            guard let sort else { return }
+            // An accessory column has no sort value, so its header click does
+            // nothing — it is not `.disabled`, which would grey out that one
+            // header among its neighbours and read as a disabled column.
+            guard let sort, column.accessory == nil else { return }
             sort.wrappedValue = nextSort(current: sort.wrappedValue, column: column.id)
         } label: {
             HStack(spacing: 3) {
@@ -130,6 +165,10 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     private func rowView(_ row: Row) -> some View {
         HStack(spacing: AinkradSpacing.md) {
             ForEach(columns, id: \.id) { column in
+                if let accessory = column.accessory {
+                    accessory(row)
+                        .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
+                } else {
                 Text(column.cell(row))
                     .font(AinkradFontResolver.font(.body, typography: typo))
                     .foregroundStyle(theme.foreground.opacity(0.9))
@@ -140,6 +179,7 @@ public struct AinkradDataTable<Row: Identifiable>: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
+                }
             }
         }
         .padding(.horizontal, AinkradSpacing.md)
