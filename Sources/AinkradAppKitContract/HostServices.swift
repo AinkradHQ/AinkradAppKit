@@ -42,6 +42,10 @@ import Observation
     /// showing right now is `\.ainkradPaneMode` instead — per pane, not per
     /// app, for the reason `PluginFocus` documents. Added v11.
     var mode: PluginModeControl { get }
+    /// Lets this app read/override the size the host draws its OVERLAY at.
+    /// Meaningless while it is presented as a pane, and harmless there. Applies
+    /// the next time the overlay is summoned. Added v11.
+    var overlaySize: PluginOverlaySizeControl { get }
     /// Lets this app record events in the host's Signal feed. Write-only with
     /// respect to other apps: the emitter is bound to this app's id, so an app
     /// cannot attribute an event to another. Reading the aggregated feed is not
