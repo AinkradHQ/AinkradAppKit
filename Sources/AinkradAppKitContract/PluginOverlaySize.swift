@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// How large the host draws an `.overlay`-presentation app.
@@ -15,26 +16,35 @@ public enum PluginOverlaySize: String, Codable, Sendable, CaseIterable {
     case medium
     case large
 
-    /// The width fraction of the host window, and the points it is clamped to.
-    public var width: (fraction: Double, min: Double, max: Double) {
+    /// The size in points.
+    ///
+    /// FIXED, not a fraction of the window. The fraction scheme that shipped
+    /// first was wrong in practice: on a 1728 pt-wide display "large" resolved
+    /// to 980 x 894, which is not large — the ceiling clamp ate the fraction
+    /// before it did anything. A size you pick by name should BE that size.
+    ///
+    /// Clamped to what actually fits (see `resolved(in:)`), which is an overflow
+    /// guard rather than a design choice: a 1200 pt panel on a 1280 pt window
+    /// would otherwise sit edge to edge with no scrim left to click.
+    public var points: CGSize {
         switch self {
-        case .small:  return (0.30, 420, 520)
-        case .medium: return (0.42, 560, 700)
-        case .large:  return (0.58, 720, 980)
+        case .small:  return CGSize(width: 520, height: 400)
+        case .medium: return CGSize(width: 780, height: 600)
+        case .large:  return CGSize(width: 1280, height: 960)
         }
     }
 
-    /// The height fraction, and its clamps.
-    public var height: (fraction: Double, min: Double, max: Double) {
-        switch self {
-        case .small:  return (0.48, 340, 520)
-        case .medium: return (0.66, 460, 760)
-        case .large:  return (0.80, 620, 1040)
-        }
+    /// The size to actually draw inside `available`, never larger than 90% of
+    /// it on either axis so the scrim stays reachable.
+    public func resolved(in available: CGSize) -> CGSize {
+        CGSize(width: min(points.width, available.width * 0.9),
+               height: min(points.height, available.height * 0.9))
     }
 
-    /// `medium` is what every overlay was before this existed, so an app that
-    /// says nothing keeps exactly the size it had.
+    /// `medium` is the default. It is close to, but not identical to, the
+    /// single hardcoded frame every overlay had before this existed — the old
+    /// frame was 560–700 wide, and 780 is the size that actually suits the
+    /// apps using it.
     public static let `default` = PluginOverlaySize.medium
 
     public var title: String {
