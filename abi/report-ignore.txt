@@ -28,3 +28,19 @@ is a new API without '@available'
 # hide the NEXT added requirement too, which is the one that might genuinely
 # break something.
 Var HostServices.signals has been added as a protocol requirement
+
+# HostServices.mode (generation 11). The same class of change as `signals`
+# above, reviewed the same way.
+#
+# It cannot stop an installed plugin from LOADING: a plugin CALLS `host.mode`,
+# it never implements it, and in production only the host conforms to
+# HostServices. A generation-10 bundle never calls it, so it needs no witness.
+#
+# It DOES break the compilation of the fake conformances in Raven's, Rune's and
+# Git Mage's test support — exactly as `signals` did at generation 9. That is a
+# source break in three repos, fixed when each moves its pin, not a load
+# failure in the field.
+#
+# `AinkradAppModes` is deliberately NOT here: it is a separate protocol found by
+# cast, so it adds no requirement to anything and needs no exemption.
+Var HostServices\.mode has been added as a protocol requirement
