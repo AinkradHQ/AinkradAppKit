@@ -9,6 +9,10 @@ public enum PluginInfoKey {
     public static let apiVersion = "AinkradAPIVersion"
     public static let principalClass = "NSPrincipalClass"
     public static let presentation = "AinkradPresentation"
+    /// Which mode the app opens in (generation 11). Absent or unrecognized
+    /// means `.advanced`, so every pre-generation-11 bundle keeps its
+    /// behaviour exactly — see `PluginMode`.
+    public static let mode = "AinkradMode"
     /// Store-listing completeness fields (sub-project D). Read directly from
     /// the Info.plist by `StorePolicy` callers rather than folded into the
     /// strict `PluginBundleMetadata.parse` (which stays ABI-frozen): a bundle
@@ -41,16 +45,38 @@ public struct PluginBundleMetadata: Equatable {
     public let apiVersion: Int
     public let principalClassName: String
     public let presentation: PluginPresentation
+    /// The mode the app opens in. Defaulted in `init`, so every existing call
+    /// site keeps compiling and keeps meaning `.advanced`.
+    public let mode: PluginMode
 
+    /// The pre-generation-11 initializer, kept EXACTLY as it was.
+    ///
+    /// Adding `mode:` to it — even defaulted — changes the mangled symbol and
+    /// removes this one, which `make abi-check` correctly reports as a removal.
+    /// A defaulted parameter is source-compatible, not ABI-compatible. So the
+    /// old spelling stays and delegates; generation 11's callers use the
+    /// overload below.
     public init(appID: String, displayName: String, iconSymbol: String,
                 apiVersion: Int, principalClassName: String,
                 presentation: PluginPresentation = .pane) {
+        self.init(appID: appID, displayName: displayName, iconSymbol: iconSymbol,
+                  apiVersion: apiVersion, principalClassName: principalClassName,
+                  presentation: presentation, mode: .advanced)
+    }
+
+    /// Generation 11. No defaults, so it can never be ambiguous with the
+    /// initializer above.
+    public init(appID: String, displayName: String, iconSymbol: String,
+                apiVersion: Int, principalClassName: String,
+                presentation: PluginPresentation,
+                mode: PluginMode) {
         self.appID = appID
         self.displayName = displayName
         self.iconSymbol = iconSymbol
         self.apiVersion = apiVersion
         self.principalClassName = principalClassName
         self.presentation = presentation
+        self.mode = mode
     }
 }
 
@@ -69,9 +95,14 @@ public extension PluginBundleMetadata {
         guard let principal = string(PluginInfoKey.principalClass) else { return .failure(.missingKey(PluginInfoKey.principalClass)) }
         guard let api = dict[PluginInfoKey.apiVersion] as? Int else { return .failure(.invalidAPIVersion) }
         let presentation = PluginPresentation(rawValue: (dict[PluginInfoKey.presentation] as? String) ?? "") ?? .pane
+        // Same shape as `presentation`: a missing or unrecognized value falls
+        // back rather than failing the parse, so a generation-10 bundle — which
+        // cannot carry this key — still loads.
+        let mode = PluginMode(rawValue: (dict[PluginInfoKey.mode] as? String) ?? "") ?? .advanced
         return .success(PluginBundleMetadata(appID: appID, displayName: displayName,
                                              iconSymbol: icon, apiVersion: api,
                                              principalClassName: principal,
-                                             presentation: presentation))
+                                             presentation: presentation,
+                                             mode: mode))
     }
 }
