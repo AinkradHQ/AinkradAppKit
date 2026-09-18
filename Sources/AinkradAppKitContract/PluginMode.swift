@@ -10,6 +10,12 @@ import SwiftUI
 ///
 /// Defaults to `.advanced` everywhere it is absent, so nothing changes for an
 /// app that never opts in.
+/// ## Switching over this
+///
+/// It ships in a resilient module, so a `switch` over it needs `@unknown
+/// default` and the compiler will say so. **Fall back to `.advanced`**: showing
+/// everything is always correct, while guessing `.basic` would hide controls
+/// for a mode the build does not understand.
 public enum PluginMode: String, Codable, Sendable, CaseIterable {
     case basic
     case advanced
