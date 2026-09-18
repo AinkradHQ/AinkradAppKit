@@ -116,7 +116,7 @@ struct ContractFreezeTests {
         // symbol (Swift mangles the module name in), so a generation-7 binary
         // passed the version check and then failed to LINK. Promising support
         // we cannot deliver turns a clear "update this app" into an opaque
-        // "failed to load". See abi/README-module-renames.md.
+        // "failed to load". See Docs/Topics/AinkradAppKit/abi/readme-module-renames.md in the Ainkrad workspace.
         //
         // Generation 9 adds only `HostServices.signals` and
         // `PluginSignalEmitter`. Nothing moved, nothing was renamed, so the
