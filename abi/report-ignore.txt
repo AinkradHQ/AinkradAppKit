@@ -44,3 +44,13 @@ Var HostServices.signals has been added as a protocol requirement
 # `AinkradAppModes` is deliberately NOT here: it is a separate protocol found by
 # cast, so it adds no requirement to anything and needs no exemption.
 Var HostServices\.mode has been added as a protocol requirement
+
+# HostServices.overlaySize (generation 11). Same class and same reasoning as
+# `mode` above and `signals` at generation 9: a plugin CALLS it and never
+# implements it, so no installed bundle needs a witness for it.
+#
+# Added within generation 11 rather than bumping to 12: 11 has not been
+# released, so no bundle in the field was built against the narrower protocol.
+# If 11 ships before this lands, this exemption is wrong and the generation must
+# move instead.
+Var HostServices\.overlaySize has been added as a protocol requirement

@@ -70,7 +70,8 @@ struct ContractFreezeTests {
         var actions: AgentActionProvider { StubActions() }
         var apps: PluginAppLauncher { StubLauncher() }
         var presentation: PluginPresentationControl { StubPresentation() }
-        var mode: PluginModeControl { StubMode() }
+        var overlaySize: PluginOverlaySizeControl { FreezeStubOverlaySize() }
+    var mode: PluginModeControl { StubMode() }
         var signals: PluginSignalEmitter { NoopSignalEmitter() }
     }
 
@@ -215,3 +216,10 @@ private struct StubLog: PluginLogger {
     func set(_ mode: PluginMode) {}
     func reset() {}
 }
+
+@MainActor private struct FreezeStubOverlaySize: PluginOverlaySizeControl {
+    var current: PluginOverlaySize { .medium }
+    func set(_ size: PluginOverlaySize) {}
+    func reset() {}
+}
+

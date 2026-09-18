@@ -24,18 +24,26 @@ public struct AinkradSurfaceSettings: View {
     /// rather than shown disabled. A control that cannot do anything is worse
     /// than no control: it invites the click and then refuses it.
     private let mode: (any PluginModeControl)?
+    /// `nil` when the caller has no size control to offer. The row is also
+    /// hidden while the app is presented as a PANE — a size that applies to a
+    /// surface you are not using is a control that does nothing.
+    private let overlaySize: (any PluginOverlaySizeControl)?
 
     @State private var presentationSelection: PluginPresentation
     @State private var modeSelection: PluginMode
+    @State private var sizeSelection: PluginOverlaySize
 
     public init(appName: String,
                 presentation: any PluginPresentationControl,
-                mode: (any PluginModeControl)? = nil) {
+                mode: (any PluginModeControl)? = nil,
+                overlaySize: (any PluginOverlaySizeControl)? = nil) {
         self.appName = appName
         self.presentation = presentation
         self.mode = mode
+        self.overlaySize = overlaySize
         _presentationSelection = State(initialValue: presentation.current)
         _modeSelection = State(initialValue: mode?.current ?? .advanced)
+        _sizeSelection = State(initialValue: overlaySize?.current ?? .default)
     }
 
     public var body: some View {
@@ -58,8 +66,17 @@ public struct AinkradSurfaceSettings: View {
                     }
                 }
             }
+            if overlaySize != nil, presentationSelection == .overlay {
+                AinkradFormRow(title: "Overlay size",
+                               help: "How large \(appName) is drawn when it opens as an "
+                                   + "overlay. Applies the next time it is summoned.") {
+                    AinkradSegmentedPicker(items: PluginOverlaySize.allCases,
+                                           selection: $sizeSelection) { $0.title }
+                }
+            }
         }
         .onChange(of: presentationSelection) { _, new in presentation.set(new) }
         .onChange(of: modeSelection) { _, new in mode?.set(new) }
+        .onChange(of: sizeSelection) { _, new in overlaySize?.set(new) }
     }
 }

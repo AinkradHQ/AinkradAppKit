@@ -129,6 +129,7 @@ private enum ModalApp: AinkradApp, AinkradAppModes {
     var actions: AgentActionProvider { ModeStubActions() }
     var apps: PluginAppLauncher { ModeStubLauncher() }
     var presentation: PluginPresentationControl { ModeStubPresentation() }
+    var overlaySize: PluginOverlaySizeControl { ModeStubOverlaySize() }
     var mode: PluginModeControl { ModeStubMode() }
     var signals: PluginSignalEmitter { NoopSignalEmitter() }
 }
@@ -172,3 +173,10 @@ private struct ModeStubLog: PluginLogger {
     func set(_ mode: PluginMode) {}
     func reset() {}
 }
+
+@MainActor private struct ModeStubOverlaySize: PluginOverlaySizeControl {
+    var current: PluginOverlaySize { .medium }
+    func set(_ size: PluginOverlaySize) {}
+    func reset() {}
+}
+
