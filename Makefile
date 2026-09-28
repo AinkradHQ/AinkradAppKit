@@ -1,13 +1,14 @@
-# The project currently needs the macOS 27 beta SDK; default to Xcode-beta when
-# it's installed. On a machine/runner without Xcode-beta (e.g. a GitHub-hosted
-# macos-latest runner), fall back to whatever toolchain `xcode-select` already
-# points at instead of a nonexistent path. An explicitly supplied DEVELOPER_DIR
+# The project needs the macOS 27 SDK; default to Xcode 27 at /Applications/Xcode.app
+# when it's installed. On a machine/runner without it (e.g. a GitHub-hosted
+# macos-latest runner, whose Xcode.app is older), fall back to whatever toolchain
+# `xcode-select` already points at. An explicitly supplied DEVELOPER_DIR
 # (env or command line) always wins over both.
 # Override on the command line: `make abi-check DEVELOPER_DIR=…` or point at a
-# different beta install with `make abi-check XCODE_BETA=…`.
-XCODE_BETA := /Applications/Xcode-beta.app/Contents/Developer
-HAVE_BETA := $(if $(wildcard $(XCODE_BETA)),1,)
-DEVELOPER_DIR ?= $(if $(HAVE_BETA),$(XCODE_BETA),$(shell xcode-select -p))
+# different install with `make abi-check XCODE=…`.
+XCODE := /Applications/Xcode.app/Contents/Developer
+# Keyed on the VERSION, not the path: every runner has an Xcode.app.
+HAVE_XCODE := $(shell $(XCODE)/usr/bin/xcodebuild -version 2>/dev/null | grep -q '^Xcode 27' && echo 1)
+DEVELOPER_DIR ?= $(if $(HAVE_XCODE),$(XCODE),$(shell xcode-select -p))
 export DEVELOPER_DIR
 SDK := $(shell xcrun --show-sdk-path)
 TARGET := arm64-apple-macosx14.0
@@ -62,30 +63,30 @@ abi-baseline: build
 # GitHub-hosted macos runner produced (log: `Failed to load module:
 # AinkradAppKitContract`, then 39 bogus removals).
 #
-# Note this is a *toolchain* constraint, not an SDK one: running the beta
+# Note this is a *toolchain* constraint, not an SDK one: running the Xcode 27
 # digester against the CommandLineTools SDK passes fine, while running the CLT
-# digester against a beta-built module fails. So the guard is on Xcode-beta —
+# digester against an Xcode-27-built module fails. So the guard is on Xcode 27 —
 # the toolchain that builds this package and generated the committed baseline.
 #
 # There is no way to make the check meaningful under a foreign toolchain, and
 # making it merely *pass* would mean deleting the guardrail. So: run it when
-# the beta toolchain is here, and when it is not, skip LOUDLY. A release is
+# the Xcode 27 toolchain is here, and when it is not, skip LOUDLY. A release is
 # still covered — scripts/preflight.sh in the host repo (invoked by
-# scripts/release.sh) runs this check on a machine that does have Xcode-beta.
+# scripts/release.sh) runs this check on a machine that does have Xcode 27.
 #
 # Force it anyway (e.g. after moving the baseline to another toolchain):
 #   make abi-check ABI_CHECK_FORCE=1
 ABI_CHECK_FORCE ?=
 
 abi-check:
-ifeq ($(strip $(HAVE_BETA))$(strip $(ABI_CHECK_FORCE)),)
+ifeq ($(strip $(HAVE_XCODE))$(strip $(ABI_CHECK_FORCE)),)
 	@printf '%s\n' \
 	  "$(if $(CI),::warning title=ABI check SKIPPED::,)" \
 	  "==============================================================" \
 	  "  ABI CHECK SKIPPED — IT DID NOT RUN. THIS IS NOT A PASS." \
 	  "==============================================================" \
-	  "  Reason: Xcode-beta is not installed at" \
-	  "          $(XCODE_BETA)" \
+	  "  Reason: Xcode 27 is not installed at" \
+	  "          $(XCODE)" \
 	  "  swift-api-digester can only read a .swiftmodule written by its" \
 	  "  own compiler build. Under any other toolchain it fails to load" \
 	  "  the module and reports the ENTIRE contract as removed, which is" \
@@ -93,7 +94,7 @@ ifeq ($(strip $(HAVE_BETA))$(strip $(ABI_CHECK_FORCE)),)
 	  "" \
 	  "  The contract is therefore UNVERIFIED in this environment." \
 	  "  It is verified before every release by scripts/preflight.sh in" \
-	  "  the host repo, on a machine with the beta toolchain." \
+	  "  the host repo, on a machine with the Xcode 27 toolchain." \
 	  "=============================================================="
 else
 	$(MAKE) build

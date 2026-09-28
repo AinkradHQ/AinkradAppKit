@@ -29,7 +29,18 @@ public enum AinkradAppKit {
     /// `HostServices`), the manifest key is read outside the frozen
     /// `PluginBundleMetadata.parse`, and the locator travels through the
     /// SwiftUI environment rather than through `AinkradApp`.
-    public static let apiVersion = 10
+    /// **Generation 11 adds Basic Mode.** Additive, so a generation-10 bundle
+    /// keeps loading: `AinkradAppModes` is a SEPARATE protocol discovered by
+    /// cast (never a requirement added to `AinkradApp`), `AinkradMode` falls
+    /// back to `.advanced` when absent rather than failing the parse, and the
+    /// pane's live mode travels through the SwiftUI environment.
+    ///
+    /// `HostServices.mode` IS a new requirement on `HostServices` — safe for
+    /// loading, since only the host conforms in production, but it does break
+    /// the *compilation* of the fake conformances in Raven's, Rune's and Git
+    /// Mage's test support, exactly as `signals` did at generation 9. They fix
+    /// it when they move their pin.
+    public static let apiVersion = 11
 
     /// The oldest generation a host built on this SDK still loads.
     ///
