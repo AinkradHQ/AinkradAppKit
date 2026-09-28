@@ -4,10 +4,9 @@ import AinkradAppKitUI
 
 /// A settings page: one scrolling column of groups with sticky headers, an
 /// optional "on this page" mini-map at width, and the deep-link scroll +
-/// highlight target. Pages with three or more groups (measured against the
-/// real catalog: Tools has 3, Permissions & Sandbox has 4) get a top tab bar
-/// instead, one tab per group, so a tall page never becomes a long scroll —
-/// see `usesTabs(page:)`. This is deliberately narrow: it separates groups
+/// highlight target. Pages with two or more groups get a top tab bar instead,
+/// one tab per group, so every multi-group page reads the same way and a tall
+/// page never becomes a long scroll — see `usesTabs(page:)`. This is deliberately narrow: it separates groups
 /// within one topic, not different topics, which stay flat top-level pages.
 public struct SettingsPageView: View {
     @Environment(\.ainkradTheme) private var tokens
@@ -65,14 +64,14 @@ public struct SettingsPageView: View {
         showsMiniMap(page: page, width: totalWidth) ? totalWidth - miniMapOccupiedWidth : totalWidth
     }
 
-    /// Tall pages get a tab bar instead of a long scroll. Threshold measured
-    /// against the real catalog: Tools has 3 groups and Permissions & Sandbox
-    /// has 4; every other page has 1-2, and a tab bar over two groups is worse
-    /// than none.
+    /// Any page with more than one group is tabbed. It was three, which left a
+    /// two-group app page (Appearance + one tab of its own) as a stacked
+    /// scroll while its neighbours had tabs — the same kind of page in two
+    /// different shapes. One group has nothing to switch between.
     public static func usesTabs(page: SettingsPage) -> Bool {
         page.groups.count >= tabThreshold
     }
-    static let tabThreshold = 3
+    static let tabThreshold = 2
 
     /// Matches inside one group, for the badge on its tab. A filter must never
     /// be able to hide a match behind an unselected tab.

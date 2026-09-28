@@ -53,6 +53,10 @@ public struct SettingsRow: View {
         }
     }
 
+    /// A segmented control holds a handful of short choices; past that it runs
+    /// off the trailing rail (a folder list, a font list), so it becomes a menu.
+    static func usesMenu(optionCount: Int) -> Bool { optionCount > 4 }
+
     public static func badges(for field: SettingsField) -> [String] {
         var result: [String] = []
         if field.isAdvanced { result.append("Advanced") }
@@ -160,16 +164,16 @@ public struct SettingsRow: View {
         case .toggle(let binding):
             AinkradToggle(isOn: binding)
         case .select(let options, let selection):
-            // `AinkradSegmentedPicker` requires `T: Hashable`; `SettingsOption`
-            // is only `Identifiable`. The field's binding already holds the
-            // selected option's `id` (a `String`, which is `Hashable`), so the
-            // picker operates directly on ids — no extra glue binding needed.
-            AinkradSegmentedPicker(
-                items: options.map(\.id),
-                selection: selection,
-                label: { id in options.first { $0.id == id }?.title ?? id }
-            )
-            .fixedSize()
+            // Both pickers need `T: Hashable`; `SettingsOption` is only
+            // `Identifiable`. The field's binding already holds the selected
+            // option's `id` (a `String`), so they operate directly on ids.
+            let label = { (id: String) in options.first { $0.id == id }?.title ?? id }
+            if Self.usesMenu(optionCount: options.count) {
+                AinkradSelect(items: options.map(\.id), selection: selection, label: label)
+            } else {
+                AinkradSegmentedPicker(items: options.map(\.id), selection: selection, label: label)
+                    .fixedSize()
+            }
         case .slider(let range, let step, let value):
             // `AinkradSlider` has no native step, so it's wrapped in a
             // shim binding that quantizes writes via `Self.quantize`

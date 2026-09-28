@@ -48,3 +48,24 @@ struct SettingsPageIdentityTests {
         #expect(Set(ids).count == ids.count)
     }
 }
+
+@Suite("Settings page shape")
+@MainActor
+struct SettingsPageShapeTests {
+    private func page(groups: Int) -> SettingsPage {
+        SettingsPage(path: SettingsPath(["p"]), title: "P", icon: "gear", group: .installedApps, order: 0,
+                     groups: (0..<groups).map { SettingsGroup(path: SettingsPath(["p", "\($0)"]), title: "\($0)", fields: []) })
+    }
+
+    @Test("two groups are tabs; one is a plain column")
+    func twoGroupsAreTabbed() {
+        #expect(!SettingsPageView.usesTabs(page: page(groups: 1)))
+        #expect(SettingsPageView.usesTabs(page: page(groups: 2)))
+    }
+
+    @Test("a long select is a menu, a short one a segmented control")
+    func longSelectsAreMenus() {
+        #expect(!SettingsRow.usesMenu(optionCount: 4))
+        #expect(SettingsRow.usesMenu(optionCount: 5))
+    }
+}
