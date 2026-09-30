@@ -31,6 +31,26 @@ struct SignalStoreDedupeTests {
         #expect(page[0].timestamp == Date(timeIntervalSince1970: 1030), "timestamp advances to the latest")
     }
 
+    @Test("a coalesced repeat shows the newest title and body, and search finds it")
+    func coalesceKeepsLatestText() throws {
+        let (store, url) = try makeStore()
+        defer { try? FileManager.default.removeItem(at: url) }
+        let first = SignalEvent(timestamp: Date(timeIntervalSince1970: 1000), source: .app(appID: "whisper"),
+                                kind: "whisper.message", severity: .info, title: "Mam", body: "first hello",
+                                dedupeKey: "chat:mam")
+        _ = try store.insert(first)
+        let repeatEvent = SignalEvent(timestamp: Date(timeIntervalSince1970: 1020), source: .app(appID: "whisper"),
+                                      kind: "whisper.message", severity: .info, title: "Mam", body: "second zebra",
+                                      dedupeKey: "chat:mam")
+        #expect(try store.insert(repeatEvent) == .coalesced(id: first.id))
+        let page = store.page(filter: .all, before: nil, limit: 10)
+        #expect(page.count == 1)
+        #expect(page[0].id == first.id)
+        #expect(page[0].body == "second zebra")
+        #expect(store.search("zebra", filter: .all, limit: 10).map(\.id) == [first.id])
+        #expect(store.search("first", filter: .all, limit: 10).isEmpty, "the replaced text no longer matches")
+    }
+
     @Test("the same key outside the window inserts a new row")
     func insertsOutsideWindow() throws {
         let (store, url) = try makeStore()
