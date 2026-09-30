@@ -17,16 +17,30 @@ public final class SignalToastModel {
     private var queued: [SignalEvent] = []
     public var overflowCount: Int { queued.count }
 
-    /// `nil` means "requires an explicit dismissal". A failure that vanished on
-    /// its own is exactly the case this feature exists to prevent.
+    /// How long a toast stays. A failure stays longest but no longer forever:
+    /// three failures that never left filled every slot and hid everything
+    /// after them. The feed keeps each one after its toast goes. Optional, so
+    /// a future "until dismissed" severity stays expressible.
     public static func autoDismissDelay(for severity: SignalSeverity) -> TimeInterval? {
         switch severity {
         case .info, .success: return 4
         case .warning: return 8
-        case .failure: return nil
+        case .failure: return 30
         @unknown default: return 4
         }
     }
+
+    /// The delay for this event: `.urgent` importance (a person waiting on
+    /// you) gets at least 8s, since 4s is too short to read a message.
+    static func autoDismissDelay(for event: SignalEvent) -> TimeInterval? {
+        guard let base = autoDismissDelay(for: event.severity) else { return nil }
+        return event.proposedImportance == .urgent ? max(base, 8) : base
+    }
+
+    /// How many times the toast with this id has been repeated in place (1 when
+    /// it has not). See `present(_:)`.
+    public func repeatCount(for id: UUID) -> Int { repeats[id] ?? 1 }
+    private var repeats: [UUID: Int] = [:]
 
     /// Severity order, so a more urgent arrival can take a slot from a less
     /// urgent toast. Not `CaseIterable`'s order: that is a declaration detail
@@ -52,9 +66,34 @@ public final class SignalToastModel {
     /// comparison is `>` and not `>=`, a `.failure` can never be displaced by
     /// another failure, so the toast that never auto-dismisses is never the one
     /// that silently disappears.
+    ///
+    /// A repeat (same source and `dedupeKey` as a toast still showing or
+    /// queued) replaces that toast IN PLACE, keeps its slot, restarts its
+    /// clock and counts itself: a burst from one chat is one toast reading
+    /// "×3" with the newest text, not three toasts pushing everything else out.
     public func present(_ event: SignalEvent) {
         guard !visible.contains(where: { $0.id == event.id }),
               !queued.contains(where: { $0.id == event.id }) else { return }
+
+        if let key = event.dedupeKey {
+            let isRepeat: (SignalEvent) -> Bool = { $0.dedupeKey == key && $0.source == event.source }
+            if let index = visible.firstIndex(where: isRepeat) {
+                let old = visible[index]
+                repeats[event.id] = repeatCount(for: old.id) + 1
+                repeats[old.id] = nil
+                deadlines[old.id] = nil
+                heldRemaining[old.id] = nil
+                visible[index] = event
+                scheduleAutoDismiss(event)
+                return
+            }
+            if let index = queued.firstIndex(where: isRepeat) {
+                repeats[event.id] = repeatCount(for: queued[index].id) + 1
+                repeats[queued[index].id] = nil
+                queued[index] = event
+                return
+            }
+        }
 
         if visible.count < Self.maxVisible {
             visible.insert(event, at: 0)
@@ -79,6 +118,7 @@ public final class SignalToastModel {
         visible.removeAll { $0.id == id }
         deadlines[id] = nil
         heldRemaining[id] = nil
+        repeats[id] = nil
         // Promote the NEWEST queued event, and to the top - the same ordering
         // the visible stack already uses, so a promotion does not shuffle the
         // stack into a different order than arrivals produce.
@@ -119,14 +159,15 @@ public final class SignalToastModel {
     /// is a pure function so the bar can be tested without waiting.
     public func remainingFraction(id: UUID, severity: SignalSeverity,
                                   now: Date = Date()) -> Double? {
-        guard let total = Self.autoDismissDelay(for: severity) else { return nil }
+        let event = visible.first { $0.id == id }
+        guard let total = event.map(Self.autoDismissDelay(for:)) ?? Self.autoDismissDelay(for: severity) else { return nil }
         if let held = heldRemaining[id] { return min(1, max(0, held / total)) }
         guard let deadline = deadlines[id] else { return nil }
         return min(1, max(0, deadline.timeIntervalSince(now) / total))
     }
 
     private func scheduleAutoDismiss(_ event: SignalEvent) {
-        guard let delay = Self.autoDismissDelay(for: event.severity) else { return }
+        guard let delay = Self.autoDismissDelay(for: event) else { return }
         deadlines[event.id] = Date().addingTimeInterval(delay)
         scheduleSweep()
     }
@@ -152,7 +193,7 @@ public final class SignalToastModel {
     private var isSweeping = false
 }
 
-/// Bottom-trailing stack of transient toasts.
+/// A stack of transient toasts; the host places it top-trailing, under the bell.
 ///
 /// Each toast is its own layer with its own transition, so the stack settles as
 /// separated live layers rather than one image sliding — the host's motion rule.
@@ -190,7 +231,14 @@ public struct SignalToastStack: View {
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var status
     @Environment(\.ainkradReduceMotion) private var reduceMotion
+    @Environment(\.ainkradSignalIdentity) private var identities
     @State private var hovered: UUID?
+    /// Toasts showing their whole body. An expanded toast holds its clock:
+    /// the user asked to read it, so it must not leave mid-sentence.
+    @State private var expanded: Set<UUID> = []
+    /// Toasts whose body does not fit on one line, measured, not guessed from
+    /// a character count, so the chevron appears exactly when text is cut.
+    @State private var overflowing: Set<UUID> = []
 
     public var body: some View {
         VStack(alignment: .trailing, spacing: 8) {
@@ -241,98 +289,235 @@ public struct SignalToastStack: View {
         }
     }
 
-    /// Built from the same primitives `SignalFeedRow`'s inline action uses, so
-    /// the two read as one control in two places rather than two controls.
+    /// An action as an icon: the toast is too narrow for labelled chips
+    /// beside its text. The label becomes the tooltip and the accessible name.
+    /// An action without a symbol gets a generic one.
     private func toastAction(_ event: SignalEvent, _ action: SignalAction) -> some View {
         let tint = action.isDestructive ? status.danger : theme.accentPrimary
         return Button { onAction(event, action) } label: {
-            Text(action.label)
-                .font(AinkradFontResolver.font(size: 10.5, weight: .medium, typography: typo))
+            Image(systemName: action.symbol ?? "arrow.up.forward.circle")
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(tint)
-                .padding(.horizontal, AinkradSpacing.sm)
-                .padding(.vertical, AinkradSpacing.xs / 2)
+                .frame(width: 22, height: 20)
                 .background(ChamferShape(cut: 4).fill(tint.opacity(0.14)))
-                .overlay(ChamferShape(cut: 4).strokeBorder(tint.opacity(0.5), lineWidth: 1))
+                .overlay(ChamferShape(cut: 4).strokeBorder(tint.opacity(0.45), lineWidth: 1))
                 .contentShape(ChamferShape(cut: 4))
         }
         .buttonStyle(.plain)
+        .help(action.label)
+        .accessibilityLabel(action.label)
+    }
+
+    /// The severity colour, from the same mapping feed rows use, so an info
+    /// event reads the same in a toast and in the dropdown.
+    private func accent(_ event: SignalEvent) -> Color {
+        SignalPresentation.status(for: event.severity).color(in: theme, statusColors: status)
+    }
+
+    /// The sending app's launcher icon, large, as the toast's anchor. Without
+    /// a resolver (a plugin hosting the stack itself) it falls back to the
+    /// severity glyph.
+    @ViewBuilder
+    private func leadingIcon(_ event: SignalEvent) -> some View {
+        if let identity = identities.identity(for: event.source) {
+            AinkradAppTile(symbol: identity.symbol, size: 34)
+                .allowsHitTesting(false)
+                .accessibilityLabel(identity.name)
+        } else {
+            Image(systemName: SignalPresentation.iconSymbol(for: event.severity))
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(accent(event))
+                .frame(width: 34, height: 34)
+        }
+    }
+
+    private func bodyText(_ event: SignalEvent) -> Text {
+        Text(event.body.flatMap { $0.isEmpty ? nil : $0 } ?? " ")
+            .font(AinkradFontResolver.font(size: 11.5, typography: typo))
+            .foregroundStyle(theme.foreground.opacity(0.66))
+    }
+
+    private func toggleExpanded(_ event: SignalEvent) {
+        if expanded.contains(event.id) {
+            collapse(event.id)
+            if hovered != event.id { model.resume(id: event.id) }
+        } else {
+            expanded.insert(event.id)
+            model.pause(id: event.id)
+        }
+    }
+
+    private func collapse(_ id: UUID) {
+        expanded.remove(id)
+        overflowing.remove(id)
+    }
+
+    /// Two on the toast and the rest behind "⋯": the same set the feed row
+    /// offers, so one event never offers different things in two places.
+    @ViewBuilder
+    private func actionRow(_ event: SignalEvent) -> some View {
+        let more = Array(event.actions.dropFirst(2))
+        HStack(spacing: AinkradSpacing.xs + 1) {
+            ForEach(Array(event.actions.prefix(2)), id: \.id) { action in toastAction(event, action) }
+            if !more.isEmpty {
+                AinkradMenuButton(items: more.map { action in
+                    AinkradMenuItem(title: action.label, isDestructive: action.isDestructive) {
+                        onAction(event, action)
+                    }
+                }) {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(theme.foreground.opacity(0.6))
+                        .frame(width: 22, height: 20)
+                        .background(ChamferShape(cut: 4).fill(theme.foreground.opacity(0.08)))
+                }
+            }
+        }
     }
 
     private func toast(_ event: SignalEvent) -> some View {
-        let accent = SignalPresentation.color(for: event.severity, in: status)
-        return HStack(alignment: .top, spacing: AinkradSpacing.sm + 1) {
-            Image(systemName: SignalPresentation.iconSymbol(for: event.severity))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(accent)
-            VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
-                Text(event.title)
-                    .font(AinkradFontResolver.font(size: 12, weight: .semibold, typography: typo))
-                    .foregroundStyle(theme.foreground)
-                    .lineLimit(1)
-                if let body = event.body, !body.isEmpty {
-                    Text(body)
-                        .font(AinkradFontResolver.font(size: 11, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.6))
-                        .lineLimit(2)
-                }
-                // At most two. The toast is the surface that appears at the
-                // moment the thing happened, and until now it was the one
-                // surface that could do nothing about it.
-                if !event.actions.isEmpty {
-                    HStack(spacing: AinkradSpacing.xs + 2) {
-                        ForEach(event.actions.prefix(2), id: \.id) { action in
-                            toastAction(event, action)
-                        }
+        let accent = accent(event)
+        let repeats = model.repeatCount(for: event.id)
+        let isHovered = hovered == event.id
+        return HStack(alignment: .top, spacing: AinkradSpacing.sm + 2) {
+            leadingIcon(event)
+            VStack(alignment: .leading, spacing: 3) {
+                // Who: the thing it is about (the chat's service, when the
+                // link names one) and the title. When, and the way out, trail.
+                HStack(spacing: AinkradSpacing.xs + 1) {
+                    if let symbol = event.deepLink?.symbol {
+                        Image(systemName: symbol)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(theme.accentSecondary)
                     }
-                    .padding(.top, 1)
+                    Text(event.title)
+                        .font(AinkradFontResolver.font(size: 12.5, weight: .semibold, typography: typo))
+                        .foregroundStyle(theme.foreground)
+                        .lineLimit(1)
+                    if repeats > 1 {
+                        Text("×\(repeats)")
+                            .font(AinkradFontResolver.font(size: 10, weight: .semibold, typography: typo))
+                            .monospacedDigit()
+                            .foregroundStyle(theme.accentSecondary)
+                    }
+                    Spacer(minLength: AinkradSpacing.xs)
+                    Text(SignalPresentation.relativeTime(event.timestamp, now: now))
+                        .font(AinkradFontResolver.font(size: 10, typography: typo))
+                        .foregroundStyle(theme.foreground.opacity(0.4))
+                    if overflowing.contains(event.id) || expanded.contains(event.id) {
+                        Button { toggleExpanded(event) } label: {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(theme.foreground.opacity(isHovered ? 0.7 : 0.4))
+                                .rotationEffect(.degrees(expanded.contains(event.id) ? 180 : 0))
+                                .frame(width: 14, height: 14)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help(expanded.contains(event.id) ? "Show less" : "Show the whole message")
+                    }
+                    Button {
+                        collapse(event.id)
+                        model.dismiss(id: event.id)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(theme.foreground.opacity(isHovered ? 0.7 : 0.4))
+                            .frame(width: 14, height: 14)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Dismiss")
+                }
+                // What, with the actions under the ✕ while the pointer is on
+                // the toast. They float over the text's end rather than take
+                // a row, so nothing reflows when they appear.
+                // The actions sit beside the text, under ✕, shown while
+                // hovered; their space is reserved so nothing moves.
+                HStack(alignment: .top, spacing: AinkradSpacing.xs + 2) {
+                    bodyText(event)
+                        .lineLimit(expanded.contains(event.id) ? 30 : 1)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        // Measure the body's natural height against one
+                        // line's: the same text, laid out unclamped, invisible.
+                        .background {
+                            GeometryReader { oneLine in
+                                bodyText(event)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(width: oneLine.size.width, alignment: .leading)
+                                    .hidden()
+                                    .background(GeometryReader { full in
+                                        Color.clear.preference(
+                                            key: ToastBodyOverflowKey.self,
+                                            value: full.size.height > (expanded.contains(event.id) ? 0 : oneLine.size.height) + 1
+                                                ? [event.id] : [])
+                                    })
+                            }
+                            .allowsHitTesting(false)
+                        }
+                    // Always laid out, only faded: appearing on hover made the
+                    // toast grow and its text re-truncate under the pointer.
+                    if !event.actions.isEmpty {
+                        actionRow(event)
+                            .opacity(isHovered ? 1 : 0)
+                            .allowsHitTesting(isHovered)
+                    }
                 }
             }
-            Button {
-                model.dismiss(id: event.id)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(theme.foreground.opacity(0.45))
-            }
-            .buttonStyle(.plain)
         }
-        .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm + 2)
+        .padding(.leading, AinkradSpacing.sm + 3)
+        .padding(.trailing, AinkradSpacing.sm + 2)
+        .padding(.vertical, AinkradSpacing.sm + 1)
         // A fixed width, not content-sized: a stack of toasts with ragged
         // right edges reads as a layout accident rather than one surface.
-        .frame(width: 330, alignment: .leading)
+        .frame(width: 320, alignment: .leading)
         // Chamfered and accent-stroked like every other Ainkrad surface; a
         // continuous rounded rectangle read as a foreign toast library.
         .background(ChamferShape(cut: AinkradRadius.md).fill(theme.surfaceElevated))
         .overlay(ChamferShape(cut: AinkradRadius.md)
-            .strokeBorder(accent.opacity(event.severity == .failure ? 0.55 : 0.3), lineWidth: 1))
-        // A failure toast carries a hairline of its own severity colour rather
-        // than a separator: it has to be distinguishable at a glance, since it
-        // is the one toast that never auto-dismisses.
+            .strokeBorder(accent.opacity(event.severity == .failure ? 0.55 : (isHovered ? 0.45 : 0.28)), lineWidth: 1))
+        // Severity as an edge, not a second icon: the app icon says who, the
+        // edge says how bad. Info has none, so a quiet message stays quiet.
         .overlay(alignment: .leading) {
-            if event.severity == .failure {
+            if event.severity != .info {
                 Capsule().fill(accent).frame(width: 2.5).padding(.vertical, 8)
+                    .shadow(color: accent.opacity(0.6), radius: 3)
             }
+        }
+        .animation(reduceMotion ? nil : AinkradMotion.hover, value: isHovered)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86),
+                   value: expanded.contains(event.id))
+        .onPreferenceChange(ToastBodyOverflowKey.self) { ids in
+            if ids.contains(event.id) { overflowing.insert(event.id) }
+            else if !expanded.contains(event.id) { overflowing.remove(event.id) }
         }
         // The clock stops while the pointer is over it: an eight-second
         // warning expiring mid-read is the most irritating thing a toast does.
         .onHover { isOver in
             hovered = isOver ? event.id : nil
-            if isOver { model.pause(id: event.id) } else { model.resume(id: event.id) }
+            if isOver { model.pause(id: event.id) }
+            else if !expanded.contains(event.id) { model.resume(id: event.id) }
         }
         .overlay(alignment: .bottom) { dwellBar(event) }
         .contentShape(ChamferShape(cut: AinkradRadius.md))
         .onTapGesture { onActivate(event) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(SignalPresentation.accessibilityLabel(
-            for: event, repeatCount: 1, isUnread: true, now: now))
+            for: event, repeatCount: model.repeatCount(for: event.id), isUnread: true, now: now))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onActivate(event) }
         .accessibilityActions {
-            ForEach(event.actions.prefix(2), id: \.id) { action in
+            ForEach(event.actions, id: \.id) { action in
                 Button(action.label) { onAction(event, action) }
             }
             Button("Dismiss") { model.dismiss(id: event.id) }
         }
     }
+}
+
+/// Ids of toasts whose body is taller than the line it is clamped to.
+private struct ToastBodyOverflowKey: PreferenceKey {
+    static let defaultValue: Set<UUID> = []
+    static func reduce(value: inout Set<UUID>, nextValue: () -> Set<UUID>) { value.formUnion(nextValue()) }
 }

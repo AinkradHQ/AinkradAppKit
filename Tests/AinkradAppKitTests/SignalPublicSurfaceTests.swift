@@ -43,7 +43,7 @@ struct SignalPublicSurfaceTests {
         #expect(model.overflowCount == 0)
         model.dismiss(id: model.visible[0].id)
         #expect(model.visible.isEmpty)
-        #expect(SignalToastModel.autoDismissDelay(for: .failure) == nil)
+        #expect(SignalToastModel.autoDismissDelay(for: .failure) == 30)
         #expect(SignalToastModel.maxVisible == 3)
     }
 
