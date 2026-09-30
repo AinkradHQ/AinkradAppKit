@@ -233,6 +233,12 @@ public struct SignalToastStack: View {
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @Environment(\.ainkradSignalIdentity) private var identities
     @State private var hovered: UUID?
+    /// Toasts showing their whole body. An expanded toast holds its clock:
+    /// the user asked to read it, so it must not leave mid-sentence.
+    @State private var expanded: Set<UUID> = []
+    /// Toasts whose body does not fit on one line, measured, not guessed from
+    /// a character count, so the chevron appears exactly when text is cut.
+    @State private var overflowing: Set<UUID> = []
 
     public var body: some View {
         VStack(alignment: .trailing, spacing: 8) {
@@ -323,6 +329,27 @@ public struct SignalToastStack: View {
         }
     }
 
+    private func bodyText(_ event: SignalEvent) -> Text {
+        Text(event.body.flatMap { $0.isEmpty ? nil : $0 } ?? " ")
+            .font(AinkradFontResolver.font(size: 11.5, typography: typo))
+            .foregroundStyle(theme.foreground.opacity(0.66))
+    }
+
+    private func toggleExpanded(_ event: SignalEvent) {
+        if expanded.contains(event.id) {
+            collapse(event.id)
+            if hovered != event.id { model.resume(id: event.id) }
+        } else {
+            expanded.insert(event.id)
+            model.pause(id: event.id)
+        }
+    }
+
+    private func collapse(_ id: UUID) {
+        expanded.remove(id)
+        overflowing.remove(id)
+    }
+
     /// Two on the toast and the rest behind "⋯": the same set the feed row
     /// offers, so one event never offers different things in two places.
     @ViewBuilder
@@ -375,7 +402,20 @@ public struct SignalToastStack: View {
                     Text(SignalPresentation.relativeTime(event.timestamp, now: now))
                         .font(AinkradFontResolver.font(size: 10, typography: typo))
                         .foregroundStyle(theme.foreground.opacity(0.4))
+                    if overflowing.contains(event.id) || expanded.contains(event.id) {
+                        Button { toggleExpanded(event) } label: {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(theme.foreground.opacity(isHovered ? 0.7 : 0.4))
+                                .rotationEffect(.degrees(expanded.contains(event.id) ? 180 : 0))
+                                .frame(width: 14, height: 14)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help(expanded.contains(event.id) ? "Show less" : "Show the whole message")
+                    }
                     Button {
+                        collapse(event.id)
                         model.dismiss(id: event.id)
                     } label: {
                         Image(systemName: "xmark")
@@ -390,11 +430,27 @@ public struct SignalToastStack: View {
                 // What, with the actions under the ✕ while the pointer is on
                 // the toast. They float over the text's end rather than take
                 // a row, so nothing reflows when they appear.
-                Text(event.body.flatMap { $0.isEmpty ? nil : $0 } ?? " ")
-                    .font(AinkradFontResolver.font(size: 11.5, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.66))
-                    .lineLimit(2)
+                bodyText(event)
+                    .lineLimit(expanded.contains(event.id) ? 30 : 1)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    // Measure the body's natural height against one line's:
+                    // the same text, laid out unclamped and invisible.
+                    .background {
+                        GeometryReader { oneLine in
+                            bodyText(event)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(width: oneLine.size.width, alignment: .leading)
+                                .hidden()
+                                .background(GeometryReader { full in
+                                    Color.clear.preference(
+                                        key: ToastBodyOverflowKey.self,
+                                        value: full.size.height > (expanded.contains(event.id) ? 0 : oneLine.size.height) + 1
+                                            ? [event.id] : [])
+                                })
+                        }
+                        .allowsHitTesting(false)
+                    }
                     .overlay(alignment: .topTrailing) {
                         if isHovered && !event.actions.isEmpty {
                             actionRow(event)
@@ -427,11 +483,18 @@ public struct SignalToastStack: View {
             }
         }
         .animation(reduceMotion ? nil : AinkradMotion.hover, value: isHovered)
+        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86),
+                   value: expanded.contains(event.id))
+        .onPreferenceChange(ToastBodyOverflowKey.self) { ids in
+            if ids.contains(event.id) { overflowing.insert(event.id) }
+            else if !expanded.contains(event.id) { overflowing.remove(event.id) }
+        }
         // The clock stops while the pointer is over it: an eight-second
         // warning expiring mid-read is the most irritating thing a toast does.
         .onHover { isOver in
             hovered = isOver ? event.id : nil
-            if isOver { model.pause(id: event.id) } else { model.resume(id: event.id) }
+            if isOver { model.pause(id: event.id) }
+            else if !expanded.contains(event.id) { model.resume(id: event.id) }
         }
         .overlay(alignment: .bottom) { dwellBar(event) }
         .contentShape(ChamferShape(cut: AinkradRadius.md))
@@ -448,4 +511,10 @@ public struct SignalToastStack: View {
             Button("Dismiss") { model.dismiss(id: event.id) }
         }
     }
+}
+
+/// Ids of toasts whose body is taller than the line it is clamped to.
+private struct ToastBodyOverflowKey: PreferenceKey {
+    static let defaultValue: Set<UUID> = []
+    static func reduce(value: inout Set<UUID>, nextValue: () -> Set<UUID>) { value.formUnion(nextValue()) }
 }
