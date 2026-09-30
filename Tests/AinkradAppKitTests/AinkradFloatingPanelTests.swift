@@ -40,9 +40,39 @@ struct FloatingPanelFrameTests {
         let bounds = floatingPanelBounds(windowFrame: window, screenVisibleFrame: screen, contentSize: content)
         let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: bounds, gap: 4)
 
-        #expect(bounds == window)
+        #expect(bounds == window.insetBy(dx: 8, dy: 8))
         #expect(frame.minY == anchor.maxY + 4)
-        #expect(window.contains(frame))
+        #expect(bounds.contains(frame))
+    }
+
+    @Test("trailing placement opens to the right, top-aligned with the trigger")
+    func trailingRight() {
+        let anchor = CGRect(x: 10, y: 400, width: 42, height: 42)
+        let frame = floatingPanelFrameTrailing(anchorScreenRect: anchor, contentSize: CGSize(width: 180, height: 140),
+                                               bounds: screen, gap: 6)
+        #expect(frame.minX == anchor.maxX + 6)
+        #expect(frame.maxY == anchor.maxY)
+    }
+
+    @Test("trailing placement keeps a margin inside the window near its bottom edge")
+    func trailingInsideWindowMargin() {
+        let window = CGRect(x: 0, y: 100, width: 1000, height: 600)
+        let plus = CGRect(x: 10, y: 110, width: 42, height: 42)   // + at the window's foot
+        let size = CGSize(width: 150, height: 120)
+        let bounds = floatingPanelBounds(windowFrame: window, screenVisibleFrame: screen, contentSize: size)
+        let frame = floatingPanelFrameTrailing(anchorScreenRect: plus, contentSize: size, bounds: bounds)
+        #expect(frame.minY == window.minY + 8)
+        #expect(frame.minX == plus.maxX + 6)
+    }
+
+    @Test("trailing placement slides up to stay inside the bounds, and flips left at the right edge")
+    func trailingClamps() {
+        let nearBottomRight = CGRect(x: 1150, y: 10, width: 42, height: 42)
+        let size = CGSize(width: 180, height: 140)
+        let frame = floatingPanelFrameTrailing(anchorScreenRect: nearBottomRight, contentSize: size, bounds: screen, gap: 6)
+        #expect(frame.minY == screen.minY)
+        #expect(frame.maxX == nearBottomRight.minX - 6)
+        #expect(screen.contains(frame))
     }
 
     @Test("a window too small for the panel falls back to the screen")
