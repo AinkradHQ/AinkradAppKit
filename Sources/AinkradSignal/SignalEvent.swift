@@ -43,6 +43,17 @@ public struct SignalDeepLink: Codable, Sendable, Equatable {
     /// pane of that app, which is the generation-9 behaviour.
     public let locator: String?
 
+    /// The SF Symbol of what this link opens, when it is more specific than
+    /// the app: the WhatsApp chat inside Whisper, say. Notification surfaces
+    /// draw it beside the title, next to the app's own icon.
+    ///
+    /// A settable `var` with a default rather than an `init` parameter, for
+    /// the same ABI reason `MCPToolSpec.requiresLiveApp` is: a new parameter
+    /// re-mangles the initializers every compiled plugin links. It rides in
+    /// the deep link's stored JSON, so the event store needs no new column,
+    /// and an older host decoding it simply ignores the key.
+    public var symbol: String? = nil
+
     public init(appID: String, payload: Data) {
         self.appID = appID
         self.payload = payload
@@ -60,7 +71,7 @@ public struct SignalDeepLink: Codable, Sendable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case appID, payload, locator
+        case appID, payload, locator, symbol
     }
 
     /// Hand-written so `locator` is optional on the wire. Events stored before
@@ -72,6 +83,7 @@ public struct SignalDeepLink: Codable, Sendable, Equatable {
         appID = try c.decode(String.self, forKey: .appID)
         payload = try c.decode(Data.self, forKey: .payload)
         locator = try c.decodeIfPresent(String.self, forKey: .locator)
+        symbol = try c.decodeIfPresent(String.self, forKey: .symbol)
     }
 }
 
