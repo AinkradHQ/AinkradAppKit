@@ -45,6 +45,25 @@ struct FloatingPanelFrameTests {
         #expect(window.contains(frame))
     }
 
+    @Test("trailing placement opens to the right, top-aligned with the trigger")
+    func trailingRight() {
+        let anchor = CGRect(x: 10, y: 400, width: 42, height: 42)
+        let frame = floatingPanelFrameTrailing(anchorScreenRect: anchor, contentSize: CGSize(width: 180, height: 140),
+                                               bounds: screen, gap: 6)
+        #expect(frame.minX == anchor.maxX + 6)
+        #expect(frame.maxY == anchor.maxY)
+    }
+
+    @Test("trailing placement slides up to stay inside the bounds, and flips left at the right edge")
+    func trailingClamps() {
+        let nearBottomRight = CGRect(x: 1150, y: 10, width: 42, height: 42)
+        let size = CGSize(width: 180, height: 140)
+        let frame = floatingPanelFrameTrailing(anchorScreenRect: nearBottomRight, contentSize: size, bounds: screen, gap: 6)
+        #expect(frame.minY == screen.minY)
+        #expect(frame.maxX == nearBottomRight.minX - 6)
+        #expect(screen.contains(frame))
+    }
+
     @Test("a window too small for the panel falls back to the screen")
     func smallWindowUsesScreen() {
         let tile = CGRect(x: 15, y: 669, width: 124, height: 134)

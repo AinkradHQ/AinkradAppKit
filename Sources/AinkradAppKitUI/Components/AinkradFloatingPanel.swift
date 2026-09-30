@@ -60,6 +60,34 @@ public func floatingPanelFrame(
     return CGRect(x: originX, y: originY, width: contentSize.width, height: contentSize.height)
 }
 
+/// Where a floating panel opens relative to its trigger.
+public enum AinkradPanelPlacement: Sendable, Equatable {
+    /// Below the trigger, flipping above when there is no room (the default).
+    case below
+    /// Beside the trigger, top-aligned with it: to its right, or its left when
+    /// the right has no room. For triggers in a vertical rail or sidebar.
+    case trailing
+}
+
+/// `.trailing` placement: right of the anchor (left if that overflows),
+/// top edges aligned, then slid up or down to stay inside `bounds`. Pure —
+/// unit tested without AppKit/SwiftUI.
+public func floatingPanelFrameTrailing(
+    anchorScreenRect: CGRect,
+    contentSize: CGSize,
+    bounds: CGRect,
+    gap: CGFloat = 6
+) -> CGRect {
+    var originX = anchorScreenRect.maxX + gap
+    if originX + contentSize.width > bounds.maxX {
+        originX = max(bounds.minX, anchorScreenRect.minX - gap - contentSize.width)
+    }
+    var originY = anchorScreenRect.maxY - contentSize.height
+    if originY < bounds.minY { originY = bounds.minY }
+    if originY + contentSize.height > bounds.maxY { originY = max(bounds.minY, bounds.maxY - contentSize.height) }
+    return CGRect(x: originX, y: originY, width: contentSize.width, height: contentSize.height)
+}
+
 /// The region a floating panel is placed within: the parent window's part of
 /// the screen when the panel fits there, so a trigger near the window's bottom
 /// flips its panel up instead of hanging it below the app. A window too small
@@ -143,6 +171,7 @@ final class AinkradFloatingPanelController: NSObject, NSWindowDelegate {
         autofocusTextField: Bool = false,
         matchAnchorWidth: Bool = false,
         anchorScreenRectOverride: CGRect? = nil,
+        placement: AinkradPanelPlacement = .below,
         @ViewBuilder content: @escaping () -> Content,
         onDismiss: @escaping () -> Void
     ) {
@@ -173,12 +202,18 @@ final class AinkradFloatingPanelController: NSObject, NSWindowDelegate {
 
         let visibleFrame = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
             ?? CGRect(x: 0, y: 0, width: width, height: height)
-        frame = floatingPanelFrame(
-            anchorScreenRect: anchorScreenRectOverride ?? anchorScreenRect() ?? .zero,
-            contentSize: CGSize(width: width, height: height),
-            screenVisibleFrame: floatingPanelBounds(windowFrame: window.frame, screenVisibleFrame: visibleFrame,
-                                                    contentSize: CGSize(width: width, height: height))
-        )
+        let anchorRect = anchorScreenRectOverride ?? anchorScreenRect() ?? .zero
+        let contentSize = CGSize(width: width, height: height)
+        let bounds = floatingPanelBounds(windowFrame: window.frame, screenVisibleFrame: visibleFrame,
+                                         contentSize: contentSize)
+        switch placement {
+        case .below:
+            frame = floatingPanelFrame(anchorScreenRect: anchorRect, contentSize: contentSize,
+                                       screenVisibleFrame: bounds)
+        case .trailing:
+            frame = floatingPanelFrameTrailing(anchorScreenRect: anchorRect, contentSize: contentSize,
+                                               bounds: bounds)
+        }
 
         let hosting = NSHostingView(rootView: sized)
         hosting.frame = CGRect(origin: .zero, size: frame.size)
@@ -389,6 +424,7 @@ private struct AinkradFloatingPanelModifier<PanelContent: View>: ViewModifier {
     var maxHeight: CGFloat
     var autofocusTextField: Bool = false
     var matchAnchorWidth: Bool = false
+    var placement: AinkradPanelPlacement = .below
     @ViewBuilder var panelContent: () -> PanelContent
 
     @Environment(\.ainkradTheme) private var theme
@@ -417,7 +453,8 @@ private struct AinkradFloatingPanelModifier<PanelContent: View>: ViewModifier {
         let theme = theme
         let typo = typo
         let statusColors = statusColors
-        controller.present(maxHeight: maxHeight, autofocusTextField: autofocusTextField, matchAnchorWidth: matchAnchorWidth) {
+        controller.present(maxHeight: maxHeight, autofocusTextField: autofocusTextField,
+                           matchAnchorWidth: matchAnchorWidth, placement: placement) {
             panelContent()
                 .environment(\.ainkradTheme, theme)
                 .environment(\.ainkradTypography, typo)
@@ -457,5 +494,18 @@ public extension View {
         @ViewBuilder content: @escaping () -> PanelContent
     ) -> some View {
         modifier(AinkradFloatingPanelModifier(isPresented: isPresented, maxHeight: maxHeight, autofocusTextField: autofocusTextField, matchAnchorWidth: matchAnchorWidth, panelContent: content))
+    }
+
+    /// Variant that chooses where the panel opens — `.trailing` puts it beside
+    /// the trigger, for triggers in a vertical rail. NEW additive overload
+    /// (`placement:` has no default), so the existing symbols are unchanged.
+    func ainkradFloatingPanel<PanelContent: View>(
+        isPresented: Binding<Bool>,
+        maxHeight: CGFloat = 320,
+        placement: AinkradPanelPlacement,
+        @ViewBuilder content: @escaping () -> PanelContent
+    ) -> some View {
+        modifier(AinkradFloatingPanelModifier(isPresented: isPresented, maxHeight: maxHeight,
+                                              placement: placement, panelContent: content))
     }
 }
