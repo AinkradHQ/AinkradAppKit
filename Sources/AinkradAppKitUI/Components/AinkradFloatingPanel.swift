@@ -60,6 +60,19 @@ public func floatingPanelFrame(
     return CGRect(x: originX, y: originY, width: contentSize.width, height: contentSize.height)
 }
 
+/// The region a floating panel is placed within: the parent window's part of
+/// the screen when the panel fits there, so a trigger near the window's bottom
+/// flips its panel up instead of hanging it below the app. A window too small
+/// for the panel (a shrunken tile, a short pane) falls back to the whole
+/// visible screen rather than squeezing the panel. Pure — unit tested.
+func floatingPanelBounds(windowFrame: CGRect, screenVisibleFrame: CGRect, contentSize: CGSize) -> CGRect {
+    let inWindow = windowFrame.intersection(screenVisibleFrame)
+    guard !inWindow.isNull, inWindow.width >= contentSize.width, inWindow.height >= contentSize.height else {
+        return screenVisibleFrame
+    }
+    return inWindow
+}
+
 /// The width a floating panel's content should be laid out at: never below
 /// `minWidth`, always at least the content's natural width, and — when
 /// `matchAnchorWidth` is set — at least the trigger's own width, so a
@@ -163,7 +176,8 @@ final class AinkradFloatingPanelController: NSObject, NSWindowDelegate {
         frame = floatingPanelFrame(
             anchorScreenRect: anchorScreenRectOverride ?? anchorScreenRect() ?? .zero,
             contentSize: CGSize(width: width, height: height),
-            screenVisibleFrame: visibleFrame
+            screenVisibleFrame: floatingPanelBounds(windowFrame: window.frame, screenVisibleFrame: visibleFrame,
+                                                    contentSize: CGSize(width: width, height: height))
         )
 
         let hosting = NSHostingView(rootView: sized)
