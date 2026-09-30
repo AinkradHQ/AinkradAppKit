@@ -160,7 +160,7 @@ public final class SignalStore {
         guard !isReadOnly else { return .inserted }
         if let key = event.dedupeKey,
            let existing = coalescibleRow(source: event.source, key: key, at: event.timestamp) {
-            try bumpCoalesced(rowID: existing.rowID, id: existing.id, to: event.timestamp)
+            try bumpCoalesced(rowID: existing.rowID, id: existing.id, to: event)
             return .coalesced(id: existing.id)
         }
         try exec("BEGIN IMMEDIATE;")
@@ -595,17 +595,41 @@ public final class SignalStore {
 
     /// Advances the row to the newest occurrence and increments its count. The
     /// row is also re-marked unread: a repeat is new information.
-    func bumpCoalesced(rowID: Int64, id: UUID, to date: Date) throws {
-        let sql = """
-        UPDATE events SET timestamp = ?, dedupe_count = dedupe_count + 1, read_at = NULL
-        WHERE rowid = ?;
-        """
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { throw SignalStoreError.exec(lastError) }
-        defer { sqlite3_finalize(stmt) }
-        sqlite3_bind_double(stmt, 1, Self.sqlTime(date))
-        sqlite3_bind_int64(stmt, 2, rowID)
-        guard sqlite3_step(stmt) == SQLITE_DONE else { throw SignalStoreError.exec(lastError) }
+    /// Folds a repeat into the row it coalesced with. The row takes the
+    /// repeat's title, body and deep link as well as its time: a burst of chat
+    /// messages is one entry showing the NEWEST message, not the first one
+    /// re-announced. The FTS row is rewritten with it (external content does
+    /// not follow an UPDATE), inside one transaction.
+    func bumpCoalesced(rowID: Int64, id: UUID, to event: SignalEvent) throws {
+        try exec("BEGIN IMMEDIATE;")
+        do {
+            try exec("""
+            INSERT INTO events_fts (events_fts, rowid, title, body, kind)
+            SELECT 'delete', rowid, title, body, kind FROM events WHERE rowid = \(rowID);
+            """)
+            let sql = """
+            UPDATE events SET timestamp = ?, dedupe_count = dedupe_count + 1, read_at = NULL,
+                              title = ?, body = ?, deep_link = ?
+            WHERE rowid = ?;
+            """
+            var stmt: OpaquePointer?
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { throw SignalStoreError.exec(lastError) }
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_double(stmt, 1, Self.sqlTime(event.timestamp))
+            bind(stmt, 2, event.title)
+            if let body = event.body { bind(stmt, 3, body) } else { sqlite3_bind_null(stmt, 3) }
+            try bindJSON(stmt, 4, event.deepLink)
+            sqlite3_bind_int64(stmt, 5, rowID)
+            guard sqlite3_step(stmt) == SQLITE_DONE else { throw SignalStoreError.exec(lastError) }
+            try exec("""
+            INSERT INTO events_fts (rowid, title, body, kind)
+            SELECT rowid, title, body, kind FROM events WHERE rowid = \(rowID);
+            """)
+            try exec("COMMIT;")
+        } catch {
+            try? exec("ROLLBACK;")
+            throw error
+        }
     }
 
     public func dedupeCount(id: UUID) -> Int {
