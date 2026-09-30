@@ -40,9 +40,9 @@ struct FloatingPanelFrameTests {
         let bounds = floatingPanelBounds(windowFrame: window, screenVisibleFrame: screen, contentSize: content)
         let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: bounds, gap: 4)
 
-        #expect(bounds == window)
+        #expect(bounds == window.insetBy(dx: 8, dy: 8))
         #expect(frame.minY == anchor.maxY + 4)
-        #expect(window.contains(frame))
+        #expect(bounds.contains(frame))
     }
 
     @Test("trailing placement opens to the right, top-aligned with the trigger")
@@ -52,6 +52,17 @@ struct FloatingPanelFrameTests {
                                                bounds: screen, gap: 6)
         #expect(frame.minX == anchor.maxX + 6)
         #expect(frame.maxY == anchor.maxY)
+    }
+
+    @Test("trailing placement keeps a margin inside the window near its bottom edge")
+    func trailingInsideWindowMargin() {
+        let window = CGRect(x: 0, y: 100, width: 1000, height: 600)
+        let plus = CGRect(x: 10, y: 110, width: 42, height: 42)   // + at the window's foot
+        let size = CGSize(width: 150, height: 120)
+        let bounds = floatingPanelBounds(windowFrame: window, screenVisibleFrame: screen, contentSize: size)
+        let frame = floatingPanelFrameTrailing(anchorScreenRect: plus, contentSize: size, bounds: bounds)
+        #expect(frame.minY == window.minY + 8)
+        #expect(frame.minX == plus.maxX + 6)
     }
 
     @Test("trailing placement slides up to stay inside the bounds, and flips left at the right edge")

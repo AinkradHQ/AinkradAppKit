@@ -93,8 +93,12 @@ public func floatingPanelFrameTrailing(
 /// flips its panel up instead of hanging it below the app. A window too small
 /// for the panel (a shrunken tile, a short pane) falls back to the whole
 /// visible screen rather than squeezing the panel. Pure — unit tested.
-func floatingPanelBounds(windowFrame: CGRect, screenVisibleFrame: CGRect, contentSize: CGSize) -> CGRect {
-    let inWindow = windowFrame.intersection(screenVisibleFrame)
+///
+/// The window is inset by `margin` first: its frame includes the window's own
+/// border, and a panel flush with it reads as hanging off the edge.
+func floatingPanelBounds(windowFrame: CGRect, screenVisibleFrame: CGRect, contentSize: CGSize,
+                         margin: CGFloat = AinkradSpacing.sm) -> CGRect {
+    let inWindow = windowFrame.insetBy(dx: margin, dy: margin).intersection(screenVisibleFrame)
     guard !inWindow.isNull, inWindow.width >= contentSize.width, inWindow.height >= contentSize.height else {
         return screenVisibleFrame
     }
