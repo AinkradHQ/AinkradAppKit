@@ -432,8 +432,8 @@ public struct SignalToastStack: View {
                 // What, with the actions under the ✕ while the pointer is on
                 // the toast. They float over the text's end rather than take
                 // a row, so nothing reflows when they appear.
-                // The actions sit beside the text, under ✕, while hovered. The
-                // text gives way to them rather than being covered.
+                // The actions sit beside the text, under ✕, shown while
+                // hovered; their space is reserved so nothing moves.
                 HStack(alignment: .top, spacing: AinkradSpacing.xs + 2) {
                     bodyText(event)
                         .lineLimit(expanded.contains(event.id) ? 30 : 1)
@@ -456,9 +456,12 @@ public struct SignalToastStack: View {
                             }
                             .allowsHitTesting(false)
                         }
-                    if isHovered && !event.actions.isEmpty {
+                    // Always laid out, only faded: appearing on hover made the
+                    // toast grow and its text re-truncate under the pointer.
+                    if !event.actions.isEmpty {
                         actionRow(event)
-                            .transition(.opacity.combined(with: .offset(x: 6)))
+                            .opacity(isHovered ? 1 : 0)
+                            .allowsHitTesting(isHovered)
                     }
                 }
             }
