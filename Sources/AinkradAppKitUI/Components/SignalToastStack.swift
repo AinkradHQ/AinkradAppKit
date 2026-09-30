@@ -289,21 +289,23 @@ public struct SignalToastStack: View {
         }
     }
 
-    /// Built from the same primitives `SignalFeedRow`'s inline action uses, so
-    /// the two read as one control in two places rather than two controls.
+    /// An action as an icon: the toast is too narrow for labelled chips
+    /// beside its text. The label becomes the tooltip and the accessible name.
+    /// An action without a symbol gets a generic one.
     private func toastAction(_ event: SignalEvent, _ action: SignalAction) -> some View {
         let tint = action.isDestructive ? status.danger : theme.accentPrimary
         return Button { onAction(event, action) } label: {
-            Text(action.label)
-                .font(AinkradFontResolver.font(size: 10.5, weight: .medium, typography: typo))
+            Image(systemName: action.symbol ?? "arrow.up.forward.circle")
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(tint)
-                .padding(.horizontal, AinkradSpacing.sm)
-                .padding(.vertical, AinkradSpacing.xs / 2)
+                .frame(width: 22, height: 20)
                 .background(ChamferShape(cut: 4).fill(tint.opacity(0.14)))
-                .overlay(ChamferShape(cut: 4).strokeBorder(tint.opacity(0.5), lineWidth: 1))
+                .overlay(ChamferShape(cut: 4).strokeBorder(tint.opacity(0.45), lineWidth: 1))
                 .contentShape(ChamferShape(cut: 4))
         }
         .buttonStyle(.plain)
+        .help(action.label)
+        .accessibilityLabel(action.label)
     }
 
     /// The severity colour, from the same mapping feed rows use, so an info
@@ -366,7 +368,7 @@ public struct SignalToastStack: View {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(theme.foreground.opacity(0.6))
-                        .frame(width: 22, height: 18)
+                        .frame(width: 22, height: 20)
                         .background(ChamferShape(cut: 4).fill(theme.foreground.opacity(0.08)))
                 }
             }
@@ -430,37 +432,35 @@ public struct SignalToastStack: View {
                 // What, with the actions under the ✕ while the pointer is on
                 // the toast. They float over the text's end rather than take
                 // a row, so nothing reflows when they appear.
-                bodyText(event)
-                    .lineLimit(expanded.contains(event.id) ? 30 : 1)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    // Measure the body's natural height against one line's:
-                    // the same text, laid out unclamped and invisible.
-                    .background {
-                        GeometryReader { oneLine in
-                            bodyText(event)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(width: oneLine.size.width, alignment: .leading)
-                                .hidden()
-                                .background(GeometryReader { full in
-                                    Color.clear.preference(
-                                        key: ToastBodyOverflowKey.self,
-                                        value: full.size.height > (expanded.contains(event.id) ? 0 : oneLine.size.height) + 1
-                                            ? [event.id] : [])
-                                })
+                // The actions sit beside the text, under ✕, while hovered. The
+                // text gives way to them rather than being covered.
+                HStack(alignment: .top, spacing: AinkradSpacing.xs + 2) {
+                    bodyText(event)
+                        .lineLimit(expanded.contains(event.id) ? 30 : 1)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        // Measure the body's natural height against one
+                        // line's: the same text, laid out unclamped, invisible.
+                        .background {
+                            GeometryReader { oneLine in
+                                bodyText(event)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(width: oneLine.size.width, alignment: .leading)
+                                    .hidden()
+                                    .background(GeometryReader { full in
+                                        Color.clear.preference(
+                                            key: ToastBodyOverflowKey.self,
+                                            value: full.size.height > (expanded.contains(event.id) ? 0 : oneLine.size.height) + 1
+                                                ? [event.id] : [])
+                                    })
+                            }
+                            .allowsHitTesting(false)
                         }
-                        .allowsHitTesting(false)
+                    if isHovered && !event.actions.isEmpty {
+                        actionRow(event)
+                            .transition(.opacity.combined(with: .offset(x: 6)))
                     }
-                    .overlay(alignment: .topTrailing) {
-                        if isHovered && !event.actions.isEmpty {
-                            actionRow(event)
-                                .padding(.leading, AinkradSpacing.md)
-                                .background(
-                                    LinearGradient(colors: [theme.surfaceElevated.opacity(0), theme.surfaceElevated],
-                                                   startPoint: .leading, endPoint: UnitPoint(x: 0.25, y: 0.5)))
-                                .transition(.opacity.combined(with: .offset(x: 6)))
-                        }
-                    }
+                }
             }
         }
         .padding(.leading, AinkradSpacing.sm + 3)

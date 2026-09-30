@@ -91,6 +91,10 @@ public struct SignalAction: Codable, Sendable, Equatable {
     public let id: String
     public let label: String
     public let isDestructive: Bool
+    /// SF Symbol for surfaces that draw actions as icons (the toast); the
+    /// label is then the tooltip. A settable `var` so no initializer
+    /// re-mangles; stored in the actions JSON, so no schema change.
+    public var symbol: String? = nil
     public init(id: String, label: String, isDestructive: Bool = false) {
         self.id = id
         self.label = label
@@ -114,10 +118,11 @@ public struct SignalAction: Codable, Sendable, Equatable {
         id = try c.decode(String.self, forKey: .id)
         label = try c.decode(String.self, forKey: .label)
         isDestructive = try c.decodeIfPresent(Bool.self, forKey: .isDestructive) ?? false
+        symbol = try c.decodeIfPresent(String.self, forKey: .symbol)
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, label, isDestructive
+        case id, label, isDestructive, symbol
     }
 }
 
