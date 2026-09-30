@@ -17,16 +17,30 @@ public final class SignalToastModel {
     private var queued: [SignalEvent] = []
     public var overflowCount: Int { queued.count }
 
-    /// `nil` means "requires an explicit dismissal". A failure that vanished on
-    /// its own is exactly the case this feature exists to prevent.
+    /// How long a toast stays. A failure stays longest but no longer forever:
+    /// three failures that never left filled every slot and hid everything
+    /// after them. The feed keeps each one after its toast goes. Optional, so
+    /// a future "until dismissed" severity stays expressible.
     public static func autoDismissDelay(for severity: SignalSeverity) -> TimeInterval? {
         switch severity {
         case .info, .success: return 4
         case .warning: return 8
-        case .failure: return nil
+        case .failure: return 30
         @unknown default: return 4
         }
     }
+
+    /// The delay for this event: `.urgent` importance (a person waiting on
+    /// you) gets at least 8s, since 4s is too short to read a message.
+    static func autoDismissDelay(for event: SignalEvent) -> TimeInterval? {
+        guard let base = autoDismissDelay(for: event.severity) else { return nil }
+        return event.proposedImportance == .urgent ? max(base, 8) : base
+    }
+
+    /// How many times the toast with this id has been repeated in place (1 when
+    /// it has not). See `present(_:)`.
+    public func repeatCount(for id: UUID) -> Int { repeats[id] ?? 1 }
+    private var repeats: [UUID: Int] = [:]
 
     /// Severity order, so a more urgent arrival can take a slot from a less
     /// urgent toast. Not `CaseIterable`'s order: that is a declaration detail
@@ -52,9 +66,34 @@ public final class SignalToastModel {
     /// comparison is `>` and not `>=`, a `.failure` can never be displaced by
     /// another failure, so the toast that never auto-dismisses is never the one
     /// that silently disappears.
+    ///
+    /// A repeat (same source and `dedupeKey` as a toast still showing or
+    /// queued) replaces that toast IN PLACE, keeps its slot, restarts its
+    /// clock and counts itself: a burst from one chat is one toast reading
+    /// "×3" with the newest text, not three toasts pushing everything else out.
     public func present(_ event: SignalEvent) {
         guard !visible.contains(where: { $0.id == event.id }),
               !queued.contains(where: { $0.id == event.id }) else { return }
+
+        if let key = event.dedupeKey {
+            let isRepeat: (SignalEvent) -> Bool = { $0.dedupeKey == key && $0.source == event.source }
+            if let index = visible.firstIndex(where: isRepeat) {
+                let old = visible[index]
+                repeats[event.id] = repeatCount(for: old.id) + 1
+                repeats[old.id] = nil
+                deadlines[old.id] = nil
+                heldRemaining[old.id] = nil
+                visible[index] = event
+                scheduleAutoDismiss(event)
+                return
+            }
+            if let index = queued.firstIndex(where: isRepeat) {
+                repeats[event.id] = repeatCount(for: queued[index].id) + 1
+                repeats[queued[index].id] = nil
+                queued[index] = event
+                return
+            }
+        }
 
         if visible.count < Self.maxVisible {
             visible.insert(event, at: 0)
@@ -79,6 +118,7 @@ public final class SignalToastModel {
         visible.removeAll { $0.id == id }
         deadlines[id] = nil
         heldRemaining[id] = nil
+        repeats[id] = nil
         // Promote the NEWEST queued event, and to the top - the same ordering
         // the visible stack already uses, so a promotion does not shuffle the
         // stack into a different order than arrivals produce.
@@ -119,14 +159,15 @@ public final class SignalToastModel {
     /// is a pure function so the bar can be tested without waiting.
     public func remainingFraction(id: UUID, severity: SignalSeverity,
                                   now: Date = Date()) -> Double? {
-        guard let total = Self.autoDismissDelay(for: severity) else { return nil }
+        let event = visible.first { $0.id == id }
+        guard let total = event.map(Self.autoDismissDelay(for:)) ?? Self.autoDismissDelay(for: severity) else { return nil }
         if let held = heldRemaining[id] { return min(1, max(0, held / total)) }
         guard let deadline = deadlines[id] else { return nil }
         return min(1, max(0, deadline.timeIntervalSince(now) / total))
     }
 
     private func scheduleAutoDismiss(_ event: SignalEvent) {
-        guard let delay = Self.autoDismissDelay(for: event.severity) else { return }
+        guard let delay = Self.autoDismissDelay(for: event) else { return }
         deadlines[event.id] = Date().addingTimeInterval(delay)
         scheduleSweep()
     }
@@ -152,7 +193,7 @@ public final class SignalToastModel {
     private var isSweeping = false
 }
 
-/// Bottom-trailing stack of transient toasts.
+/// A stack of transient toasts; the host places it top-trailing, under the bell.
 ///
 /// Each toast is its own layer with its own transition, so the stack settles as
 /// separated live layers rather than one image sliding — the host's motion rule.
@@ -190,6 +231,7 @@ public struct SignalToastStack: View {
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var status
     @Environment(\.ainkradReduceMotion) private var reduceMotion
+    @Environment(\.ainkradSignalIdentity) private var identities
     @State private var hovered: UUID?
 
     public var body: some View {
@@ -258,60 +300,113 @@ public struct SignalToastStack: View {
         .buttonStyle(.plain)
     }
 
-    private func toast(_ event: SignalEvent) -> some View {
-        let accent = SignalPresentation.color(for: event.severity, in: status)
-        return HStack(alignment: .top, spacing: AinkradSpacing.sm + 1) {
-            Image(systemName: SignalPresentation.iconSymbol(for: event.severity))
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(accent)
-            VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
-                Text(event.title)
-                    .font(AinkradFontResolver.font(size: 12, weight: .semibold, typography: typo))
-                    .foregroundStyle(theme.foreground)
-                    .lineLimit(1)
-                if let body = event.body, !body.isEmpty {
-                    Text(body)
-                        .font(AinkradFontResolver.font(size: 11, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.6))
-                        .lineLimit(2)
-                }
-                // At most two. The toast is the surface that appears at the
-                // moment the thing happened, and until now it was the one
-                // surface that could do nothing about it.
-                if !event.actions.isEmpty {
-                    HStack(spacing: AinkradSpacing.xs + 2) {
-                        ForEach(event.actions.prefix(2), id: \.id) { action in
-                            toastAction(event, action)
-                        }
-                    }
-                    .padding(.top, 1)
-                }
+    /// The severity colour, from the same mapping feed rows use, so an info
+    /// event reads the same in a toast and in the dropdown.
+    private func accent(_ event: SignalEvent) -> Color {
+        SignalPresentation.status(for: event.severity).color(in: theme, statusColors: status)
+    }
+
+    /// Who and when: the sending app's launcher icon and name, the time, and
+    /// how many times it repeated in place. Without a resolver (a plugin
+    /// hosting the stack itself) it falls back to the severity glyph and the
+    /// label derived from the source id.
+    private func header(_ event: SignalEvent) -> some View {
+        let identity = identities.identity(for: event.source)
+        let repeats = model.repeatCount(for: event.id)
+        return HStack(spacing: AinkradSpacing.xs + 2) {
+            if let identity {
+                AinkradAppTile(symbol: identity.symbol, size: 20)
+                    .allowsHitTesting(false)
+            } else {
+                Image(systemName: SignalPresentation.iconSymbol(for: event.severity))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(accent(event))
             }
+            Text(identity?.name ?? SignalPresentation.sourceLabel(event.source))
+                .font(AinkradFontResolver.font(size: 10.5, weight: .semibold, typography: typo))
+                .foregroundStyle(theme.foreground.opacity(0.62))
+                .lineLimit(1)
+            Text("· \(SignalPresentation.relativeTime(event.timestamp, now: now))")
+                .font(AinkradFontResolver.font(size: 10, typography: typo))
+                .foregroundStyle(theme.foreground.opacity(0.4))
+            if repeats > 1 {
+                AinkradBadge(text: "×\(repeats)", tint: theme.accentSecondary)
+                    .fixedSize()
+            }
+            Spacer(minLength: AinkradSpacing.xs)
             Button {
                 model.dismiss(id: event.id)
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(theme.foreground.opacity(0.45))
+                    .frame(width: 16, height: 16)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help("Dismiss")
         }
-        .padding(.horizontal, AinkradSpacing.md)
+    }
+
+    private func toast(_ event: SignalEvent) -> some View {
+        let accent = accent(event)
+        let shown = Array(event.actions.prefix(2))
+        let more = Array(event.actions.dropFirst(2))
+        return VStack(alignment: .leading, spacing: AinkradSpacing.xs + 1) {
+            header(event)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(event.title)
+                    .font(AinkradFontResolver.font(size: 12.5, weight: .semibold, typography: typo))
+                    .foregroundStyle(theme.foreground)
+                    .lineLimit(1)
+                if let body = event.body, !body.isEmpty {
+                    Text(body)
+                        .font(AinkradFontResolver.font(size: 11.5, typography: typo))
+                        .foregroundStyle(theme.foreground.opacity(0.68))
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            // The same actions the feed row offers: two on the toast, the
+            // rest behind "⋯", so one event never offers different things in
+            // two places.
+            if !event.actions.isEmpty {
+                HStack(spacing: AinkradSpacing.xs + 2) {
+                    ForEach(shown, id: \.id) { action in toastAction(event, action) }
+                    if !more.isEmpty {
+                        AinkradMenuButton(items: more.map { action in
+                            AinkradMenuItem(title: action.label, isDestructive: action.isDestructive) {
+                                onAction(event, action)
+                            }
+                        }) {
+                            Image(systemName: "ellipsis")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(theme.foreground.opacity(0.6))
+                                .frame(width: 22, height: 18)
+                                .background(ChamferShape(cut: 4).fill(theme.foreground.opacity(0.08)))
+                        }
+                    }
+                }
+                .padding(.top, 1)
+            }
+        }
+        .padding(.leading, AinkradSpacing.md + 1)
+        .padding(.trailing, AinkradSpacing.sm + 2)
         .padding(.vertical, AinkradSpacing.sm + 2)
         // A fixed width, not content-sized: a stack of toasts with ragged
         // right edges reads as a layout accident rather than one surface.
-        .frame(width: 330, alignment: .leading)
+        .frame(width: 340, alignment: .leading)
         // Chamfered and accent-stroked like every other Ainkrad surface; a
         // continuous rounded rectangle read as a foreign toast library.
         .background(ChamferShape(cut: AinkradRadius.md).fill(theme.surfaceElevated))
         .overlay(ChamferShape(cut: AinkradRadius.md)
             .strokeBorder(accent.opacity(event.severity == .failure ? 0.55 : 0.3), lineWidth: 1))
-        // A failure toast carries a hairline of its own severity colour rather
-        // than a separator: it has to be distinguishable at a glance, since it
-        // is the one toast that never auto-dismisses.
+        // Severity as an edge, not a second icon: the app icon says who, the
+        // edge says how bad. Info has none, so a quiet message stays quiet.
         .overlay(alignment: .leading) {
-            if event.severity == .failure {
+            if event.severity != .info {
                 Capsule().fill(accent).frame(width: 2.5).padding(.vertical, 8)
+                    .shadow(color: accent.opacity(0.6), radius: 3)
             }
         }
         // The clock stops while the pointer is over it: an eight-second
@@ -325,11 +420,11 @@ public struct SignalToastStack: View {
         .onTapGesture { onActivate(event) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(SignalPresentation.accessibilityLabel(
-            for: event, repeatCount: 1, isUnread: true, now: now))
+            for: event, repeatCount: model.repeatCount(for: event.id), isUnread: true, now: now))
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onActivate(event) }
         .accessibilityActions {
-            ForEach(event.actions.prefix(2), id: \.id) { action in
+            ForEach(event.actions, id: \.id) { action in
                 Button(action.label) { onAction(event, action) }
             }
             Button("Dismiss") { model.dismiss(id: event.id) }
