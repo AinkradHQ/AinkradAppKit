@@ -31,13 +31,39 @@ final class SignalToastStackModelTests {
         #expect(model.visible.first?.title == "e3", "the promoted toast lands on top")
     }
 
-    @Test("auto-dismiss delay scales with severity and failures never auto-dismiss")
+    @Test("auto-dismiss delay scales with severity; failures stay longest but not forever")
     func autoDismissDelays() {
         #expect(SignalToastModel.autoDismissDelay(for: .info) == 4)
         #expect(SignalToastModel.autoDismissDelay(for: .success) == 4)
         #expect(SignalToastModel.autoDismissDelay(for: .warning) == 8)
-        #expect(SignalToastModel.autoDismissDelay(for: .failure) == nil,
-                "a failure the user never saw is the whole problem this feature solves")
+        #expect(SignalToastModel.autoDismissDelay(for: .failure) == 30,
+                "three failures that never left filled every slot; the feed keeps them")
+    }
+
+    @Test("an urgent info toast stays at least eight seconds")
+    func urgentStaysLonger() {
+        let message = SignalEvent(source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
+                                  title: "Mam", proposedImportance: .urgent)
+        #expect(SignalToastModel.autoDismissDelay(for: message) == 8)
+        #expect(SignalToastModel.autoDismissDelay(for: event("plain")) == 4)
+    }
+
+    @Test("a repeat replaces its toast in place and counts itself")
+    func repeatsInPlace() {
+        let model = SignalToastModel()
+        func chat(_ body: String, key: String = "acct:Mam") -> SignalEvent {
+            SignalEvent(source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
+                        title: "Mam", body: body, dedupeKey: key)
+        }
+        model.present(event("other"))
+        model.present(chat("one"))
+        model.present(chat("two"))
+        model.present(chat("three"))
+        #expect(model.visible.count == 2, "one toast for the chat, not three")
+        #expect(model.visible[0].body == "three", "the newest text is shown")
+        #expect(model.repeatCount(for: model.visible[0].id) == 3)
+        model.present(chat("elsewhere", key: "acct:Islam"))
+        #expect(model.visible.count == 3, "a different chat is its own toast")
     }
 
     @Test("a failure arriving past the cap displaces the least-severe toast")
@@ -118,15 +144,15 @@ final class SignalToastStackModelTests {
         #expect(abs((after ?? 0) - (held ?? 0)) < 0.05)
     }
 
-    @Test("a failure has no clock to pause")
-    func failureHasNoDeadline() {
+    @Test("a failure gets the longest clock, thirty seconds")
+    func failureHasLongDeadline() {
         let model = SignalToastModel()
         let event = SignalEvent(source: .host, kind: "k", severity: .failure, title: "t")
+        let before = Date()
         model.present(event)
-        // It never auto-dismisses, so there is nothing to hold and no bar to
-        // draw — `nil` rather than a full bar that never moves.
-        #expect(model.deadlines[event.id] == nil)
-        #expect(model.remainingFraction(id: event.id, severity: .failure) == nil)
+        let deadline = try? #require(model.deadlines[event.id])
+        #expect(deadline.map { $0.timeIntervalSince(before) > 29 } == true)
+        #expect((model.remainingFraction(id: event.id, severity: .failure) ?? 0) > 0.9)
     }
 
     @Test("dismissing forgets the toast's clock")

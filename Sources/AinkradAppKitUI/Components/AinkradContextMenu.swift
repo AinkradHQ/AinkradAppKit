@@ -248,6 +248,7 @@ private extension View {
 public struct AinkradMenuButton<Label: View>: View {
     private let items: [AinkradMenuItem]
     private let maxHeight: CGFloat
+    private var placement: AinkradPanelPlacement = .below
     private let label: Label
 
     @State private var isPresented = false
@@ -265,10 +266,23 @@ public struct AinkradMenuButton<Label: View>: View {
         self.label = label()
     }
 
+    /// Chooses where the menu opens; `.trailing` opens it beside the button,
+    /// for a button in a vertical rail. NEW overload (`placement:` has no
+    /// default), so `init(items:maxHeight:label:)` keeps its symbol.
+    public init(items: [AinkradMenuItem],
+                maxHeight: CGFloat = 320,
+                placement: AinkradPanelPlacement,
+                @ViewBuilder label: () -> Label) {
+        self.items = items
+        self.maxHeight = maxHeight
+        self.placement = placement
+        self.label = label()
+    }
+
     public var body: some View {
         Button { isPresented.toggle() } label: { label }
             .buttonStyle(.plain)
-            .ainkradFloatingPanel(isPresented: $isPresented, maxHeight: maxHeight) {
+            .ainkradFloatingPanel(isPresented: $isPresented, maxHeight: maxHeight, placement: placement) {
                 AinkradContextMenuList(items: items, dismiss: { isPresented = false })
                     .ainkradMenuEnvironment(theme: theme, typography: typo,
                                             statusColors: statusColors,
