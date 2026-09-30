@@ -187,6 +187,17 @@ public struct SettingsPageView: View {
                                         // `deepLinkTarget` reasons about, so
                                         // the test and the view cannot drift.
                                         .id(Self.groupViewIdentity(page: page, index: index))
+                                        // The tab bar switches inside its own
+                                        // 0.55s materialize animation, so the
+                                        // new identity inherited it and SwiftUI
+                                        // cross-faded the old tab out and the
+                                        // new one in over half a second, both
+                                        // on screen with their text overlapping.
+                                        // The old tab now leaves at once and the
+                                        // new one fades in fast.
+                                        .transition(.asymmetric(
+                                            insertion: .opacity.animation(reduceMotion ? nil : .easeOut(duration: 0.12)),
+                                            removal: .identity))
                                 } else {
                                     ForEach(page.groups) { group in
                                         SettingsGroupView(
