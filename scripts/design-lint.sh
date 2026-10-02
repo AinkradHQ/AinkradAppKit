@@ -236,7 +236,7 @@ run_lint() {
         done
         [ -z "${reason// }" ] && bad_allows+=("bad allow: $file:$lineno (empty reason)")
         if [ ${#la[@]} -gt 0 ]; then
-          line_allows+=("$file:$lineno|${la[*]}")
+          line_allows+=("$file|$lineno|${la[*]}")
         fi
       fi
     done < "$file"
@@ -308,7 +308,7 @@ run_lint() {
   fi
   
   if [ "$MODE" = "list" ]; then
-    echo "$awk_out"
+    [ -n "$awk_out" ] && echo "$awk_out"
     return
   fi
   

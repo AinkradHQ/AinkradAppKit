@@ -80,13 +80,14 @@ BEGIN {
     }
   }
   
-  if (mode == "list" && list_rule == rule_name) {
-    suffix = allowed ? " [allowed]" : ""
-    print file ":" lineno ": " content suffix
-  }
-  
+  # Allowed lines leave count and --list, and increment allowed.
   if (allowed) allowed_count[rule_name]++
-  else count[rule_name]++
+  else {
+    count[rule_name]++
+    if (mode == "list" && list_rule == rule_name) {
+      print file ":" lineno ": " content
+    }
+  }
 }
 END {
   if (ENVIRON["AWK_MODE"] == "list") exit 0

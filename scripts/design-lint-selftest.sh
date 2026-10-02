@@ -299,6 +299,81 @@ EOF
     failed=1
   fi
 
+  # Allows regression: the exact repro plus multi-rule and allow-file
+  # variants, all through the REAL engine, asserting count/allowed numbers.
+  # Single-rule line allow: one hit suppressed, one counted.
+  local repro1=$(mktemp -d)
+  mkdir -p "$repro1/Sources"
+  cat > "$repro1/Sources/A.swift" <<'EOF'
+import SwiftUI
+struct V: View { var body: some View {
+  Text("x").font(.system(size: 10)) // design-lint: allow font-size test reason
+  Text("y").font(.system(size: 11))
+} }
+EOF
+  (cd "$repro1" && git init -q && git add -A)
+  local got
+  got=$(cd "$repro1" && bash "$real_script" 2>/dev/null | awk '$1=="font-size" {print $2, $4}')
+  [ "$got" = "1 1" ] || { echo "FAIL: repro font-size table got [$got] want [1 1]" >&2; failed=1; }
+  local lst
+  lst=$(cd "$repro1" && bash "$real_script" --list font-size 2>/dev/null)
+  if echo "$lst" | grep -q ":3:"; then
+    echo "FAIL: --list font-size still shows the allowed line 3" >&2
+    failed=1
+  fi
+  if ! echo "$lst" | grep -q "Sources/A.swift:4:"; then
+    echo "FAIL: --list font-size misses the counted line 4" >&2
+    failed=1
+  fi
+
+  # Multi-rule line allow: one line suppressed under both rules, controls counted.
+  local repro2=$(mktemp -d)
+  mkdir -p "$repro2/Sources"
+  cat > "$repro2/Sources/B.swift" <<'EOF'
+import SwiftUI
+struct W: View { var body: some View {
+  V().padding(8).opacity(0.5) // design-lint: allow padding-literal,opacity-literal test reason
+  V().padding(4)
+  V().opacity(0.6)
+} }
+EOF
+  (cd "$repro2" && git init -q && git add -A)
+  got=$(cd "$repro2" && bash "$real_script" 2>/dev/null | awk '$1=="padding-literal" {print $2, $4}')
+  [ "$got" = "1 1" ] || { echo "FAIL: multi-rule padding table got [$got] want [1 1]" >&2; failed=1; }
+  got=$(cd "$repro2" && bash "$real_script" 2>/dev/null | awk '$1=="opacity-literal" {print $2, $4}')
+  [ "$got" = "1 1" ] || { echo "FAIL: multi-rule opacity table got [$got] want [1 1]" >&2; failed=1; }
+  lst=$(cd "$repro2" && bash "$real_script" --list padding-literal 2>/dev/null)
+  if echo "$lst" | grep -q ":3:"; then
+    echo "FAIL: --list padding-literal still shows the allowed line 3" >&2
+    failed=1
+  fi
+  if ! echo "$lst" | grep -q "Sources/B.swift:4:"; then
+    echo "FAIL: --list padding-literal misses the counted line 4" >&2
+    failed=1
+  fi
+
+  # Allow-file: whole file suppressed for that rule only; --list is empty, not one blank line.
+  local repro3=$(mktemp -d)
+  mkdir -p "$repro3/Sources"
+  cat > "$repro3/Sources/C.swift" <<'EOF'
+// design-lint: allow-file font-size theme layer
+.font(.system(size: 12))
+.font(.system(size: 13))
+.padding(8)
+EOF
+  (cd "$repro3" && git init -q && git add -A)
+  got=$(cd "$repro3" && bash "$real_script" 2>/dev/null | awk '$1=="font-size" {print $2, $4}')
+  [ "$got" = "0 2" ] || { echo "FAIL: allow-file font-size table got [$got] want [0 2]" >&2; failed=1; }
+  got=$(cd "$repro3" && bash "$real_script" 2>/dev/null | awk '$1=="padding-literal" {print $2, $4}')
+  [ "$got" = "1 0" ] || { echo "FAIL: allow-file padding table got [$got] want [1 0]" >&2; failed=1; }
+  lst=$(cd "$repro3" && bash "$real_script" --list font-size 2>/dev/null)
+  [ -z "$lst" ] || { echo "FAIL: --list font-size not empty under allow-file: [$lst]" >&2; failed=1; }
+  if ! (cd "$repro3" && bash "$real_script" --list-allows 2>/dev/null | grep -q "Sources/C.swift:1: allow-file font-size"); then
+    echo "FAIL: --list-allows misses the allow-file entry" >&2
+    failed=1
+  fi
+  rm -rf "$repro1" "$repro2" "$repro3"
+
   cd - >/dev/null
   rm -rf "$tmpdir"
   
