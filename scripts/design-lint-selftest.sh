@@ -109,6 +109,24 @@ Task.sleep(for: .seconds(2))
 // comment .spring(response: 0.5)
 EOF
 
+  cat > Sources/CommentSkip.swift <<'EOF'
+/// COMMENT-MUST-NOT-COUNT font-size .font(.system(size: 99))
+/// COMMENT-MUST-NOT-COUNT hex-color project stored `#FF0000`
+/// COMMENT-MUST-NOT-COUNT chamfer There were two — `ChamferShape(cut: 6)`
+   /// COMMENT-MUST-NOT-COUNT raw-control Button("X") {}
+// COMMENT-MUST-NOT-COUNT raw-color Theme surface, not `Color.gray`
+// COMMENT-MUST-NOT-COUNT opacity .opacity(0.5)
+// COMMENT-MUST-NOT-COUNT frame .frame(width: 99)
+// COMMENT-MUST-NOT-COUNT motion .delay(0.1)
+// COMMENT-MUST-NOT-COUNT radius .cornerRadius(12)
+// COMMENT-MUST-NOT-COUNT padding .padding(8)
+// COMMENT-MUST-NOT-COUNT spacing spacing: 8
+/* COMMENT-MUST-NOT-COUNT raw-control Toggle("X", isOn: .constant(true)) */
+/* COMMENT-MUST-NOT-COUNT opacity .opacity(0.7) */
+ * COMMENT-MUST-NOT-COUNT frame .frame(height: 50)
+ * COMMENT-MUST-NOT-COUNT motion .spring(response: 0.5)
+EOF
+
   cat > Sources/AllowFile.swift <<'EOF'
 // design-lint: allow-file font-size,padding-literal theme layer
 .font(.system(size: 12))
@@ -248,6 +266,38 @@ EOF
   done
   [ $fl501 -eq 1 ] || { echo "FAIL: file-length should catch 1 file (501 lines), got $fl501" >&2; failed=1; }
   [ $fl500 -ge 1 ] || { echo "FAIL: file-length should not catch 500-line file" >&2; failed=1; }
+
+  # Bugs 1+2 regression: exercise the REAL grep+awk engine (not the loop
+  # above) on these fixtures. (1) No comment-only fixture line may be
+  # listed or counted — covers ///, //, /* and * prefixes. (2) Every
+  # --list line must be <file>:<line>: shaped, never <rule>:0:.
+  local real_script="$SELF_TEST_DIR/design-lint.sh"
+  local r
+  for r in "${rule_names[@]}"; do
+    local out
+    out=$(bash "$real_script" --list "$r" 2>/dev/null || true)
+    if echo "$out" | grep -q "COMMENT-MUST-NOT-COUNT"; then
+      echo "FAIL: --list $r leaks comment lines" >&2
+      failed=1
+    fi
+    while IFS= read -r l; do
+      [ -z "$l" ] && continue
+      case "$l" in
+        Sources/*:[1-9]*:*) ;;
+        *) echo "FAIL: --list $r bad shape: $l" >&2; failed=1 ;;
+      esac
+      case "$l" in
+        "$r":*) echo "FAIL: --list $r prints rule instead of file: $l" >&2; failed=1 ;;
+      esac
+      case "$l" in
+        *:0:*) echo "FAIL: --list $r prints lineno 0: $l" >&2; failed=1 ;;
+      esac
+    done <<< "$out"
+  done
+  if ! bash "$real_script" --list raw-control 2>/dev/null | grep -q 'Sources/Rule7.swift:.*Button'; then
+    echo "FAIL: --list raw-control misses the real Rule7 Button hit" >&2
+    failed=1
+  fi
 
   cd - >/dev/null
   rm -rf "$tmpdir"

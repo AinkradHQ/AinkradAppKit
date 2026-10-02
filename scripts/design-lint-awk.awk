@@ -40,10 +40,13 @@ BEGIN {
     }
   }
   
-  # Skip comment lines
+  # Skip comment lines: any line whose text after leading whitespace
+  # starts with ///, //, /* or *. (content here is the raw source line —
+  # the rule:file:lineno: prefix was stripped above — so doc comments
+  # must be dropped here, not just in the bash is_comment_line path.)
   trimmed = content
   sub(/^[[:space:]]*/, "", trimmed)
-  if (trimmed ~ /^\/\// || trimmed ~ /^\/\*/ || trimmed ~ /^\*/) next
+  if (trimmed ~ /^\/\/\// || trimmed ~ /^\/\// || trimmed ~ /^\/\*/ || trimmed ~ /^\*/) next
   
   # Check line allows
   allowed = 0

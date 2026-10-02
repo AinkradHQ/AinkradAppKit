@@ -127,65 +127,65 @@ run_lint() {
   local file_allows=()
   local line_allows=()
   
-  # Build combined grep output with rule prefixes (run greps in parallel)
-  local combined_grep_out=""
-  local ri=0
+  # Single parallel grep phase: one grep -nHE per rule over the file array.
+  # Each outfile carries exactly ONE "rule:" prefix: rule:file:lineno:content.
+  # (Do NOT re-prefix when combining — the file/line parse and the comment
+  # skip in the awk pass depend on the single-prefix shape.)
   local tmpdir=$(mktemp -d)
   local pids=()
+  local ri=0
   while [ $ri -lt ${#rule_names[@]} ]; do
     local rname="${rule_names[$ri]}"
     local scope="${rule_scopes[$ri]}"
     local pattern="${rule_patterns[$ri]}"
-    
+
     local grep_files=()
     for file in "${files[@]}"; do
       [ "$scope" = "Sources" ] && [[ "$file" != Sources/* ]] && continue
       grep_files+=("$file")
     done
-    
+
     if [ ${#grep_files[@]} -eq 0 ]; then
       ri=$((ri + 1))
       continue
     fi
-    
+
     local grep_pattern="${pattern//\\\\/\\}"
     local outfile="$tmpdir/grep_$ri.out"
-    
+
     # Run grep in background
-    (
-      grep_pattern="$grep_pattern"
-      grep_files=("${grep_files[@]}")
-      grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | sed "s/^/${rname}:/" > "$outfile"
-    ) &
+    grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | sed "s/^/${rname}:/" > "$outfile" &
     pids+=($!)
     echo "$rname:$outfile" >> "$tmpdir/rule_files.txt"
-    
+
     ri=$((ri + 1))
   done
-  
+
   # Wait for all greps to complete
   for pid in "${pids[@]}"; do
     wait "$pid"
   done
-  
-  # Scan files for allows - only files that have matches (from grep output)
-  local bad_allows=()
-  local file_allows=()
-  local line_allows=()
-  
-  # Collect all files that have matches from grep output
+
+  # Scan for allows: every file that can affect the output — files with
+  # matches (field 2 of rule:file:lineno:content) plus every file mentioning
+  # design-lint: (line/file allows and bad allows only live there).
   local matched_files=()
-  while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    local file
-    # line format: rule:file:lineno:content
-    # Extract field 2 (file path) using cut with colon delimiter
-    file=$(echo "$line" | cut -d: -f2)
-    [ -n "$file" ] && matched_files+=("$file")
+  while IFS= read -r f; do
+    [ -n "$f" ] && matched_files+=("$f")
   done < <(cat "$tmpdir"/grep_*.out 2>/dev/null | cut -d: -f2 | sort -u)
-  
+
+  local allow_files=()
+  while IFS= read -r f; do
+    [ -n "$f" ] && allow_files+=("$f")
+  done < <(grep -l 'design-lint:' "${files[@]}" 2>/dev/null || true)
+
+  local scan_files=()
+  while IFS= read -r f; do
+    [ -n "$f" ] && scan_files+=("$f")
+  done < <({ for f in "${matched_files[@]}" "${allow_files[@]}"; do echo "$f"; done; } | sort -u)
+
   # Scan only matched files for allows
-  for file in "${matched_files[@]}"; do
+  for file in "${scan_files[@]}"; do
     local fa=()
     local lineno=0
     # Scan first 10 lines for allow-file
@@ -242,59 +242,16 @@ run_lint() {
     done < "$file"
   done
   
-  # Build combined grep output with rule prefixes (run greps in parallel)
-  local combined_grep_out=""
-  local ri=0
-  local tmpdir=$(mktemp -d)
-  local pids=()
-  while [ $ri -lt ${#rule_names[@]} ]; do
-    local rname="${rule_names[$ri]}"
-    local scope="${rule_scopes[$ri]}"
-    local pattern="${rule_patterns[$ri]}"
-    
-    local grep_files=()
-    for file in "${files[@]}"; do
-      [ "$scope" = "Sources" ] && [[ "$file" != Sources/* ]] && continue
-      grep_files+=("$file")
-    done
-    
-    if [ ${#grep_files[@]} -eq 0 ]; then
-      ri=$((ri + 1))
-      continue
-    fi
-    
-    local grep_pattern="${pattern//\\\\/\\}"
-    local outfile="$tmpdir/grep_$ri.out"
-    
-    # Run grep in background
-    (
-      grep_pattern="$grep_pattern"
-      grep_files=("${grep_files[@]}")
-      grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | sed "s/^/${rname}:/" > "$outfile"
-    ) &
-    pids+=($!)
-    echo "$rname:$outfile" >> "$tmpdir/rule_files.txt"
-    
-    ri=$((ri + 1))
-  done
-  
-  # Wait for all greps to complete
-  for pid in "${pids[@]}"; do
-    wait "$pid"
-  done
-  
-  # Combine results to file (avoid huge bash string)
+  # Combine results to file in rule order (avoid huge bash string).
+  # Outfiles already carry their single "rule:" prefix — concatenate as-is.
   local combined_grep_file=$(mktemp)
-  while IFS= read -r line; do
-    [ -z "$line" ] && continue
-    local rname="${line%%:*}"
-    local outfile="${line#*:}"
-    local grep_out
-    grep_out=$(cat "$outfile" 2>/dev/null || true)
-    if [ -n "$grep_out" ]; then
-      echo "$grep_out" | sed "s/^/${rname}:/" >> "$combined_grep_file"
-    fi
-  done < "$tmpdir/rule_files.txt"
+  if [ -f "$tmpdir/rule_files.txt" ]; then
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      local outfile="${line#*:}"
+      [ -f "$outfile" ] && cat "$outfile" >> "$combined_grep_file"
+    done < "$tmpdir/rule_files.txt"
+  fi
   
   # Cleanup tmpdir
   rm -rf "$tmpdir"
