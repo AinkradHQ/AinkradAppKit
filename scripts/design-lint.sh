@@ -1,5 +1,6 @@
 #!/bin/bash
 # design-lint.sh — design rules + allow syntax (Epic 2 task 2.1) + ratchet and baseline (task 2.2)
+# + hygiene rules file-length/try-bang/force-cast/force-unwrap/print (task 2.3)
 DESIGN_LINT_VERSION=1
 
 set -o pipefail
@@ -22,6 +23,11 @@ rule_names=(
   "hex-color"
   "raw-color"
   "raw-control"
+  "file-length"
+  "try-bang"
+  "force-cast"
+  "force-unwrap"
+  "print"
   "opacity-literal"
   "frame-literal"
   "chamfer-literal"
@@ -32,6 +38,11 @@ rule_scopes=(
   "Sources"
   "Sources"
   "Sources"
+  "Sources"
+  "Sources"
+  "Sources"
+  "Sources"
+  "Sources+Tests"
   "Sources"
   "Sources"
   "Sources"
@@ -52,6 +63,11 @@ rule_patterns=(
   "Color\\(hex:|NSColor\\(hex:|0x[0-9A-Fa-f]{6}([^0-9A-Fa-f]|$)|#[0-9A-Fa-f]{6}"
   "Color\\((red|white|hue|\\.sRGB|\\.displayP3|nsColor):|Color\\.(${COLORS})([^A-Za-z0-9_]|$)|\\.(foregroundStyle|foregroundColor|fill|stroke|background|tint|border)\\(\\.(${COLORS})\\)"
   "(^|[^A-Za-z0-9_])(Button|Toggle|TextField|SecureField|Picker)[[:space:]]*[({\[]|\\.(sheet|popover|contextMenu)[[:space:]]*[({\[]"
+  ""
+  "try!"
+  "as!"
+  "[]A-Za-z0-9_)]![^=]|[]A-Za-z0-9_)]!$"
+  "(^|[^A-Za-z0-9_.])(print|debugPrint|NSLog)\\("
   "\\.opacity\\(([^)]*[^0-9A-Za-z_.])?0?\\.[0-9]*[1-9]"
   "\\.frame\\(([^)]*, *)?(width|height|minWidth|maxWidth|minHeight|maxHeight|idealWidth|idealHeight): *-?([1-9]|0\\.[0-9]*[1-9])"
   "ChamferShape\\( *cut: *([^,)]*[^A-Za-z0-9_.])?[0-9]|\\.cornerBrackets\\([^)]*(length|inset): *-?[0-9]"
@@ -141,6 +157,20 @@ compute_counts() {
     i=$((i + 1))
   done
   
+  # S-ERR-1: try! and as! are their own rules — a line hitting either is not
+  # a force-unwrap hit. The exclusion reuses those two rules' own patterns so
+  # it cannot drift from them.
+  local unwrap_excl=""
+  local ei=0
+  while [ $ei -lt ${#rule_names[@]} ]; do
+    if [ "${rule_names[$ei]}" = "try-bang" ] || [ "${rule_names[$ei]}" = "force-cast" ]; then
+      unwrap_excl="${unwrap_excl}|${rule_patterns[$ei]}"
+    fi
+    ei=$((ei + 1))
+  done
+  unwrap_excl="${unwrap_excl#|}"
+  unwrap_excl="${unwrap_excl//\\\\/\\}"
+
   # Single parallel grep phase: one grep -nHE per rule over the file array.
   # Each outfile carries exactly ONE "rule:" prefix: rule:file:lineno:content.
   # (Do NOT re-prefix when combining — the file/line parse and the comment
@@ -167,8 +197,30 @@ compute_counts() {
     local grep_pattern="${pattern//\\\\/\\}"
     local outfile="$tmpdir/grep_$ri.out"
 
+    if [ "$rname" = "file-length" ]; then
+      # S-SIZE-1: not a grep rule. One wc -l over the array; each file over
+      # 500 lines counts once (counts FILES). Pseudo-hits use the same
+      # rule:file:lineno:content shape so allows and the awk pass apply.
+      wc -l "${grep_files[@]}" 2>/dev/null | while IFS= read -r wline; do
+        wtrimmed="${wline#"${wline%%[![:space:]]*}"}"
+        wcount="${wtrimmed%%[[:space:]]*}"
+        wfile="${wtrimmed#*[[:space:]]}"
+        wfile="${wfile#"${wfile%%[![:space:]]*}"}"
+        case "$wcount" in ''|*[!0-9]*) continue ;; esac
+        [ "$wfile" = "total" ] && continue
+        [ "$wcount" -gt 500 ] && echo "file-length:$wfile:$wcount: $wcount lines"
+      done > "$outfile"
+      echo "$rname:$outfile" >> "$tmpdir/rule_files.txt"
+      ri=$((ri + 1))
+      continue
+    fi
+
     # Run grep in background
-    grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | sed "s/^/${rname}:/" > "$outfile" &
+    if [ "$rname" = "force-unwrap" ]; then
+      grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | grep -vE "$unwrap_excl" | sed "s/^/${rname}:/" > "$outfile" &
+    else
+      grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | sed "s/^/${rname}:/" > "$outfile" &
+    fi
     pids+=($!)
     echo "$rname:$outfile" >> "$tmpdir/rule_files.txt"
 
