@@ -8,6 +8,7 @@ set -o pipefail
 
 SELF_TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF_TEST_FILE="$SELF_TEST_DIR/design-lint-selftest.sh"
+AWK_SCRIPT="$SELF_TEST_DIR/design-lint-awk.awk"
 
 COLORS="red|blue|green|orange|yellow|pink|purple|gray|grey|black|white|cyan|mint|teal|indigo|brown"
 
@@ -39,6 +40,8 @@ rule_scopes=(
   "Sources"
 )
 
+# Patterns use [(] and [)] for literal parens (works in both grep -E and awk)
+# KEPT BYTE-FOR-BYTE FROM 2ead708 — DO NOT CHANGE
 rule_patterns=(
   "\\.system\\(size:|systemFont\\(ofSize:|\\.custom\\(\"[^\"]*\", *size:"
   "\\.padding\\(([^)]*, *)?-?[0-9]"
@@ -124,9 +127,68 @@ run_lint() {
   local file_allows=()
   local line_allows=()
   
-  for file in "${files[@]}"; do
+  # Build combined grep output with rule prefixes (run greps in parallel)
+  local combined_grep_out=""
+  local ri=0
+  local tmpdir=$(mktemp -d)
+  local pids=()
+  while [ $ri -lt ${#rule_names[@]} ]; do
+    local rname="${rule_names[$ri]}"
+    local scope="${rule_scopes[$ri]}"
+    local pattern="${rule_patterns[$ri]}"
+    
+    local grep_files=()
+    for file in "${files[@]}"; do
+      [ "$scope" = "Sources" ] && [[ "$file" != Sources/* ]] && continue
+      grep_files+=("$file")
+    done
+    
+    if [ ${#grep_files[@]} -eq 0 ]; then
+      ri=$((ri + 1))
+      continue
+    fi
+    
+    local grep_pattern="${pattern//\\\\/\\}"
+    local outfile="$tmpdir/grep_$ri.out"
+    
+    # Run grep in background
+    (
+      grep_pattern="$grep_pattern"
+      grep_files=("${grep_files[@]}")
+      grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | sed "s/^/${rname}:/" > "$outfile"
+    ) &
+    pids+=($!)
+    echo "$rname:$outfile" >> "$tmpdir/rule_files.txt"
+    
+    ri=$((ri + 1))
+  done
+  
+  # Wait for all greps to complete
+  for pid in "${pids[@]}"; do
+    wait "$pid"
+  done
+  
+  # Scan files for allows - only files that have matches (from grep output)
+  local bad_allows=()
+  local file_allows=()
+  local line_allows=()
+  
+  # Collect all files that have matches from grep output
+  local matched_files=()
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    local file
+    # line format: rule:file:lineno:content
+    # Extract field 2 (file path) using cut with colon delimiter
+    file=$(echo "$line" | cut -d: -f2)
+    [ -n "$file" ] && matched_files+=("$file")
+  done < <(cat "$tmpdir"/grep_*.out 2>/dev/null | cut -d: -f2 | sort -u)
+  
+  # Scan only matched files for allows
+  for file in "${matched_files[@]}"; do
     local fa=()
     local lineno=0
+    # Scan first 10 lines for allow-file
     while IFS= read -r line && [ $lineno -lt 10 ]; do
       lineno=$((lineno + 1))
       if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow-file[[:space:]]+([^[:space:]]+)[[:space:]]+(.+) ]]; then
@@ -180,7 +242,11 @@ run_lint() {
     done < "$file"
   done
   
+  # Build combined grep output with rule prefixes (run greps in parallel)
+  local combined_grep_out=""
   local ri=0
+  local tmpdir=$(mktemp -d)
+  local pids=()
   while [ $ri -lt ${#rule_names[@]} ]; do
     local rname="${rule_names[$ri]}"
     local scope="${rule_scopes[$ri]}"
@@ -198,158 +264,69 @@ run_lint() {
     fi
     
     local grep_pattern="${pattern//\\\\/\\}"
-    local grep_out
-    grep_out=$(grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null || true)
+    local outfile="$tmpdir/grep_$ri.out"
     
-    local count=0
-    local allowed=0
-    
-    if [ -n "$grep_out" ]; then
-      local line_allows_str=$(IFS=$'\x01'; echo "${line_allows[*]}")
-      local file_allows_str=$(IFS=$'\x01'; echo "${file_allows[*]}")
-      
-      local awk_out
-      if [ "$MODE" = "list" ]; then
-        AWK_RULE="$grep_pattern" AWK_RNAME="$rname" AWK_MODE="$MODE" AWK_LIST_RULE="$LIST_RULE" \
-        awk -v line_allows="$line_allows_str" -v file_allows="$file_allows_str" '
-        BEGIN {
-          split(line_allows, line_allows_arr, "\x01")
-          split(file_allows, file_allows_arr, "\x01")
-          rule = ENVIRON["AWK_RULE"]
-          rname = ENVIRON["AWK_RNAME"]
-          mode = ENVIRON["AWK_MODE"]
-          list_rule = ENVIRON["AWK_LIST_RULE"]
-        }
-        {
-          file = FILENAME
-          line = $0
-          lineno = FNR
-          
-          trimmed = line
-          sub(/^[[:space:]]*/, "", trimmed)
-          if (trimmed ~ /^\/\// || trimmed ~ /^\/\*/ || trimmed ~ /^\*/) next
-          
-          if (line ~ rule) {
-            allowed = 0
-            for (i in line_allows_arr) {
-              split(line_allows_arr[i], parts, "|")
-              if (parts[1] == file && parts[2] == lineno) {
-                split(parts[3], rules, " ")
-                for (j in rules) {
-                  if (rules[j] == rname) {
-                    allowed = 1
-                    break
-                  }
-                }
-              }
-              if (allowed) break
-            }
-            
-            if (!allowed) {
-              for (i in file_allows_arr) {
-                split(file_allows_arr[i], parts, "|")
-                if (parts[1] == file) {
-                  split(parts[2], rules, " ")
-                  for (j in rules) {
-                    if (rules[j] == rname) {
-                      allowed = 1
-                      break
-                    }
-                  }
-                }
-                if (allowed) break
-              }
-            }
-            
-            if (mode == "list" && list_rule == rname) {
-              suffix = allowed ? " [allowed]" : ""
-              print file ":" lineno ": " line suffix
-            }
-          }
-        }' "${grep_files[@]}" 2>/dev/null || true
-        ri=$((ri + 1))
-        continue
-      fi
-      
-      awk_out=$(AWK_RULE="$grep_pattern" AWK_RNAME="$rname" AWK_MODE="$MODE" AWK_LIST_RULE="$LIST_RULE" \
-        awk -v line_allows="$line_allows_str" -v file_allows="$file_allows_str" '
-        BEGIN {
-          split(line_allows, line_allows_arr, "\x01")
-          split(file_allows, file_allows_arr, "\x01")
-          rule = ENVIRON["AWK_RULE"]
-          rname = ENVIRON["AWK_RNAME"]
-          mode = ENVIRON["AWK_MODE"]
-          list_rule = ENVIRON["AWK_LIST_RULE"]
-          count = 0
-          allowed_count = 0
-        }
-        {
-          file = FILENAME
-          line = $0
-          lineno = FNR
-          
-          trimmed = line
-          sub(/^[[:space:]]*/, "", trimmed)
-          if (trimmed ~ /^\/\// || trimmed ~ /^\/\*/ || trimmed ~ /^\*/) next
-          
-          if (line ~ rule) {
-            allowed = 0
-            for (i in line_allows_arr) {
-              split(line_allows_arr[i], parts, "|")
-              if (parts[1] == file && parts[2] == lineno) {
-                split(parts[3], rules, " ")
-                for (j in rules) {
-                  if (rules[j] == rname) {
-                    allowed = 1
-                    break
-                  }
-                }
-              }
-              if (allowed) break
-            }
-            
-            if (!allowed) {
-              for (i in file_allows_arr) {
-                split(file_allows_arr[i], parts, "|")
-                if (parts[1] == file) {
-                  split(parts[2], rules, " ")
-                  for (j in rules) {
-                    if (rules[j] == rname) {
-                      allowed = 1
-                      break
-                    }
-                  }
-                }
-                if (allowed) break
-              }
-            }
-            
-            if (mode == "list" && list_rule == rname) {
-              suffix = allowed ? " [allowed]" : ""
-              print file ":" lineno ": " line suffix
-            }
-            
-            if (allowed) allowed_count++
-            else count++
-          }
-        }
-        END {
-          print "COUNT:" count
-          print "ALLOWED:" allowed_count
-        }' "${grep_files[@]}" 2>/dev/null || true)
-      
-      local count=$(echo "$awk_out" | grep "^COUNT:" | cut -d: -f2)
-      local allowed=$(echo "$awk_out" | grep "^ALLOWED:" | cut -d: -f2)
-      
-      counts[$ri]="${count:-0}"
-      allowed_counts[$ri]="${allowed:-0}"
-    else
-      counts[$ri]="0"
-      allowed_counts[$ri]="0"
-    fi
+    # Run grep in background
+    (
+      grep_pattern="$grep_pattern"
+      grep_files=("${grep_files[@]}")
+      grep -nHE "$grep_pattern" "${grep_files[@]}" 2>/dev/null | sed "s/^/${rname}:/" > "$outfile"
+    ) &
+    pids+=($!)
+    echo "$rname:$outfile" >> "$tmpdir/rule_files.txt"
     
     ri=$((ri + 1))
   done
+  
+  # Wait for all greps to complete
+  for pid in "${pids[@]}"; do
+    wait "$pid"
+  done
+  
+  # Combine results to file (avoid huge bash string)
+  local combined_grep_file=$(mktemp)
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    local rname="${line%%:*}"
+    local outfile="${line#*:}"
+    local grep_out
+    grep_out=$(cat "$outfile" 2>/dev/null || true)
+    if [ -n "$grep_out" ]; then
+      echo "$grep_out" | sed "s/^/${rname}:/" >> "$combined_grep_file"
+    fi
+  done < "$tmpdir/rule_files.txt"
+  
+  # Cleanup tmpdir
+  rm -rf "$tmpdir"
+  
+  # Single awk pass to process all matches, filter comments, apply allows
+  local line_allows_str=$(IFS=$'\x01'; echo "${line_allows[*]}")
+  local file_allows_str=$(IFS=$'\x01'; echo "${file_allows[*]}")
+  
+  local awk_out
+  awk_out=$(AWK_MODE="$MODE" AWK_LIST_RULE="$LIST_RULE" \
+    awk -v line_allows="$line_allows_str" -v file_allows="$file_allows_str" -f "$AWK_SCRIPT" "$combined_grep_file" 2>/dev/null || true)
+  
+  # Cleanup
+  rm -f "$combined_grep_file"
+  
+  # Parse results
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    local rname="${line%%:*}"
+    local rest="${line#*:}"
+    local count="${rest%%:*}"
+    local allowed="${rest#*:}"
+    local ri=0
+    while [ $ri -lt ${#rule_names[@]} ]; do
+      if [ "${rule_names[$ri]}" = "$rname" ]; then
+        counts[$ri]="$count"
+        allowed_counts[$ri]="$allowed"
+        break
+      fi
+      ri=$((ri + 1))
+    done
+  done <<< "$awk_out"
   
   for ba in "${bad_allows[@]}"; do echo "$ba" >&2; done
   
@@ -373,7 +350,10 @@ run_lint() {
     return
   fi
   
-  if [ "$MODE" = "list" ]; then return; fi
+  if [ "$MODE" = "list" ]; then
+    echo "$awk_out"
+    return
+  fi
   
   local repo_name=$(basename "$repo_root")
   local total_files=${#files[@]}
