@@ -312,6 +312,7 @@ struct V: View { var body: some View {
 } }
 EOF
   (cd "$repro1" && git init -q && git add -A)
+  (cd "$repro1" && bash "$real_script" --rebaseline >/dev/null 2>&1)
   local got
   got=$(cd "$repro1" && bash "$real_script" 2>/dev/null | awk '$1=="font-size" {print $2, $4}')
   [ "$got" = "1 1" ] || { echo "FAIL: repro font-size table got [$got] want [1 1]" >&2; failed=1; }
@@ -338,6 +339,7 @@ struct W: View { var body: some View {
 } }
 EOF
   (cd "$repro2" && git init -q && git add -A)
+  (cd "$repro2" && bash "$real_script" --rebaseline >/dev/null 2>&1)
   got=$(cd "$repro2" && bash "$real_script" 2>/dev/null | awk '$1=="padding-literal" {print $2, $4}')
   [ "$got" = "1 1" ] || { echo "FAIL: multi-rule padding table got [$got] want [1 1]" >&2; failed=1; }
   got=$(cd "$repro2" && bash "$real_script" 2>/dev/null | awk '$1=="opacity-literal" {print $2, $4}')
@@ -362,6 +364,7 @@ EOF
 .padding(8)
 EOF
   (cd "$repro3" && git init -q && git add -A)
+  (cd "$repro3" && bash "$real_script" --rebaseline >/dev/null 2>&1)
   got=$(cd "$repro3" && bash "$real_script" 2>/dev/null | awk '$1=="font-size" {print $2, $4}')
   [ "$got" = "0 2" ] || { echo "FAIL: allow-file font-size table got [$got] want [0 2]" >&2; failed=1; }
   got=$(cd "$repro3" && bash "$real_script" 2>/dev/null | awk '$1=="padding-literal" {print $2, $4}')
@@ -373,6 +376,8 @@ EOF
     failed=1
   fi
   rm -rf "$repro1" "$repro2" "$repro3"
+
+  run_ratchet_self_test
 
   cd - >/dev/null
   rm -rf "$tmpdir"
