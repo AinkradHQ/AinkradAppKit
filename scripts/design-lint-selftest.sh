@@ -109,6 +109,39 @@ Task.sleep(for: .seconds(2))
 // comment .spring(response: 0.5)
 EOF
 
+  cat > Sources/Rule9.swift <<'EOF'
+let a = try! decode(data)
+let b = try! parse(text) // design-lint: allow try-bang test
+// comment try! decode(data)
+EOF
+
+  cat > Sources/Rule10.swift <<'EOF'
+let c = obj as! Widget
+let d = ref as! Service // design-lint: allow force-cast test
+// comment x as! Widget
+EOF
+
+  cat > Sources/Rule11.swift <<'EOF'
+let a = value!.count
+let b = foo()!
+let c = x!
+let d = dict["k"]!
+var s: URLSession!
+let f = store[key]! // design-lint: allow force-unwrap test
+if a != b {}
+let g = !flag
+// comment x!
+EOF
+
+  cat > Sources/Rule12.swift <<'EOF'
+print("hello")
+debugPrint(state)
+NSLog("n") // design-lint: allow print test
+logger.print("x")
+blueprint("y")
+// comment print("z")
+EOF
+
   cat > Sources/CommentSkip.swift <<'EOF'
 /// COMMENT-MUST-NOT-COUNT font-size .font(.system(size: 99))
 /// COMMENT-MUST-NOT-COUNT hex-color project stored `#FF0000`
@@ -123,8 +156,12 @@ EOF
 // COMMENT-MUST-NOT-COUNT spacing spacing: 8
 /* COMMENT-MUST-NOT-COUNT raw-control Toggle("X", isOn: .constant(true)) */
 /* COMMENT-MUST-NOT-COUNT opacity .opacity(0.7) */
- * COMMENT-MUST-NOT-COUNT frame .frame(height: 50)
- * COMMENT-MUST-NOT-COUNT motion .spring(response: 0.5)
+   * COMMENT-MUST-NOT-COUNT frame .frame(height: 50)
+   * COMMENT-MUST-NOT-COUNT motion .spring(response: 0.5)
+ // COMMENT-MUST-NOT-COUNT try-bang try! decode(data)
+ // COMMENT-MUST-NOT-COUNT force-cast x as! Widget
+ // COMMENT-MUST-NOT-COUNT force-unwrap let h = maybe[key]!
+ // COMMENT-MUST-NOT-COUNT print print("z")
 EOF
 
   cat > Sources/AllowFile.swift <<'EOF'
@@ -135,10 +172,13 @@ EOF
 
   for i in {1..500}; do echo "line $i"; done > Tests/FileLength500.swift
   for i in {1..501}; do echo "line $i"; done > Tests/FileLength501.swift
+  echo '// design-lint: allow-file file-length over-long test fixture' > Tests/FileLengthAllowed.swift
+  for i in {1..501}; do echo "line $i"; done >> Tests/FileLengthAllowed.swift
 
   git add -A
   git commit -q -m "fixtures"
-  
+
+  local real_script="$SELF_TEST_DIR/design-lint.sh"
   local files=()
   while IFS= read -r f; do files+=("$f"); done < <(collect_files 0)
   
@@ -152,6 +192,16 @@ EOF
   done
 
   local bad_allows=()
+
+  # try!/as! precedence (mirrors the engine): resolve the two rules' patterns
+  # once; a line hitting either is never a force-unwrap hit.
+  local try_pat="" cast_pat=""
+  local pi=0
+  while [ $pi -lt ${#rule_names[@]} ]; do
+    [ "${rule_names[$pi]}" = "try-bang" ] && try_pat="${rule_patterns[$pi]}"
+    [ "${rule_names[$pi]}" = "force-cast" ] && cast_pat="${rule_patterns[$pi]}"
+    pi=$((pi + 1))
+  done
     
   for file in "${files[@]}"; do
     local file_allows=()
@@ -192,6 +242,16 @@ EOF
         local scope="${rule_scopes[$ri]}"
         local pattern="${rule_patterns[$ri]}"
         [ "$scope" = "Sources" ] && [[ "$file" != Sources/* ]] && { ri=$((ri + 1)); continue; }
+        # file-length has no line pattern (one wc -l over the array); its
+        # count is asserted through the real engine below.
+        [ "$rname" = "file-length" ] && { ri=$((ri + 1)); continue; }
+        # try!/as! precedence (mirrors the engine): a line hitting either of
+        # those rules is never a force-unwrap hit.
+        if [ "$rname" = "force-unwrap" ]; then
+          if echo "$line" | grep -qE "$try_pat" || echo "$line" | grep -qE "$cast_pat"; then
+            ri=$((ri + 1)); continue
+          fi
+        fi
         
         if echo "$line" | grep -qE "$pattern"; then
           local is_allowed=0
@@ -231,6 +291,9 @@ EOF
     local expected_allowed=1
     
     case "$rname" in
+      # file-length is skipped in the loop above (wc-based); its count is
+      # asserted through the real engine below.
+      "file-length") expected=0; expected_allowed=0 ;;
       "font-size") expected=1; expected_allowed=2 ;;
       "padding-literal") expected=1; expected_allowed=2 ;;
       "spacing-literal") expected=1; expected_allowed=1 ;;
@@ -238,6 +301,13 @@ EOF
       "hex-color") expected=4; expected_allowed=1 ;;
       "raw-color") expected=8; expected_allowed=1 ;;
       "raw-control") expected=7; expected_allowed=1 ;;
+      "try-bang") expected=1; expected_allowed=1 ;;
+      "force-cast") expected=1; expected_allowed=1 ;;
+      # force-unwrap: the five must-match lines counted, the Rule11 allow
+      # line allowed; Rule9/Rule10 try!/as! lines are excluded by precedence
+      # (try! and as! are must-not-match for this rule).
+      "force-unwrap") expected=5; expected_allowed=1 ;;
+      "print") expected=2; expected_allowed=1 ;;
       "opacity-literal") expected=2; expected_allowed=1 ;;
       "frame-literal") expected=2; expected_allowed=1 ;;
       "chamfer-literal") expected=2; expected_allowed=1 ;;
@@ -264,14 +334,33 @@ EOF
     local lines=$(wc -l < "$file")
     [ $lines -gt 500 ] && fl501=$((fl501 + 1)) || fl500=$((fl500 + 1))
   done
-  [ $fl501 -eq 1 ] || { echo "FAIL: file-length should catch 1 file (501 lines), got $fl501" >&2; failed=1; }
+  [ $fl501 -eq 2 ] || { echo "FAIL: file-length should catch 2 files (501 lines), got $fl501" >&2; failed=1; }
   [ $fl500 -ge 1 ] || { echo "FAIL: file-length should not catch 500-line file" >&2; failed=1; }
+
+  # file-length through the REAL engine: --list shows the 501-line file only
+  # (the 500-line and the allow-file ones absent), with file:lines shape.
+  local fllist
+  fllist=$(bash "$real_script" --list file-length 2>/dev/null || true)
+  echo "$fllist" | grep -q "Tests/FileLength501.swift:501:" || { echo "FAIL: --list file-length misses Tests/FileLength501.swift:501" >&2; failed=1; }
+  echo "$fllist" | grep -q "FileLength500" && { echo "FAIL: --list file-length shows the 500-line file" >&2; failed=1; }
+  echo "$fllist" | grep -q "FileLengthAllowed" && { echo "FAIL: --list file-length shows the allow-file fixture" >&2; failed=1; }
+  [ "$(echo "$fllist" | grep -c .)" -eq 1 ] || { echo "FAIL: --list file-length lists $fllist, want 1 line" >&2; failed=1; }
+
+  # Hygiene counts through the REAL engine: rebaseline the fixture repo, then
+  # read count/allowed off the table for each new rule.
+  (bash "$real_script" --rebaseline >/dev/null 2>&1)
+  local hrule hwant hgot
+  for hrule in "file-length 1 1" "try-bang 1 1" "force-cast 1 1" "force-unwrap 5 1" "print 2 1"; do
+    set -- $hrule
+    hwant="$2 $3"
+    hgot=$(bash "$real_script" 2>/dev/null | awk -v r="$1" '$1==r {print $2, $4}')
+    [ "$hgot" = "$hwant" ] || { echo "FAIL: real-engine $1 table got [$hgot] want [$hwant]" >&2; failed=1; }
+  done
 
   # Bugs 1+2 regression: exercise the REAL grep+awk engine (not the loop
   # above) on these fixtures. (1) No comment-only fixture line may be
   # listed or counted — covers ///, //, /* and * prefixes. (2) Every
   # --list line must be <file>:<line>: shaped, never <rule>:0:.
-  local real_script="$SELF_TEST_DIR/design-lint.sh"
   local r
   for r in "${rule_names[@]}"; do
     local out
@@ -284,6 +373,7 @@ EOF
       [ -z "$l" ] && continue
       case "$l" in
         Sources/*:[1-9]*:*) ;;
+        Tests/*:[1-9]*:*) ;; # file-length scope covers Tests/
         *) echo "FAIL: --list $r bad shape: $l" >&2; failed=1 ;;
       esac
       case "$l" in
