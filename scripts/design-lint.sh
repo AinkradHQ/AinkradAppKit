@@ -1,6 +1,6 @@
 #!/bin/bash
-# design-lint.sh — design rules + allow syntax (Epic 2 task 2.1)
-# DESIGN_LINT_VERSION=1
+# design-lint.sh — design rules + allow syntax (Epic 2 task 2.1) + ratchet and baseline (task 2.2)
+DESIGN_LINT_VERSION=1
 
 set -o pipefail
 
@@ -9,6 +9,8 @@ set -o pipefail
 SELF_TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SELF_TEST_FILE="$SELF_TEST_DIR/design-lint-selftest.sh"
 AWK_SCRIPT="$SELF_TEST_DIR/design-lint-awk.awk"
+BASELINE_LIB="$SELF_TEST_DIR/design-lint-baseline.sh"
+RATCHET_SELF_TEST_FILE="$SELF_TEST_DIR/design-lint-selftest-ratchet.sh"
 
 COLORS="red|blue|green|orange|yellow|pink|purple|gray|grey|black|white|cyan|mint|teal|indigo|brown"
 
@@ -107,25 +109,37 @@ is_comment_line() {
   return 1
 }
 
-[ $SELF_TEST -eq 1 ] && { source "$SELF_TEST_FILE"; run_self_test; exit $?; }
+# Ratchet and baseline (task 2.2) live in design-lint-baseline.sh (sourced).
+[ -f "$BASELINE_LIB" ] || { echo "design-lint: baseline lib missing" >&2; exit 2; }
+source "$BASELINE_LIB"
 
-run_lint() {
+
+[ $SELF_TEST -eq 1 ] && { source "$SELF_TEST_FILE"; source "$RATCHET_SELF_TEST_FILE"; run_self_test; rc=$?; if [ $rc -eq 0 ]; then exit 0; else exit 3; fi; }
+
+BASELINE="$repo_root/.design-lint-baseline"
+
+# Shared counting engine: fills globals lint_files, counts, allowed_counts,
+# bad_allows, line_allows, file_allows, line_allows_str, file_allows_str,
+# COMBINED_FILE (kept for failure listing; the caller deletes it).
+compute_counts() {
   local tracked_only="$1"
-  local files=()
-  while IFS= read -r f; do files+=("$f"); done < <(collect_files "$tracked_only")
-  
-  local counts=()
-  local allowed_counts=()
+  lint_files=()
+  counts=()
+  allowed_counts=()
+  bad_allows=()
+  file_allows=()
+  line_allows=()
+  local list_tmp=$(mktemp)
+  collect_files "$tracked_only" > "$list_tmp" || { local rc=$?; rm -f "$list_tmp"; exit $rc; }
+  while IFS= read -r f; do [ -n "$f" ] && lint_files+=("$f"); done < "$list_tmp"
+  rm -f "$list_tmp"
+
   local i=0
   while [ $i -lt ${#rule_names[@]} ]; do
     counts+=("0")
     allowed_counts+=("0")
     i=$((i + 1))
   done
-  
-  local bad_allows=()
-  local file_allows=()
-  local line_allows=()
   
   # Single parallel grep phase: one grep -nHE per rule over the file array.
   # Each outfile carries exactly ONE "rule:" prefix: rule:file:lineno:content.
@@ -140,7 +154,7 @@ run_lint() {
     local pattern="${rule_patterns[$ri]}"
 
     local grep_files=()
-    for file in "${files[@]}"; do
+    for file in "${lint_files[@]}"; do
       [ "$scope" = "Sources" ] && [[ "$file" != Sources/* ]] && continue
       grep_files+=("$file")
     done
@@ -177,7 +191,7 @@ run_lint() {
   local allow_files=()
   while IFS= read -r f; do
     [ -n "$f" ] && allow_files+=("$f")
-  done < <(grep -l 'design-lint:' "${files[@]}" 2>/dev/null || true)
+  done < <(grep -l 'design-lint:' "${lint_files[@]}" 2>/dev/null || true)
 
   local scan_files=()
   while IFS= read -r f; do
@@ -188,53 +202,54 @@ run_lint() {
   for file in "${scan_files[@]}"; do
     local fa=()
     local lineno=0
-    # Scan first 10 lines for allow-file
+    # Scan first 10 lines for allow-file. A directive with no "<rules>
+    # <reason>" reports an empty reason and suppresses nothing (2.2 fix:
+    # the old full-match-only regex never fired this check).
     while IFS= read -r line && [ $lineno -lt 10 ]; do
       lineno=$((lineno + 1))
-      if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow-file[[:space:]]+([^[:space:]]+)[[:space:]]+(.+) ]]; then
-        local rule_list="${BASH_REMATCH[1]}" reason="${BASH_REMATCH[2]}"
-        IFS=',' read -ra rules <<< "$rule_list"
-        for rule in "${rules[@]}"; do
-          rule=$(echo "$rule" | xargs)
-          local found=0
-          local i=0
-          while [ $i -lt ${#rule_names[@]} ]; do
-            [ "${rule_names[$i]}" = "$rule" ] && found=1 && break
-            i=$((i + 1))
-          done
-          if [ $found -eq 1 ]; then
-            fa+=("$rule")
+      if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow-file([[:space:]]|$) ]]; then
+        if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow-file[[:space:]]+([^[:space:]]+)[[:space:]]+(.+) ]]; then
+          validate_allow_rules "${BASH_REMATCH[1]}" "$file" "$lineno"
+          local reason="${BASH_REMATCH[2]}"
+          if is_blank "$reason"; then
+            bad_allows+=("bad allow: $file:$lineno (empty reason)")
           else
-            bad_allows+=("bad allow: $file:$lineno (unknown rule: $rule)")
+            local r
+            for r in $VALID_RULES; do fa+=("$r"); done
           fi
-        done
-        [ -z "${reason// }" ] && bad_allows+=("bad allow: $file:$lineno (empty reason)")
+        else
+          if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow-file[[:space:]]+([^[:space:]]+)[[:space:]]*$ ]]; then
+            validate_allow_rules "${BASH_REMATCH[1]}" "$file" "$lineno"
+          fi
+          bad_allows+=("bad allow: $file:$lineno (empty reason)")
+        fi
       fi
     done < "$file"
     file_allows+=("$file|${fa[*]}")
-    
+
     lineno=0
     while IFS= read -r line; do
       lineno=$((lineno + 1))
-      if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow[[:space:]]+([^[:space:]]+)[[:space:]]+(.+) ]]; then
-        local rule_list="${BASH_REMATCH[1]}" reason="${BASH_REMATCH[2]}"
-        IFS=',' read -ra rules <<< "$rule_list"
+      if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow-file([[:space:]]|$) ]]; then
+        continue
+      fi
+      if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow([[:space:]]|$) ]]; then
         local la=()
-        for rule in "${rules[@]}"; do
-          rule=$(echo "$rule" | xargs)
-          local found=0
-          local i=0
-          while [ $i -lt ${#rule_names[@]} ]; do
-            [ "${rule_names[$i]}" = "$rule" ] && found=1 && break
-            i=$((i + 1))
-          done
-          if [ $found -eq 1 ]; then
-            la+=("$rule")
+        if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow[[:space:]]+([^[:space:]]+)[[:space:]]+(.+) ]]; then
+          validate_allow_rules "${BASH_REMATCH[1]}" "$file" "$lineno"
+          local reason="${BASH_REMATCH[2]}"
+          if is_blank "$reason"; then
+            bad_allows+=("bad allow: $file:$lineno (empty reason)")
           else
-            bad_allows+=("bad allow: $file:$lineno (unknown rule: $rule)")
+            local r
+            for r in $VALID_RULES; do la+=("$r"); done
           fi
-        done
-        [ -z "${reason// }" ] && bad_allows+=("bad allow: $file:$lineno (empty reason)")
+        else
+          if [[ "$line" =~ //[[:space:]]*design-lint:[[:space:]]*allow[[:space:]]+([^[:space:]]+)[[:space:]]*$ ]]; then
+            validate_allow_rules "${BASH_REMATCH[1]}" "$file" "$lineno"
+          fi
+          bad_allows+=("bad allow: $file:$lineno (empty reason)")
+        fi
         if [ ${#la[@]} -gt 0 ]; then
           line_allows+=("$file|$lineno|${la[*]}")
         fi
@@ -244,29 +259,26 @@ run_lint() {
   
   # Combine results to file in rule order (avoid huge bash string).
   # Outfiles already carry their single "rule:" prefix — concatenate as-is.
-  local combined_grep_file=$(mktemp)
+  COMBINED_FILE=$(mktemp)
   if [ -f "$tmpdir/rule_files.txt" ]; then
     while IFS= read -r line; do
       [ -z "$line" ] && continue
       local outfile="${line#*:}"
-      [ -f "$outfile" ] && cat "$outfile" >> "$combined_grep_file"
+      [ -f "$outfile" ] && cat "$outfile" >> "$COMBINED_FILE"
     done < "$tmpdir/rule_files.txt"
   fi
-  
+
   # Cleanup tmpdir
   rm -rf "$tmpdir"
-  
+
   # Single awk pass to process all matches, filter comments, apply allows
-  local line_allows_str=$(IFS=$'\x01'; echo "${line_allows[*]}")
-  local file_allows_str=$(IFS=$'\x01'; echo "${file_allows[*]}")
-  
+  line_allows_str=$(IFS=$'\x01'; echo "${line_allows[*]}")
+  file_allows_str=$(IFS=$'\x01'; echo "${file_allows[*]}")
+
   local awk_out
   awk_out=$(AWK_MODE="$MODE" AWK_LIST_RULE="$LIST_RULE" \
-    awk -v line_allows="$line_allows_str" -v file_allows="$file_allows_str" -f "$AWK_SCRIPT" "$combined_grep_file" 2>/dev/null || true)
-  
-  # Cleanup
-  rm -f "$combined_grep_file"
-  
+    awk -v line_allows="$line_allows_str" -v file_allows="$file_allows_str" -f "$AWK_SCRIPT" "$COMBINED_FILE" 2>/dev/null || true)
+
   # Parse results
   while IFS= read -r line; do
     [ -z "$line" ] && continue
@@ -284,13 +296,21 @@ run_lint() {
       ri=$((ri + 1))
     done
   done <<< "$awk_out"
-  
-  for ba in "${bad_allows[@]}"; do echo "$ba" >&2; done
-  
+}
+
+
+# Hits for one rule ("file:line: content") from the current compute pass.
+
+
+run_list_modes() {
+  compute_counts 0
+  print_bad_allows
   if [ "$MODE" = "list-allows" ]; then
+    local entry
     for entry in "${file_allows[@]}"; do
       local efile="${entry%%|*}"
       local erules="${entry#*|}"
+      local rule
       for rule in $erules; do
         echo "$efile:1: allow-file $rule"
       done
@@ -300,56 +320,31 @@ run_lint() {
       local erest="${entry#*|}"
       local elineno="${erest%%|*}"
       local erules="${erest#*|}"
+      local rule
       for rule in $erules; do
         echo "$efile:$elineno: allow $rule"
       done
     done
+    rm -f "$COMBINED_FILE"
     return
   fi
-  
-  if [ "$MODE" = "list" ]; then
-    [ -n "$awk_out" ] && echo "$awk_out"
-    return
-  fi
-  
-  local repo_name=$(basename "$repo_root")
-  local total_files=${#files[@]}
-  local source_files=0
-  for f in "${files[@]}"; do [[ "$f" == Sources/* ]] && source_files=$((source_files + 1)); done
-  
-  echo "design-lint v1 · $repo_name · $source_files sources · $total_files files"
-  printf "%-18s %6s %6s %6s\n" "rule" "count" "base" "allowed"
-  
-  local failed=0
-  local ri=0
-  while [ $ri -lt ${#rule_names[@]} ]; do
-    local rname="${rule_names[$ri]}"
-    local count=${counts[$ri]:-0}
-    local allowed=${allowed_counts[$ri]:-0}
-    local base=0 status="ok"
-    
-    if [ "$MODE" = "default" ]; then
-      printf "%-18s %6d %6d %6d  %s\n" "$rname" "$count" "$base" "$allowed" "$status"
-    else
-      printf "%-18s %6d %6d %6d  %s\n" "$rname" "$count" "$base" "$allowed" "$status"
-      [ $count -gt 0 ] && [ "$MODE" = "check" ] && failed=1
-    fi
-    ri=$((ri + 1))
-  done
-  
-  if [ "$MODE" = "check" ] && [ $failed -eq 1 ]; then
-    echo "design-lint: FAIL — rules over baseline" >&2
-    exit 1
-  fi
+  rule_index "$LIST_RULE" || { echo "design-lint: unknown rule '$LIST_RULE'" >&2; rm -f "$COMBINED_FILE"; exit 2; }
+  list_hits_for_rule "$LIST_RULE"
+  rm -f "$COMBINED_FILE"
 }
 
+
 if [ "$MODE" = "default" ]; then
-  run_lint 0
+  run_default
 elif [ "$MODE" = "check" ]; then
-  run_lint 1
+  run_check
+elif [ "$MODE" = "rebaseline" ]; then
+  run_rebaseline
+elif [ "$MODE" = "check-raise" ]; then
+  run_check_raise
 elif [ "$MODE" = "list" ] || [ "$MODE" = "list-allows" ]; then
-  run_lint 0
+  run_list_modes
 else
-  echo "design-lint: mode $MODE not implemented in task 2.1" >&2
+  echo "design-lint: unknown mode: $MODE" >&2
   exit 2
 fi
