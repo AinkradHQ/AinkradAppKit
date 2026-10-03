@@ -434,6 +434,7 @@ private struct AinkradFloatingPanelModifier<PanelContent: View>: ViewModifier {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkinStorage) private var skinStorage
 
     @State private var controller = AinkradFloatingPanelController()
 
@@ -457,9 +458,11 @@ private struct AinkradFloatingPanelModifier<PanelContent: View>: ViewModifier {
         let theme = theme
         let typo = typo
         let statusColors = statusColors
+        let skinStorage = skinStorage
         controller.present(maxHeight: maxHeight, autofocusTextField: autofocusTextField,
                            matchAnchorWidth: matchAnchorWidth, placement: placement) {
             panelContent()
+                .environment(\.ainkradSkinStorage, skinStorage)
                 .environment(\.ainkradTheme, theme)
                 .environment(\.ainkradTypography, typo)
                 .environment(\.ainkradStatusColors, statusColors)

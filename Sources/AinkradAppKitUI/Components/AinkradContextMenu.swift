@@ -171,6 +171,7 @@ private struct AinkradContextMenuModifier: ViewModifier {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkinStorage) private var skinStorage
     @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
     @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
     @State private var controller = AinkradFloatingPanelController()
@@ -188,6 +189,7 @@ private struct AinkradContextMenuModifier: ViewModifier {
         let theme = theme
         let typo = typo
         let statusColors = statusColors
+        let skinStorage = skinStorage
         let surfaceOpacity = surfaceOpacity
         let surfaceBlur = surfaceBlur
         controller.present(
@@ -197,6 +199,7 @@ private struct AinkradContextMenuModifier: ViewModifier {
             AinkradContextMenuList(items: items, dismiss: { controller.dismiss() })
                 .ainkradMenuEnvironment(theme: theme, typography: typo,
                                         statusColors: statusColors,
+                                        skinStorage: skinStorage,
                                         surfaceOpacity: surfaceOpacity,
                                         surfaceBlur: surfaceBlur)
         } onDismiss: {}
@@ -227,9 +230,11 @@ private extension View {
     func ainkradMenuEnvironment(theme: HostThemeTokens,
                                 typography: AinkradTypography,
                                 statusColors: AinkradStatusColors,
+                                skinStorage: AinkradSkin,
                                 surfaceOpacity: Double?,
                                 surfaceBlur: Bool) -> some View {
-        self.environment(\.ainkradTheme, theme)
+        self.environment(\.ainkradSkinStorage, skinStorage)
+            .environment(\.ainkradTheme, theme)
             .environment(\.ainkradTypography, typography)
             .environment(\.ainkradStatusColors, statusColors)
             .environment(\.ainkradSurfaceOpacity, surfaceOpacity)
@@ -255,6 +260,7 @@ public struct AinkradMenuButton<Label: View>: View {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkinStorage) private var skinStorage
     @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
     @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
 
@@ -286,6 +292,7 @@ public struct AinkradMenuButton<Label: View>: View {
                 AinkradContextMenuList(items: items, dismiss: { isPresented = false })
                     .ainkradMenuEnvironment(theme: theme, typography: typo,
                                             statusColors: statusColors,
+                                            skinStorage: skinStorage,
                                             surfaceOpacity: surfaceOpacity,
                                             surfaceBlur: surfaceBlur)
             }
