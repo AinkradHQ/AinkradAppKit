@@ -1,3 +1,4 @@
+// design-lint: allow-file radius-literal theme layer — the radius scale the tokens resolve to
 import CoreGraphics
 import SwiftUI
 import AinkradAppKitContract

@@ -29,7 +29,7 @@ ABI_SIGNAL := abi/AinkradSignal.abi.json
 ALLOWLIST := abi/breakage-allowlist.txt
 
 .PHONY: build abi-baseline abi-check test
-build:
+build: lint
 	swift build -c release
 
 # The baseline tracks AinkradAppKitContract ONLY.
@@ -108,5 +108,7 @@ else
 	@./scripts/abi-check.sh abi/report-signal.txt
 endif
 
-test:
+test: lint
 	swift test
+
+include scripts/guardrails.mk
