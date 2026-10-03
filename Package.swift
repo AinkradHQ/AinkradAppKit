@@ -67,7 +67,8 @@ let package = Package(
             // symbols per MODULE, and after the split those live in
             // Contract/UI rather than in the umbrella.
             dependencies: ["AinkradAppKit", "AinkradAppKitContract", "AinkradAppKitUI", "AinkradAppKitHome",
-                           "AinkradSignal"]
+                           "AinkradSignal"],
+            resources: [.copy("SkinParity/Goldens")]
         ),
     ]
 )
