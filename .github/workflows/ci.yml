@@ -47,6 +47,9 @@ jobs:
             echo "DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer" >> "$GITHUB_ENV"
           fi
 
+      - name: Lint
+        run: ./scripts/design-lint.sh --self-test && ./scripts/design-lint.sh --check
+
       - name: Build
         run: swift build -c release
 

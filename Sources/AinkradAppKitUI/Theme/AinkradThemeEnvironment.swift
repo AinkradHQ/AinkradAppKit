@@ -1,3 +1,4 @@
+// design-lint: allow-file raw-color theme layer — holds the literals the tokens resolve to
 import SwiftUI
 import AinkradAppKitContract
 

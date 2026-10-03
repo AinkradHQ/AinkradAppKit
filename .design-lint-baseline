@@ -1,0 +1,20 @@
+# design-lint baseline. Counts only go down: `make lint` lowers them.
+# Raising one needs `make lint-rebaseline`, DESIGN_LINT_ALLOW_RAISE=1 on push, and a PR note.
+version 1
+format off
+font-size 48
+padding-literal 13
+spacing-literal 14
+radius-literal 24
+hex-color 3
+raw-color 7
+raw-control off AppKit implements the kit controls
+file-length 4
+try-bang 0
+force-cast 0
+force-unwrap 1
+print 0
+opacity-literal 266
+frame-literal 50
+chamfer-literal 106
+motion-literal 6
