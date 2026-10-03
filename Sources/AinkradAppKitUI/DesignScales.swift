@@ -10,20 +10,20 @@ import AinkradAppKitContract
 
 /// 4-pt spacing ramp. Use instead of raw `.padding(_:)` literals.
 public enum AinkradSpacing {
-    public static let xs: CGFloat = 4
-    public static let sm: CGFloat = 8
-    public static let md: CGFloat = 12
-    public static let lg: CGFloat = 16
-    public static let xl: CGFloat = 24
-    public static let xxl: CGFloat = 32
+    public static var xs: CGFloat { CGFloat(AinkradSkin.standardSpacing.xs) }
+    public static var sm: CGFloat { CGFloat(AinkradSkin.standardSpacing.sm) }
+    public static var md: CGFloat { CGFloat(AinkradSkin.standardSpacing.md) }
+    public static var lg: CGFloat { CGFloat(AinkradSkin.standardSpacing.lg) }
+    public static var xl: CGFloat { CGFloat(AinkradSkin.standardSpacing.xl) }
+    public static var xxl: CGFloat { CGFloat(AinkradSkin.standardSpacing.xxl) }
 }
 
 /// Corner-radius steps. `panel` is the standard overlay/HUD radius.
 public enum AinkradRadius {
-    public static let sm: CGFloat = 8
-    public static let md: CGFloat = 12
-    public static let lg: CGFloat = 14
-    public static let panel: CGFloat = 14
+    public static var sm: CGFloat { CGFloat(AinkradSkin.standardRadius.sm) }
+    public static var md: CGFloat { CGFloat(AinkradSkin.standardRadius.md) }
+    public static var lg: CGFloat { CGFloat(AinkradSkin.standardRadius.lg) }
+    public static var panel: CGFloat { CGFloat(AinkradSkin.standardRadius.panel) }
 }
 
 /// A drop-shadow specification. `.clear`/`0` is a no-op.
@@ -37,28 +37,34 @@ public struct ShadowSpec: Equatable, Sendable {
     }
 }
 
+public extension AinkradShadowToken {
+    var spec: ShadowSpec {
+        ShadowSpec(color: AinkradSkin.standard.color(color), radius: CGFloat(radius), x: CGFloat(x), y: CGFloat(y))
+    }
+}
+
 /// Neutral elevation shadows by surface level. Accent glow is a separate
 /// concern handled with the shared components (Slice 1b).
 public enum AinkradElevation {
-    public static let level0 = ShadowSpec(color: .clear, radius: 0, x: 0, y: 0)
-    public static let level1 = ShadowSpec(color: .black.opacity(0.22), radius: 8, x: 0, y: 2)
-    public static let level2 = ShadowSpec(color: .black.opacity(0.30), radius: 20, x: 0, y: 8)
+    public static var level0: ShadowSpec { AinkradSkin.standardElevation.level0.spec }
+    public static var level1: ShadowSpec { AinkradSkin.standardElevation.level1.spec }
+    public static var level2: ShadowSpec { AinkradSkin.standardElevation.level2.spec }
 }
 
 /// Motion durations + named animations. Use instead of literal `.animation`
 /// durations so timing is consistent across surfaces.
 public enum AinkradMotion {
-    public static let durationFast: Double = 0.15
-    public static let durationBase: Double = 0.25
-    public static let durationSlow: Double = 0.40
+    public static var durationFast: Double { AinkradSkin.standardMotion.fast }
+    public static var durationBase: Double { AinkradSkin.standardMotion.base }
+    public static var durationSlow: Double { AinkradSkin.standardMotion.slow }
     /// Duration of the SAO-style materialize/dematerialize (scan-in) transition.
-    public static let durationMaterialize: Double = 0.55
+    public static var durationMaterialize: Double { AinkradSkin.standardMotion.materialize }
 
-    public static var hover: Animation { .easeInOut(duration: durationFast) }
-    public static var present: Animation { .easeOut(duration: durationBase) }
-    public static var dismiss: Animation { .easeIn(duration: durationFast) }
+    public static var hover: Animation { AinkradSkin.standard.animation(AinkradSkin.standardMotion.hover) }
+    public static var present: Animation { AinkradSkin.standard.animation(AinkradSkin.standardMotion.present) }
+    public static var dismiss: Animation { AinkradSkin.standard.animation(AinkradSkin.standardMotion.dismiss) }
     /// The materialize transition animation (scan-in on appear).
-    public static var materialize: Animation { .easeOut(duration: durationMaterialize) }
+    public static var materialize: Animation { AinkradSkin.standard.animation(AinkradSkin.standardMotion.materializeAnimation) }
 }
 
 /// Named typography roles with base point sizes. The host's `AinkradFont`
@@ -68,12 +74,12 @@ public enum AinkradTypeRole: CaseIterable {
 
     public var size: CGFloat {
         switch self {
-        case .display:  return 28
-        case .title:    return 20
-        case .headline: return 16
-        case .body:     return 14
-        case .caption:  return 11
-        case .mono:     return 13
+        case .display:  return CGFloat(AinkradSkin.standardTypeRoles.display)
+        case .title:    return CGFloat(AinkradSkin.standardTypeRoles.title)
+        case .headline: return CGFloat(AinkradSkin.standardTypeRoles.headline)
+        case .body:     return CGFloat(AinkradSkin.standardTypeRoles.body)
+        case .caption:  return CGFloat(AinkradSkin.standardTypeRoles.caption)
+        case .mono:     return CGFloat(AinkradSkin.standardTypeRoles.mono)
         }
     }
 }
