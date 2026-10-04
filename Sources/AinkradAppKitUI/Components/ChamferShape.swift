@@ -1,6 +1,6 @@
+import AinkradAppKitContract
 import CoreGraphics
 import SwiftUI
-import AinkradAppKitContract
 
 /// Which corners of a rect get the Cardinal HUD chamfer (cut-corner) treatment.
 public struct ChamferCorners: OptionSet, Sendable {
@@ -24,7 +24,10 @@ public struct ChamferCorners: OptionSet, Sendable {
 /// unit-testable without going through SwiftUI's `Path`.
 public func chamferPoints(in rect: CGRect, cut: CGFloat, corners: ChamferCorners) -> [CGPoint] {
     let c = max(0, min(cut, min(rect.width, rect.height) / 2))
-    let minX = rect.minX, maxX = rect.maxX, minY = rect.minY, maxY = rect.maxY
+    let minX = rect.minX
+    let maxX = rect.maxX
+    let minY = rect.minY
+    let maxY = rect.maxY
 
     var points: [CGPoint] = []
 

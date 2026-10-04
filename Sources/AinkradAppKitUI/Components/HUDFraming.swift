@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Draws the four L-shaped corner brackets used by `View.cornerBrackets(_:_:)`.
 /// A `Shape`, not a `View`, so it can be stroked/shadowed like any path.
@@ -50,11 +50,11 @@ private struct CornerBracketsModifier: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Overlays luminous L-shaped accent brackets at the view's four corners —
     /// the Cardinal HUD "targeting frame" motif. Reads `accentSecondary` from
     /// the host theme. `inset` pulls the brackets in from the view's edge.
-    func cornerBrackets(length: CGFloat = 12, inset: CGFloat = 0) -> some View {
+    public func cornerBrackets(length: CGFloat = 12, inset: CGFloat = 0) -> some View {
         modifier(CornerBracketsModifier(length: length, inset: inset))
     }
 }

@@ -1,5 +1,6 @@
-import SwiftUI
 import AppKit
+import SwiftUI
+
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
 
@@ -27,65 +28,95 @@ enum SkinParityFixturesMissing {
         var list: [SkinParityFixture] = []
 
         // 1. AccentRule
-        list.append(SkinParityFixture(name: "accentRule-unlabeled", view: AnyView(
-            AccentRule()
-        )))
-        list.append(SkinParityFixture(name: "accentRule-labeled", view: AnyView(
-            AccentRule(label: "Section Accent")
-        )))
+        list.append(
+            SkinParityFixture(
+                name: "accentRule-unlabeled",
+                view: AnyView(
+                    AccentRule()
+                )))
+        list.append(
+            SkinParityFixture(
+                name: "accentRule-labeled",
+                view: AnyView(
+                    AccentRule(label: "Section Accent")
+                )))
 
         // 2. AinkradModeSwitch (both modes)
-        list.append(SkinParityFixture(name: "modeSwitch-advanced", view: AnyView(
-            AinkradModeSwitch()
-                .environment(\.ainkradPaneMode, .advanced)
-        )))
-        list.append(SkinParityFixture(name: "modeSwitch-basic", view: AnyView(
-            AinkradModeSwitch()
-                .environment(\.ainkradPaneMode, .basic)
-        )))
+        list.append(
+            SkinParityFixture(
+                name: "modeSwitch-advanced",
+                view: AnyView(
+                    AinkradModeSwitch()
+                        .environment(\.ainkradPaneMode, .advanced)
+                )))
+        list.append(
+            SkinParityFixture(
+                name: "modeSwitch-basic",
+                view: AnyView(
+                    AinkradModeSwitch()
+                        .environment(\.ainkradPaneMode, .basic)
+                )))
 
         // 3. AinkradPopover (render content)
-        list.append(SkinParityFixture(name: "popover-content", view: AnyView(
-            Text("Popover Content View")
-                .ainkradPopover(isPresented: .constant(true)) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Popover Header").bold()
-                        Text("Popover detail body content goes here.")
-                    }
-                }
-                .frame(width: 300, height: 200)
-        )))
+        list.append(
+            SkinParityFixture(
+                name: "popover-content",
+                view: AnyView(
+                    Text("Popover Content View")
+                        .ainkradPopover(isPresented: .constant(true)) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Popover Header").bold()
+                                Text("Popover detail body content goes here.")
+                            }
+                        }
+                        .frame(width: 300, height: 200)
+                )))
 
         // 4. AinkradRadioGroup (a selection)
         let radioOptions = ["Option 1", "Option 2", "Option 3"]
-        list.append(SkinParityFixture(name: "radioGroup-selected", view: AnyView(
-            AinkradRadioGroup(options: radioOptions, selection: .constant("Option 2"), label: { $0 })
-        )))
+        list.append(
+            SkinParityFixture(
+                name: "radioGroup-selected",
+                view: AnyView(
+                    AinkradRadioGroup(options: radioOptions, selection: .constant("Option 2"), label: { $0 })
+                )))
 
         // 5. AinkradRangeSlider
-        list.append(SkinParityFixture(name: "rangeSlider-default", view: AnyView(
-            AinkradRangeSlider(range: .constant(0.2...0.8), bounds: 0.0...1.0)
-                .frame(width: 200)
-        )))
+        list.append(
+            SkinParityFixture(
+                name: "rangeSlider-default",
+                view: AnyView(
+                    AinkradRangeSlider(range: .constant(0.2...0.8), bounds: 0.0...1.0)
+                        .frame(width: 200)
+                )))
 
         // 6. AinkradSurfaceSettings
-        list.append(SkinParityFixture(name: "surfaceSettings-default", view: AnyView(
-            AinkradSurfaceSettings(
-                appName: "TestApp",
-                presentation: DummyPresentationControl(),
-                mode: DummyModeControl(),
-                overlaySize: DummyOverlaySizeControl()
-            )
-            .frame(width: 320)
-        )))
+        list.append(
+            SkinParityFixture(
+                name: "surfaceSettings-default",
+                view: AnyView(
+                    AinkradSurfaceSettings(
+                        appName: "TestApp",
+                        presentation: DummyPresentationControl(),
+                        mode: DummyModeControl(),
+                        overlaySize: DummyOverlaySizeControl()
+                    )
+                    .frame(width: 320)
+                )))
 
         // 7. AinkradToggleButton (off + on)
-        list.append(SkinParityFixture(name: "toggleButton-off", view: AnyView(
-            AinkradToggleButton(isOn: .constant(false), systemName: "star", title: "Favorite")
-        )))
-        list.append(SkinParityFixture(name: "toggleButton-on", view: AnyView(
-            AinkradToggleButton(isOn: .constant(true), systemName: "star", title: "Favorite")
-        )))
+        list.append(
+            SkinParityFixture(
+                name: "toggleButton-off",
+                view: AnyView(
+                    AinkradToggleButton(isOn: .constant(false), systemName: "star", title: "Favorite")
+                )))
+        list.append(
+            SkinParityFixture(
+                name: "toggleButton-on",
+                view: AnyView(
+                    AinkradToggleButton(isOn: .constant(true), systemName: "star", title: "Favorite")
+                )))
 
         return list
     }

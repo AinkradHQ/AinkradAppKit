@@ -21,7 +21,8 @@ public enum SignalSocketPath {
     /// that moved with it would leave the CLI unable to find the host without
     /// reading the host's configuration first.
     public static func `default`(bundleID: String = "com.ainkrad.app") -> URL {
-        let base = FileManager.default
+        let base =
+            FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent(bundleID, isDirectory: true)
@@ -77,8 +78,9 @@ public enum SignalSocketClient {
         let capacity = MemoryLayout.size(ofValue: address.sun_path)
         _ = withUnsafeMutablePointer(to: &address.sun_path) { destination in
             path.withCString { source in
-                strncpy(UnsafeMutableRawPointer(destination).assumingMemoryBound(to: CChar.self),
-                        source, capacity - 1)
+                strncpy(
+                    UnsafeMutableRawPointer(destination).assumingMemoryBound(to: CChar.self),
+                    source, capacity - 1)
             }
         }
 

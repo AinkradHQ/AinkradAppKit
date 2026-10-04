@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradSignal
+import SwiftUI
 
 /// Who sent a notification, as the user knows it: the app's display name and
 /// its launcher symbol. Toasts and feed rows show it, so a notification says
@@ -39,6 +39,6 @@ public struct SignalIdentityResolver: Sendable {
     }
 }
 
-public extension EnvironmentValues {
-    @Entry var ainkradSignalIdentity: SignalIdentityResolver = .none
+extension EnvironmentValues {
+    @Entry public var ainkradSignalIdentity: SignalIdentityResolver = .none
 }

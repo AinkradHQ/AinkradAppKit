@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradAppKitUI
+import SwiftUI
 
 /// How a row arranges label and control. Chosen from the detail pane's
 /// width, not the window's — a narrow pane inside a wide window still stacks.
@@ -87,7 +87,7 @@ public struct SettingsRow: View {
     public var body: some View {
         switch Self.presentation(for: field) {
         case .pane: paneBody
-        case .row:  rowBody
+        case .row: rowBody
         }
     }
 
@@ -130,8 +130,10 @@ public struct SettingsRow: View {
         }
         .padding(AinkradSpacing.md)
         .background(ChamferShape(cut: AinkradRadius.md).fill(tokens.surfaceElevated.opacity(0.5)))
-        .overlay(ChamferShape(cut: AinkradRadius.md)
-            .strokeBorder(tokens.accentPrimary.opacity(isHovered ? 0.3 : 0.15), lineWidth: 1))
+        .overlay(
+            ChamferShape(cut: AinkradRadius.md)
+                .strokeBorder(tokens.accentPrimary.opacity(isHovered ? 0.3 : 0.15), lineWidth: 1)
+        )
         .onHover { isHovered = $0 }
         .animation(reduceMotion ? nil : .easeOut(duration: AinkradMotion.durationFast), value: isHovered)
     }

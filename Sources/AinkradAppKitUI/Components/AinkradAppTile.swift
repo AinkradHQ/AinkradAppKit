@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Chamfer app icon tile with hover/selected glow — the kit's portable
 /// version of the host's NeonAppTile, for use by plugins that need an

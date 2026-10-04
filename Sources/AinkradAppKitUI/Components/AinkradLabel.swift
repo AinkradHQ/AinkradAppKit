@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Body-role text row with an optional leading icon. The plain-text
 /// counterpart to `AinkradChip`/`AinkradBadge` for non-interactive labels.
@@ -11,7 +11,8 @@ public struct AinkradLabel: View {
     @Environment(\.ainkradTypography) private var typo
 
     public init(_ text: String, systemName: String? = nil) {
-        self.text = text; self.systemName = systemName
+        self.text = text
+        self.systemName = systemName
     }
 
     public var body: some View {

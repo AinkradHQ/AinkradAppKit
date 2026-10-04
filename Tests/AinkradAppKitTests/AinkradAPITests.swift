@@ -1,4 +1,5 @@
 import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -22,16 +23,18 @@ struct Generation11Tests {
     func generationAndWindow() {
         #expect(AinkradAppKit.apiVersion == 11)
         #expect(AinkradAppKit.minSupportedAPIVersion == 9)
-        #expect(AinkradAppKit.minSupportedAPIVersion == AinkradAppKit.apiVersion - 2,
-                "widened at generation 10 — see the reasoning on the property")
+        #expect(
+            AinkradAppKit.minSupportedAPIVersion == AinkradAppKit.apiVersion - 2,
+            "widened at generation 10 — see the reasoning on the property")
     }
 
     @Test("generation 9, 10 and 11 all load; 8 and 12 do not")
     func compatibilityRange() {
         func loadable(_ v: Int) -> Bool {
-            AinkradAppKit.isCompatible(bundleAPIVersion: v,
-                                       minSupported: AinkradAppKit.minSupportedAPIVersion,
-                                       current: AinkradAppKit.apiVersion)
+            AinkradAppKit.isCompatible(
+                bundleAPIVersion: v,
+                minSupported: AinkradAppKit.minSupportedAPIVersion,
+                current: AinkradAppKit.apiVersion)
         }
         #expect(loadable(9))
         #expect(loadable(10))

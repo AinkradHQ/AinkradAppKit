@@ -1,10 +1,11 @@
+import AppKit
+import Foundation
+import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
-import Foundation
-import Testing
-import AppKit
-import SwiftUI
 
 /// Counts how many cells a table asks for. A lazy table inside a scroll view
 /// asks only for the rows on screen; an eager one asks for every row.
@@ -29,8 +30,9 @@ struct DataTableLazinessTests {
         let view = ScrollView { AinkradDataTable(rows: rows, columns: [column]) }
             .frame(width: 400, height: 300)
         let host = NSHostingView(rootView: view)
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
-                              styleMask: [.borderless], backing: .buffered, defer: false)
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+            styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
         // 300 pt shows roughly a dozen rows. Allow generous headroom for

@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Faint horizontal scanline sweep — a HUD "scan" texture. Animated via
 /// `TimelineView` only while `active` and motion isn't reduced; otherwise a
@@ -46,8 +46,9 @@ private struct ScanlineOverlayModifier: ViewModifier {
         let gradient = Gradient(colors: [.clear, .white.opacity(0.6), .clear])
         context.fill(
             Path(CGRect(x: 0, y: y, width: size.width, height: bandHeight)),
-            with: .linearGradient(gradient, startPoint: CGPoint(x: 0, y: y),
-                                  endPoint: CGPoint(x: 0, y: y + bandHeight))
+            with: .linearGradient(
+                gradient, startPoint: CGPoint(x: 0, y: y),
+                endPoint: CGPoint(x: 0, y: y + bandHeight))
         )
     }
 }
@@ -81,8 +82,9 @@ private struct HexGridBackgroundModifier: ViewModifier {
             let xOffset = row.isMultiple(of: 2) ? 0 : hexWidth / 2
             var x: CGFloat = xOffset
             while x < size.width + hexWidth {
-                context.stroke(hexPath(center: CGPoint(x: x, y: y), radius: hexRadius),
-                                with: .color(.white), lineWidth: 0.5)
+                context.stroke(
+                    hexPath(center: CGPoint(x: x, y: y), radius: hexRadius),
+                    with: .color(.white), lineWidth: 0.5)
                 x += hexWidth
             }
             y += vertSpacing
@@ -125,21 +127,21 @@ private struct GlowBloomModifier: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Faint moving scanline sweep (Cardinal HUD "scan" texture). Disabled
     /// (falls back to a static faint line pattern) under Reduce Motion, and
     /// fully omitted when `active` is false.
-    func scanlineOverlay(active: Bool = true) -> some View {
+    public func scanlineOverlay(active: Bool = true) -> some View {
         modifier(ScanlineOverlayModifier(active: active))
     }
 
     /// Low-opacity hexagon grid background texture.
-    func hexGridBackground(active: Bool = true) -> some View {
+    public func hexGridBackground(active: Bool = true) -> some View {
         modifier(HexGridBackgroundModifier(active: active))
     }
 
     /// Soft radial accent glow behind the content, using `ainkradTheme.accentPrimary`.
-    func glowBloom(active: Bool = true) -> some View {
+    public func glowBloom(active: Bool = true) -> some View {
         modifier(GlowBloomModifier(active: active))
     }
 }

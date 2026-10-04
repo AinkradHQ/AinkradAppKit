@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 // MARK: - Pure color conversion helpers (unit-testable)
 
@@ -13,9 +13,11 @@ func rgbComponents(fromHex hex: String) -> (red: Double, green: Double, blue: Do
     guard s.count == 6, s.allSatisfy({ $0.isHexDigit }) else { return nil }
     var value: UInt64 = 0
     Scanner(string: s).scanHexInt64(&value)
-    return (Double((value & 0xFF0000) >> 16) / 255,
-            Double((value & 0x00FF00) >> 8) / 255,
-            Double(value & 0x0000FF) / 255)
+    return (
+        Double((value & 0xFF0000) >> 16) / 255,
+        Double((value & 0x00FF00) >> 8) / 255,
+        Double(value & 0x0000FF) / 255
+    )
 }
 
 /// Uppercase 6-digit `RRGGBB` hex (no `#`) for sRGB components (each clamped to
@@ -82,8 +84,9 @@ public struct AinkradColorPicker: View {
                 .frame(width: 28, height: 24)
                 .overlay(
                     ChamferShape(cut: 6)
-                        .strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.9 : 0.35),
-                                      lineWidth: isOpen ? 1.5 : 1.25)
+                        .strokeBorder(
+                            theme.accentPrimary.opacity(isOpen ? 0.9 : 0.35),
+                            lineWidth: isOpen ? 1.5 : 1.25)
                 )
                 .shadow(color: theme.accentPrimary.opacity(isOpen ? 0.45 : 0), radius: isOpen ? 6 : 0)
                 .contentShape(ChamferShape(cut: 6))

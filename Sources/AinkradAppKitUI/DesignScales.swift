@@ -1,7 +1,7 @@
+import AinkradAppKitContract
 // design-lint: allow-file radius-literal theme layer — the radius scale the tokens resolve to
 import CoreGraphics
 import SwiftUI
-import AinkradAppKitContract
 
 /// Theme-invariant layout, motion, and type scales shared by the host and all
 /// plugins. These do NOT vary by theme, so they are standalone constants rather
@@ -33,12 +33,15 @@ public struct ShadowSpec: Equatable, Sendable {
     public let x: CGFloat
     public let y: CGFloat
     public init(color: Color, radius: CGFloat, x: CGFloat, y: CGFloat) {
-        self.color = color; self.radius = radius; self.x = x; self.y = y
+        self.color = color
+        self.radius = radius
+        self.x = x
+        self.y = y
     }
 }
 
-public extension AinkradShadowToken {
-    var spec: ShadowSpec {
+extension AinkradShadowToken {
+    public var spec: ShadowSpec {
         ShadowSpec(color: AinkradSkin.standard.color(color), radius: CGFloat(radius), x: CGFloat(x), y: CGFloat(y))
     }
 }
@@ -64,7 +67,9 @@ public enum AinkradMotion {
     public static var present: Animation { AinkradSkin.standard.animation(AinkradSkin.standardMotion.present) }
     public static var dismiss: Animation { AinkradSkin.standard.animation(AinkradSkin.standardMotion.dismiss) }
     /// The materialize transition animation (scan-in on appear).
-    public static var materialize: Animation { AinkradSkin.standard.animation(AinkradSkin.standardMotion.materializeAnimation) }
+    public static var materialize: Animation {
+        AinkradSkin.standard.animation(AinkradSkin.standardMotion.materializeAnimation)
+    }
 }
 
 /// Named typography roles with base point sizes. The host's `AinkradFont`
@@ -74,12 +79,12 @@ public enum AinkradTypeRole: CaseIterable {
 
     public var size: CGFloat {
         switch self {
-        case .display:  return CGFloat(AinkradSkin.standardTypeRoles.display)
-        case .title:    return CGFloat(AinkradSkin.standardTypeRoles.title)
+        case .display: return CGFloat(AinkradSkin.standardTypeRoles.display)
+        case .title: return CGFloat(AinkradSkin.standardTypeRoles.title)
         case .headline: return CGFloat(AinkradSkin.standardTypeRoles.headline)
-        case .body:     return CGFloat(AinkradSkin.standardTypeRoles.body)
-        case .caption:  return CGFloat(AinkradSkin.standardTypeRoles.caption)
-        case .mono:     return CGFloat(AinkradSkin.standardTypeRoles.mono)
+        case .body: return CGFloat(AinkradSkin.standardTypeRoles.body)
+        case .caption: return CGFloat(AinkradSkin.standardTypeRoles.caption)
+        case .mono: return CGFloat(AinkradSkin.standardTypeRoles.mono)
         }
     }
 }

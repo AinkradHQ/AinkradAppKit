@@ -1,5 +1,5 @@
-import SwiftUI
 import Observation
+import SwiftUI
 
 /// Lets an app read and override how the host presents it — tiled `.pane` or
 /// floating `.overlay`. An override takes effect the next time the app is
@@ -145,9 +145,11 @@ public struct HostThemeTokens: Equatable, Sendable {
     public let accentTertiary: Color
     public let foreground: Color
 
-    public init(themeID: String, background: Color, surface: Color, surfaceElevated: Color,
-                accentPrimary: Color, accentSecondary: Color, accentTertiary: Color,
-                foreground: Color) {
+    public init(
+        themeID: String, background: Color, surface: Color, surfaceElevated: Color,
+        accentPrimary: Color, accentSecondary: Color, accentTertiary: Color,
+        foreground: Color
+    ) {
         self.themeID = themeID
         self.background = background
         self.surface = surface

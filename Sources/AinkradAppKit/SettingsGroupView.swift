@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradAppKitUI
+import SwiftUI
 
 /// A titled group of rows: composes `AinkradSectionFrame` (always-expanded),
 /// `AinkradDisclosureGroup` (collapsible), or bare rows (pane-only, no
@@ -36,8 +36,9 @@ public struct SettingsGroupView: View {
         self.layout = layout
         self.matchedPaths = matchedPaths
         self.highlightedPath = highlightedPath
-        _isExpanded = State(initialValue: group.disclosure == .always
-            || Self.mustExpand(group: group, highlightedPath: highlightedPath, matchedPaths: matchedPaths))
+        _isExpanded = State(
+            initialValue: group.disclosure == .always
+                || Self.mustExpand(group: group, highlightedPath: highlightedPath, matchedPaths: matchedPaths))
     }
 
     /// A collapsed group must open by itself whenever the thing a user is
@@ -71,9 +72,10 @@ public struct SettingsGroupView: View {
     /// True when every field in the group is a pane (`.custom`) rather than a
     /// control — i.e. the group contributes no rows of its own at all.
     public static func isPaneOnly(_ group: SettingsGroup) -> Bool {
-        !group.fields.isEmpty && group.fields.allSatisfy {
-            SettingsRow.presentation(for: $0) == .pane
-        }
+        !group.fields.isEmpty
+            && group.fields.allSatisfy {
+                SettingsRow.presentation(for: $0) == .pane
+            }
     }
 
     /// Whether to draw the catalog's group header.
@@ -152,7 +154,8 @@ public struct SettingsGroupView: View {
                             .strokeBorder(
                                 highlightedPath == field.path
                                     ? tokens.accentSecondary.opacity(0.9) : .clear,
-                                lineWidth: 1.5))
+                                lineWidth: 1.5)
+                    )
                     .id(field.path)
             }
             if let note = group.footerNote {

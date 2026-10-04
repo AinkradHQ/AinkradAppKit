@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("Signal subscriptions")
@@ -36,16 +37,19 @@ struct SignalSubscriptionTests {
 
     @Test("host and sage sources are nameable")
     func hostAndSage() throws {
-        #expect(try #require(SignalSubscription.parse(["host/run.*"]).first)
-            .matches(event(source: .host, kind: "run.finished")))
-        #expect(try #require(SignalSubscription.parse(["sage/*"]).first)
-            .matches(event(source: .sage, kind: "anything.at.all")))
+        #expect(
+            try #require(SignalSubscription.parse(["host/run.*"]).first)
+                .matches(event(source: .host, kind: "run.finished")))
+        #expect(
+            try #require(SignalSubscription.parse(["sage/*"]).first)
+                .matches(event(source: .sage, kind: "anything.at.all")))
     }
 
     @Test("a wildcard source is NOT allowed — subscriptions must be reviewable")
     func noWildcardSource() {
-        #expect(SignalSubscription.parse(["*/build.failed"]).isEmpty,
-                "the user approves a named list; '*' would make approval meaningless")
+        #expect(
+            SignalSubscription.parse(["*/build.failed"]).isEmpty,
+            "the user approves a named list; '*' would make approval meaningless")
         #expect(SignalSubscription.parse(["app:*/build.failed"]).isEmpty)
     }
 
@@ -57,8 +61,9 @@ struct SignalSubscriptionTests {
 
     @Test("an app cannot subscribe to itself into a loop")
     func selfSubscriptionIsDropped() {
-        #expect(SignalSubscription.parse(["app:raven/build.*"], excluding: "raven").isEmpty,
-                "an app already sees its own events via own(limit:)")
+        #expect(
+            SignalSubscription.parse(["app:raven/build.*"], excluding: "raven").isEmpty,
+            "an app already sees its own events via own(limit:)")
     }
 
     @Test("a human-readable description exists for the approval prompt")
@@ -99,7 +104,8 @@ struct SignalSubscriptionDescriptionTests {
         }
         #expect(try name("host/run.*") == "Ainkrad")
         #expect(try name("sage/*") == "Sage")
-        #expect(try name("app:raven/build.*") == nil,
-                "nothing here knows raven is called Raven")
+        #expect(
+            try name("app:raven/build.*") == nil,
+            "nothing here knows raven is called Raven")
     }
 }

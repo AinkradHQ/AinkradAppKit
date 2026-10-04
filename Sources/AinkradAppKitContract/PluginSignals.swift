@@ -1,5 +1,5 @@
-import Foundation
 @_exported import AinkradSignal
+import Foundation
 
 /// Lets an app record events in the host's Signal feed.
 ///
@@ -24,14 +24,15 @@ import Foundation
 /// plugin repos fake one in their test support. Adding to `HostServices` or to
 /// this protocol means updating those fakes in the same generation.
 @MainActor public protocol PluginSignalEmitter {
-    func emit(kind: String,
-              severity: SignalSeverity,
-              title: String,
-              body: String?,
-              importance: SignalImportance,
-              deepLink: SignalDeepLink?,
-              actions: [SignalAction],
-              dedupeKey: String?)
+    func emit(
+        kind: String,
+        severity: SignalSeverity,
+        title: String,
+        body: String?,
+        importance: SignalImportance,
+        deepLink: SignalDeepLink?,
+        actions: [SignalAction],
+        dedupeKey: String?)
 
     /// This app's own events, newest first.
     func own(limit: Int) -> [SignalEvent]
@@ -40,28 +41,33 @@ import Foundation
     /// the handler weakly through a register-once bridge and never tears it
     /// down; once the source is gone the invocation is a no-op. Same lifetime
     /// contract as `AgentActionProvider`, and the same bridge behind it.
-    func handleAction(_ actionID: String,
-                      _ handler: @escaping @MainActor () async -> Void) -> AgentActionToken
+    func handleAction(
+        _ actionID: String,
+        _ handler: @escaping @MainActor () async -> Void
+    ) -> AgentActionToken
     func removeActionHandler(_ token: AgentActionToken)
 }
 
-public extension PluginSignalEmitter {
+extension PluginSignalEmitter {
     /// The call most apps actually make.
     ///
     /// A default-argument *extension* rather than default arguments on the
     /// requirement: defaults on a protocol requirement are not part of the
     /// witness table, so a conformer could silently diverge from them. Here
     /// every conformer gets the same behaviour.
-    func emit(kind: String,
-              severity: SignalSeverity,
-              title: String,
-              body: String? = nil,
-              importance: SignalImportance = .normal,
-              deepLink: SignalDeepLink? = nil,
-              actions: [SignalAction] = [],
-              dedupeKey: String? = nil) {
-        emit(kind: kind, severity: severity, title: title, body: body,
-             importance: importance, deepLink: deepLink, actions: actions, dedupeKey: dedupeKey)
+    public func emit(
+        kind: String,
+        severity: SignalSeverity,
+        title: String,
+        body: String? = nil,
+        importance: SignalImportance = .normal,
+        deepLink: SignalDeepLink? = nil,
+        actions: [SignalAction] = [],
+        dedupeKey: String? = nil
+    ) {
+        emit(
+            kind: kind, severity: severity, title: title, body: body,
+            importance: importance, deepLink: deepLink, actions: actions, dedupeKey: dedupeKey)
     }
 }
 
@@ -71,12 +77,16 @@ public extension PluginSignalEmitter {
 /// emission never becomes the caller's problem.
 @MainActor public final class NoopSignalEmitter: PluginSignalEmitter {
     public init() {}
-    public func emit(kind: String, severity: SignalSeverity, title: String, body: String?,
-                     importance: SignalImportance, deepLink: SignalDeepLink?,
-                     actions: [SignalAction], dedupeKey: String?) {}
+    public func emit(
+        kind: String, severity: SignalSeverity, title: String, body: String?,
+        importance: SignalImportance, deepLink: SignalDeepLink?,
+        actions: [SignalAction], dedupeKey: String?
+    ) {}
     public func own(limit: Int) -> [SignalEvent] { [] }
-    public func handleAction(_ actionID: String,
-                             _ handler: @escaping @MainActor () async -> Void) -> AgentActionToken {
+    public func handleAction(
+        _ actionID: String,
+        _ handler: @escaping @MainActor () async -> Void
+    ) -> AgentActionToken {
         AgentActionToken()
     }
     public func removeActionHandler(_ token: AgentActionToken) {}

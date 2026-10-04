@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradSignal
+import SwiftUI
 
 @MainActor
 @Observable
@@ -73,7 +73,8 @@ public final class SignalToastModel {
     /// "×3" with the newest text, not three toasts pushing everything else out.
     public func present(_ event: SignalEvent) {
         guard !visible.contains(where: { $0.id == event.id }),
-              !queued.contains(where: { $0.id == event.id }) else { return }
+            !queued.contains(where: { $0.id == event.id })
+        else { return }
 
         if let key = event.dedupeKey {
             let isRepeat: (SignalEvent) -> Bool = { $0.dedupeKey == key && $0.source == event.source }
@@ -150,17 +151,22 @@ public final class SignalToastModel {
 
     public func resume(id: UUID, now: Date = Date()) {
         guard let remaining = heldRemaining.removeValue(forKey: id),
-              visible.contains(where: { $0.id == id }) else { return }
+            visible.contains(where: { $0.id == id })
+        else { return }
         deadlines[id] = now.addingTimeInterval(remaining)
         scheduleSweep()
     }
 
     /// How much of its life a toast has left, 0...1. Drives the hairline, and
     /// is a pure function so the bar can be tested without waiting.
-    public func remainingFraction(id: UUID, severity: SignalSeverity,
-                                  now: Date = Date()) -> Double? {
+    public func remainingFraction(
+        id: UUID, severity: SignalSeverity,
+        now: Date = Date()
+    ) -> Double? {
         let event = visible.first { $0.id == id }
-        guard let total = event.map(Self.autoDismissDelay(for:)) ?? Self.autoDismissDelay(for: severity) else { return nil }
+        guard let total = event.map(Self.autoDismissDelay(for:)) ?? Self.autoDismissDelay(for: severity) else {
+            return nil
+        }
         if let held = heldRemaining[id] { return min(1, max(0, held / total)) }
         guard let deadline = deadlines[id] else { return nil }
         return min(1, max(0, deadline.timeIntervalSince(now) / total))
@@ -207,9 +213,11 @@ public struct SignalToastStack: View {
     /// Explicit, because a public struct's implicit memberwise
     /// initialiser is INTERNAL — the components were public and
     /// unconstructible outside the module until this existed.
-    public init(model: SignalToastModel,
-                now: Date = Date(),
-                onActivate: @escaping (SignalEvent) -> Void = { _ in }) {
+    public init(
+        model: SignalToastModel,
+        now: Date = Date(),
+        onActivate: @escaping (SignalEvent) -> Void = { _ in }
+    ) {
         self.model = model
         self.now = now
         self.onActivate = onActivate
@@ -217,10 +225,12 @@ public struct SignalToastStack: View {
 
     /// Separate, not a defaulted parameter — library evolution, same reason as
     /// `SignalFeedRow`'s.
-    public init(model: SignalToastModel,
-                now: Date,
-                onActivate: @escaping (SignalEvent) -> Void,
-                onAction: @escaping (SignalEvent, SignalAction) -> Void) {
+    public init(
+        model: SignalToastModel,
+        now: Date,
+        onActivate: @escaping (SignalEvent) -> Void,
+        onAction: @escaping (SignalEvent, SignalAction) -> Void
+    ) {
         self.model = model
         self.now = now
         self.onActivate = onActivate
@@ -244,30 +254,36 @@ public struct SignalToastStack: View {
         VStack(alignment: .trailing, spacing: 8) {
             ForEach(model.visible) { event in
                 toast(event)
-                    .transition(reduceMotion
-                        ? .opacity
-                        : .asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            // Shrinking away toward the corner the bell lives
-                            // in: the dismissal is where the user learns that
-                            // notifications go somewhere rather than vanish.
-                            removal: .opacity.combined(with: .scale(scale: 0.7))
-                                .combined(with: .offset(x: 40, y: -60))))
+                    .transition(
+                        reduceMotion
+                            ? .opacity
+                            : .asymmetric(
+                                insertion: .move(edge: .trailing).combined(with: .opacity),
+                                // Shrinking away toward the corner the bell lives
+                                // in: the dismissal is where the user learns that
+                                // notifications go somewhere rather than vanish.
+                                removal: .opacity.combined(with: .scale(scale: 0.7))
+                                    .combined(with: .offset(x: 40, y: -60))))
             }
             // Below the stack, not above it: the chip counts what is WAITING,
             // so it belongs after the toasts it is queued behind. Above them it
             // read as a badge hanging off whatever sits over the stack.
             if model.overflowCount > 0 {
-                AinkradBadge(text: "+\(model.overflowCount) more",
-                             tint: theme.accentSecondary)
-                    .transition(.opacity)
+                AinkradBadge(
+                    text: "+\(model.overflowCount) more",
+                    tint: theme.accentSecondary
+                )
+                .transition(.opacity)
             }
         }
         .padding(16)
-        .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.82),
-                   value: model.visible.map(\.id))
-        .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.82),
-                   value: model.overflowCount)
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.82),
+            value: model.visible.map(\.id)
+        )
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.82),
+            value: model.overflowCount)
     }
 
     /// A thin remaining-time hairline. Only while hovered — a countdown on
@@ -275,12 +291,16 @@ public struct SignalToastStack: View {
     @ViewBuilder
     private func dwellBar(_ event: SignalEvent) -> some View {
         if hovered == event.id,
-           let fraction = model.remainingFraction(id: event.id, severity: event.severity,
-                                                  now: now) {
+            let fraction = model.remainingFraction(
+                id: event.id, severity: event.severity,
+                now: now)
+        {
             GeometryReader { geo in
                 Rectangle()
-                    .fill(SignalPresentation.color(for: event.severity, in: status)
-                        .opacity(0.7))
+                    .fill(
+                        SignalPresentation.color(for: event.severity, in: status)
+                            .opacity(0.7)
+                    )
                     .frame(width: geo.size.width * fraction, height: 1.5)
                     .frame(maxHeight: .infinity, alignment: .bottom)
             }
@@ -294,7 +314,9 @@ public struct SignalToastStack: View {
     /// An action without a symbol gets a generic one.
     private func toastAction(_ event: SignalEvent, _ action: SignalAction) -> some View {
         let tint = action.isDestructive ? status.danger : theme.accentPrimary
-        return Button { onAction(event, action) } label: {
+        return Button {
+            onAction(event, action)
+        } label: {
             Image(systemName: action.symbol ?? "arrow.up.forward.circle")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(tint)
@@ -360,11 +382,13 @@ public struct SignalToastStack: View {
         HStack(spacing: AinkradSpacing.xs + 1) {
             ForEach(Array(event.actions.prefix(2)), id: \.id) { action in toastAction(event, action) }
             if !more.isEmpty {
-                AinkradMenuButton(items: more.map { action in
-                    AinkradMenuItem(title: action.label, isDestructive: action.isDestructive) {
-                        onAction(event, action)
+                AinkradMenuButton(
+                    items: more.map { action in
+                        AinkradMenuItem(title: action.label, isDestructive: action.isDestructive) {
+                            onAction(event, action)
+                        }
                     }
-                }) {
+                ) {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(theme.foreground.opacity(0.6))
@@ -405,7 +429,9 @@ public struct SignalToastStack: View {
                         .font(AinkradFontResolver.font(size: 10, typography: typo))
                         .foregroundStyle(theme.foreground.opacity(0.4))
                     if overflowing.contains(event.id) || expanded.contains(event.id) {
-                        Button { toggleExpanded(event) } label: {
+                        Button {
+                            toggleExpanded(event)
+                        } label: {
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 9, weight: .bold))
                                 .foregroundStyle(theme.foreground.opacity(isHovered ? 0.7 : 0.4))
@@ -447,12 +473,14 @@ public struct SignalToastStack: View {
                                     .fixedSize(horizontal: false, vertical: true)
                                     .frame(width: oneLine.size.width, alignment: .leading)
                                     .hidden()
-                                    .background(GeometryReader { full in
-                                        Color.clear.preference(
-                                            key: ToastBodyOverflowKey.self,
-                                            value: full.size.height > (expanded.contains(event.id) ? 0 : oneLine.size.height) + 1
-                                                ? [event.id] : [])
-                                    })
+                                    .background(
+                                        GeometryReader { full in
+                                            Color.clear.preference(
+                                                key: ToastBodyOverflowKey.self,
+                                                value: full.size.height
+                                                    > (expanded.contains(event.id) ? 0 : oneLine.size.height) + 1
+                                                    ? [event.id] : [])
+                                        })
                             }
                             .allowsHitTesting(false)
                         }
@@ -475,8 +503,11 @@ public struct SignalToastStack: View {
         // Chamfered and accent-stroked like every other Ainkrad surface; a
         // continuous rounded rectangle read as a foreign toast library.
         .background(ChamferShape(cut: AinkradRadius.md).fill(theme.surfaceElevated))
-        .overlay(ChamferShape(cut: AinkradRadius.md)
-            .strokeBorder(accent.opacity(event.severity == .failure ? 0.55 : (isHovered ? 0.45 : 0.28)), lineWidth: 1))
+        .overlay(
+            ChamferShape(cut: AinkradRadius.md)
+                .strokeBorder(
+                    accent.opacity(event.severity == .failure ? 0.55 : (isHovered ? 0.45 : 0.28)), lineWidth: 1)
+        )
         // Severity as an edge, not a second icon: the app icon says who, the
         // edge says how bad. Info has none, so a quiet message stays quiet.
         .overlay(alignment: .leading) {
@@ -486,25 +517,31 @@ public struct SignalToastStack: View {
             }
         }
         .animation(reduceMotion ? nil : AinkradMotion.hover, value: isHovered)
-        .animation(reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86),
-                   value: expanded.contains(event.id))
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86),
+            value: expanded.contains(event.id)
+        )
         .onPreferenceChange(ToastBodyOverflowKey.self) { ids in
-            if ids.contains(event.id) { overflowing.insert(event.id) }
-            else if !expanded.contains(event.id) { overflowing.remove(event.id) }
+            if ids.contains(event.id) {
+                overflowing.insert(event.id)
+            } else if !expanded.contains(event.id) {
+                overflowing.remove(event.id)
+            }
         }
         // The clock stops while the pointer is over it: an eight-second
         // warning expiring mid-read is the most irritating thing a toast does.
         .onHover { isOver in
             hovered = isOver ? event.id : nil
-            if isOver { model.pause(id: event.id) }
-            else if !expanded.contains(event.id) { model.resume(id: event.id) }
+            if isOver { model.pause(id: event.id) } else if !expanded.contains(event.id) { model.resume(id: event.id) }
         }
         .overlay(alignment: .bottom) { dwellBar(event) }
         .contentShape(ChamferShape(cut: AinkradRadius.md))
         .onTapGesture { onActivate(event) }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(SignalPresentation.accessibilityLabel(
-            for: event, repeatCount: model.repeatCount(for: event.id), isUnread: true, now: now))
+        .accessibilityLabel(
+            SignalPresentation.accessibilityLabel(
+                for: event, repeatCount: model.repeatCount(for: event.id), isUnread: true, now: now)
+        )
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onActivate(event) }
         .accessibilityActions {

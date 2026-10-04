@@ -48,9 +48,9 @@ extension SignalStore {
     public func kindActivity(for source: SignalSource, since: Date?) -> [SignalKindActivity] {
         let (sourceKind, appID) = Self.decompose(source)
         var sql = """
-        SELECT kind, COUNT(*) AS n, MAX(timestamp) AS last FROM events
-        WHERE source_kind = ? AND source_app_id IS ?
-        """
+            SELECT kind, COUNT(*) AS n, MAX(timestamp) AS last FROM events
+            WHERE source_kind = ? AND source_app_id IS ?
+            """
         if since != nil { sql += " AND timestamp >= ?" }
         sql += " GROUP BY kind ORDER BY last DESC;"
 
@@ -67,10 +67,11 @@ extension SignalStore {
         var out: [SignalKindActivity] = []
         while sqlite3_step(stmt) == SQLITE_ROW {
             guard let kindText = Self.text(stmt, 0) else { continue }
-            out.append(SignalKindActivity(
-                kind: kindText,
-                count: Int(sqlite3_column_int(stmt, 1)),
-                lastSeen: Self.date(sqlite3_column_double(stmt, 2))))
+            out.append(
+                SignalKindActivity(
+                    kind: kindText,
+                    count: Int(sqlite3_column_int(stmt, 1)),
+                    lastSeen: Self.date(sqlite3_column_double(stmt, 2))))
         }
         return out
     }

@@ -1,6 +1,7 @@
-import Testing
-import Foundation
 import AinkradSignal
+import Foundation
+import Testing
+
 @testable import AinkradAppKitContract
 
 @MainActor
@@ -24,16 +25,22 @@ final class PluginSignalEmitterTests {
         var ownEvents: [SignalEvent] = []
         var handlers: [String: () async -> Void] = [:]
 
-        func emit(kind: String, severity: SignalSeverity, title: String, body: String?,
-                  importance: SignalImportance, deepLink: SignalDeepLink?,
-                  actions: [SignalAction], dedupeKey: String?) {
-            emitted.append(Call(kind: kind, severity: severity, title: title, body: body,
-                                importance: importance, deepLink: deepLink,
-                                actions: actions, dedupeKey: dedupeKey))
+        func emit(
+            kind: String, severity: SignalSeverity, title: String, body: String?,
+            importance: SignalImportance, deepLink: SignalDeepLink?,
+            actions: [SignalAction], dedupeKey: String?
+        ) {
+            emitted.append(
+                Call(
+                    kind: kind, severity: severity, title: title, body: body,
+                    importance: importance, deepLink: deepLink,
+                    actions: actions, dedupeKey: dedupeKey))
         }
         func own(limit: Int) -> [SignalEvent] { Array(ownEvents.prefix(limit)) }
-        func handleAction(_ actionID: String,
-                          _ handler: @escaping @MainActor () async -> Void) -> AgentActionToken {
+        func handleAction(
+            _ actionID: String,
+            _ handler: @escaping @MainActor () async -> Void
+        ) -> AgentActionToken {
             handlers[actionID] = handler
             return AgentActionToken()
         }
@@ -67,8 +74,9 @@ final class PluginSignalEmitterTests {
     func ownRespectsLimit() {
         let emitter = StubEmitter()
         emitter.ownEvents = (0..<10).map {
-            SignalEvent(source: .app(appID: "x"), kind: "test.event",
-                        severity: .info, title: "e\($0)")
+            SignalEvent(
+                source: .app(appID: "x"), kind: "test.event",
+                severity: .info, title: "e\($0)")
         }
         #expect(emitter.own(limit: 3).count == 3)
     }

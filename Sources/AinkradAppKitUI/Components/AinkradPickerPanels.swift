@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Hosted content of `AinkradSelect`/`AinkradMultiSelect`/
 /// `AinkradSearchableSelect`'s floating panels.
@@ -100,7 +100,9 @@ struct MultiSelectPanelView<T: Hashable>: View {
             }
             .padding(.horizontal, AinkradSpacing.sm)
             .padding(.vertical, AinkradSpacing.xs + 2)
-            .background(ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear))
+            .background(
+                ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -219,7 +221,9 @@ struct SearchableSelectPanelView<T: Hashable>: View {
             }
             .padding(.horizontal, AinkradSpacing.sm)
             .padding(.vertical, AinkradSpacing.xs + 2)
-            .background(ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear))
+            .background(
+                ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

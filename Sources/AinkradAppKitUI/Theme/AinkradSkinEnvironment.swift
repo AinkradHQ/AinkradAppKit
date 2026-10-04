@@ -1,19 +1,19 @@
+import AinkradAppKitContract
 import AppKit
 import SwiftUI
-import AinkradAppKitContract
 
-public extension EnvironmentValues {
+extension EnvironmentValues {
     /// The stored skin. Set via `.ainkradSkin(_:)`; forwarded across the
     /// `NSPanel` boundary by hand (see `AinkradFloatingPanelModifier` and
     /// `ainkradMenuEnvironment`), because SwiftUI's environment does not cross
     /// a window boundary on its own.
-    @Entry var ainkradSkinStorage: AinkradSkin = .standard
+    @Entry public var ainkradSkinStorage: AinkradSkin = .standard
 
     /// The effective skin: the stored skin overlaid with the legacy theme and
     /// status-colour keys, which stay authoritative for the 11 colours they
     /// carry so already-installed plugins and the Gallery's subtree theme
     /// overrides keep recolouring kit components exactly as before.
-    var ainkradSkin: AinkradSkin {
+    public var ainkradSkin: AinkradSkin {
         var skin = ainkradSkinStorage
         skin.palette = overlaidSkinPalette(
             base: skin.palette, theme: ainkradTheme, status: ainkradStatusColors)
@@ -21,11 +21,11 @@ public extension EnvironmentValues {
     }
 }
 
-public extension View {
+extension View {
     /// Installs `skin` as the stored skin and derives the legacy
     /// `ainkradTheme` / `ainkradStatusColors` keys from it, so readers of
     /// either the new or the old keys see one consistent theme.
-    func ainkradSkin(_ skin: AinkradSkin) -> some View {
+    public func ainkradSkin(_ skin: AinkradSkin) -> some View {
         modifier(AinkradSkinModifier(skin: skin))
     }
 }
@@ -43,10 +43,10 @@ private struct AinkradSkinModifier: ViewModifier {
     }
 }
 
-public extension HostThemeTokens {
+extension HostThemeTokens {
     /// Derives the legacy theme tokens from a skin. `themeID` is the skin's
     /// id, because Rune keys its terminal palette on `themeID`.
-    init(skin: AinkradSkin) {
+    public init(skin: AinkradSkin) {
         self.init(
             themeID: skin.id,
             background: skinBaseColor(skin.palette.background, in: skin.palette),
@@ -60,9 +60,9 @@ public extension HostThemeTokens {
     }
 }
 
-public extension AinkradStatusColors {
+extension AinkradStatusColors {
     /// Derives the status colours from a skin's palette.
-    init(skin: AinkradSkin) {
+    public init(skin: AinkradSkin) {
         self.init(
             success: skinBaseColor(skin.palette.success, in: skin.palette),
             warning: skinBaseColor(skin.palette.warning, in: skin.palette),

@@ -1,6 +1,7 @@
-import Testing
 import Foundation
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKitUI
 
 @Suite("AinkradSettingsPanel")
@@ -8,9 +9,9 @@ import SwiftUI
 struct SettingsPanelTests {
     private var source: String {
         let path = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()      // AinkradAppKitTests
-            .deletingLastPathComponent()      // Tests
-            .deletingLastPathComponent()      // package root
+            .deletingLastPathComponent()  // AinkradAppKitTests
+            .deletingLastPathComponent()  // Tests
+            .deletingLastPathComponent()  // package root
             .appendingPathComponent("Sources/AinkradAppKitUI/Components/AinkradSettingsPanel.swift")
         return (try? String(contentsOf: path, encoding: .utf8)) ?? ""
     }

@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradSignal
+import SwiftUI
 
 /// One entry in the feed's source rail.
 public struct SignalSourceRailItem: Identifiable, Equatable {
@@ -16,8 +16,10 @@ public struct SignalSourceRailItem: Identifiable, Equatable {
         return "\(source)"
     }
 
-    public init(source: SignalSource?, name: String, unread: Int,
-                worstUnread: SignalSeverity?) {
+    public init(
+        source: SignalSource?, name: String, unread: Int,
+        worstUnread: SignalSeverity?
+    ) {
         self.source = source
         self.name = name
         self.unread = unread
@@ -28,9 +30,11 @@ public struct SignalSourceRailItem: Identifiable, Equatable {
     ///
     /// Pure, so the ordering and the severity roll-up are testable without
     /// rendering — they are the part with the decisions in them.
-    public static func build(events: [SignalEvent],
-                             readIDs: Set<UUID>,
-                             name: (SignalSource) -> String) -> [SignalSourceRailItem] {
+    public static func build(
+        events: [SignalEvent],
+        readIDs: Set<UUID>,
+        name: (SignalSource) -> String
+    ) -> [SignalSourceRailItem] {
         var order: [SignalSource] = []
         var unread: [SignalSource: Int] = [:]
         var worst: [SignalSource: SignalSeverity] = [:]
@@ -61,10 +65,12 @@ public struct SignalSourceRailItem: Identifiable, Equatable {
             source: nil, name: "All",
             unread: unread.values.reduce(0, +),
             worstUnread: worst.values.max(by: { rank($0) < rank($1) }))
-        return [all] + sources.map {
-            SignalSourceRailItem(source: $0, name: name($0),
-                                 unread: unread[$0] ?? 0, worstUnread: worst[$0])
-        }
+        return [all]
+            + sources.map {
+                SignalSourceRailItem(
+                    source: $0, name: name($0),
+                    unread: unread[$0] ?? 0, worstUnread: worst[$0])
+            }
     }
 
     /// Explicit, not `CaseIterable`'s index: that is a declaration detail and
@@ -89,9 +95,11 @@ public struct SignalSourceRail: View {
     @Binding public var selection: SignalSource?
     public var onConfigure: (SignalSource) -> Void = { _ in }
 
-    public init(items: [SignalSourceRailItem],
-                selection: Binding<SignalSource?>,
-                onConfigure: @escaping (SignalSource) -> Void = { _ in }) {
+    public init(
+        items: [SignalSourceRailItem],
+        selection: Binding<SignalSource?>,
+        onConfigure: @escaping (SignalSource) -> Void = { _ in }
+    ) {
         self.items = items
         self._selection = selection
         self.onConfigure = onConfigure
@@ -104,10 +112,11 @@ public struct SignalSourceRail: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             ForEach(items) { item in
-                SignalSourceRailRow(item: item,
-                                    isSelected: selection == item.source,
-                                    onSelect: { selection = item.source },
-                                    onConfigure: onConfigure)
+                SignalSourceRailRow(
+                    item: item,
+                    isSelected: selection == item.source,
+                    onSelect: { selection = item.source },
+                    onConfigure: onConfigure)
             }
             Spacer(minLength: 0)
         }
@@ -158,24 +167,34 @@ private struct SignalSourceRailRow: View {
         Button(action: onSelect) {
             HStack(spacing: AinkradSpacing.xs + 2) {
                 Circle()
-                    .fill(item.worstUnread.map {
-                        SignalPresentation.status(for: $0).color(in: theme, statusColors: status)
-                    } ?? .clear)
+                    .fill(
+                        item.worstUnread.map {
+                            SignalPresentation.status(for: $0).color(in: theme, statusColors: status)
+                        } ?? .clear
+                    )
                     .frame(width: 5, height: 5)
                 Text(item.name)
-                    .font(AinkradFontResolver.font(size: 11.5,
-                                                   weight: isSelected ? .semibold : .regular,
-                                                   typography: typo))
-                    .foregroundStyle(theme.foreground
-                        .opacity(isSelected ? 1 : (isHovered ? 0.9 : 0.72)))
+                    .font(
+                        AinkradFontResolver.font(
+                            size: 11.5,
+                            weight: isSelected ? .semibold : .regular,
+                            typography: typo)
+                    )
+                    .foregroundStyle(
+                        theme.foreground
+                            .opacity(isSelected ? 1 : (isHovered ? 0.9 : 0.72))
+                    )
                     .lineLimit(1)
                 Spacer(minLength: AinkradSpacing.xs)
                 if item.unread > 0 {
                     // Mono and digit-locked: the counts form a column, and a
                     // proportional face makes that column wobble.
                     Text(item.unread > 99 ? "99+" : "\(item.unread)")
-                        .font(AinkradFontResolver.font(size: 9.5, weight: .medium,
-                                                       mono: true, typography: typo))
+                        .font(
+                            AinkradFontResolver.font(
+                                size: 9.5, weight: .medium,
+                                mono: true, typography: typo)
+                        )
                         .monospacedDigit()
                         .foregroundStyle(theme.foreground.opacity(0.5))
                 }
@@ -184,7 +203,8 @@ private struct SignalSourceRailRow: View {
             .padding(.vertical, AinkradSpacing.xs + 1)
             .background(
                 ChamferShape(cut: AinkradRadius.sm)
-                    .fill(theme.surfaceElevated.opacity(fillOpacity)))
+                    .fill(theme.surfaceElevated.opacity(fillOpacity))
+            )
             .overlay(alignment: .leading) {
                 // An accent edge, not a separator — the design language forbids
                 // rules, and selection still has to read instantly.
@@ -207,9 +227,13 @@ private struct SignalSourceRailRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(SignalSourceRail.label(for: item))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .ainkradContextMenu(item.source.map { source in
-            [AinkradMenuItem(title: "Notification settings\u{2026}", systemName: "slider.horizontal.3",
-                             action: { onConfigure(source) })]
-        } ?? [])
+        .ainkradContextMenu(
+            item.source.map { source in
+                [
+                    AinkradMenuItem(
+                        title: "Notification settings\u{2026}", systemName: "slider.horizontal.3",
+                        action: { onConfigure(source) })
+                ]
+            } ?? [])
     }
 }

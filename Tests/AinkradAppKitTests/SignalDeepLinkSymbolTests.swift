@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("SignalDeepLink symbol")
@@ -19,8 +20,10 @@ struct SignalDeepLinkSymbolTests {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("signal-\(UUID().uuidString).sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let store = try SignalStore(url: url)
-        _ = try store.insert(SignalEvent(source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
-                                         title: "Islam", deepLink: link))
+        _ = try store.insert(
+            SignalEvent(
+                source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
+                title: "Islam", deepLink: link))
         #expect(store.page(filter: .all, before: nil, limit: 1).first?.deepLink?.symbol == "phone.bubble")
     }
 }

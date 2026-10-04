@@ -1,21 +1,27 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("Signal routing")
 struct SignalRoutingTests {
-    private func event(_ severity: SignalSeverity,
-                       source: SignalSource = .host,
-                       kind: String = "test.event",
-                       importance: SignalImportance = .normal) -> SignalEvent {
-        SignalEvent(source: source, kind: kind, severity: severity,
-                    title: "t", proposedImportance: importance)
+    private func event(
+        _ severity: SignalSeverity,
+        source: SignalSource = .host,
+        kind: String = "test.event",
+        importance: SignalImportance = .normal
+    ) -> SignalEvent {
+        SignalEvent(
+            source: source, kind: kind, severity: severity,
+            title: "t", proposedImportance: importance)
     }
 
-    private let frontmost = DeliveryContext(hostIsFrontmost: true, visibleAppIDs: ["raven"],
-                                            systemDoNotDisturb: false, hostFocusMode: false)
-    private let away = DeliveryContext(hostIsFrontmost: false, visibleAppIDs: [],
-                                       systemDoNotDisturb: false, hostFocusMode: false)
+    private let frontmost = DeliveryContext(
+        hostIsFrontmost: true, visibleAppIDs: ["raven"],
+        systemDoNotDisturb: false, hostFocusMode: false)
+    private let away = DeliveryContext(
+        hostIsFrontmost: false, visibleAppIDs: [],
+        systemDoNotDisturb: false, hostFocusMode: false)
 
     @Test("the feed always receives the event, whatever the rules say")
     func feedIsUnconditional() {
@@ -29,8 +35,9 @@ struct SignalRoutingTests {
     func mutedSourceCannotInterrupt() {
         var rules = RoutingRules.default
         rules.mutedSources.insert(.app(appID: "raven"))
-        let channels = route(event(.failure, source: .app(appID: "raven"), importance: .urgent),
-                             rules: rules, context: away)
+        let channels = route(
+            event(.failure, source: .app(appID: "raven"), importance: .urgent),
+            rules: rules, context: away)
         #expect(channels == [.feed])
     }
 
@@ -46,8 +53,9 @@ struct SignalRoutingTests {
 
     @Test("do not disturb strips banner and sound but never feed or badge")
     func doNotDisturb() {
-        let dnd = DeliveryContext(hostIsFrontmost: false, visibleAppIDs: [],
-                                  systemDoNotDisturb: true, hostFocusMode: false)
+        let dnd = DeliveryContext(
+            hostIsFrontmost: false, visibleAppIDs: [],
+            systemDoNotDisturb: true, hostFocusMode: false)
         let channels = route(event(.failure), rules: .default, context: dnd)
         #expect(!channels.contains(.banner))
         #expect(!channels.contains(.sound))
@@ -75,8 +83,11 @@ struct SignalRoutingTests {
     func floorIsPerSource() {
         var rules = RoutingRules.default
         rules.interruptFloor[.app(appID: "raven")] = .failure
-        #expect(route(event(.warning, source: .host), rules: rules,
-                      context: away, now: .now).contains(.banner))
+        #expect(
+            route(
+                event(.warning, source: .host), rules: rules,
+                context: away, now: .now
+            ).contains(.banner))
     }
 
     @Test("an urgent event from a bypassing source clears the floor")
@@ -84,8 +95,9 @@ struct SignalRoutingTests {
         var rules = RoutingRules.default
         rules.interruptFloor[.app(appID: "rune")] = .failure
         rules.urgentBypass = [.app(appID: "rune")]
-        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
-                             rules: rules, context: away, now: .now)
+        let channels = route(
+            event(.info, source: .app(appID: "rune"), importance: .urgent),
+            rules: rules, context: away, now: .now)
         #expect(channels.contains(.banner))
     }
 
@@ -96,8 +108,10 @@ struct SignalRoutingTests {
         rules.interruptFloor[.app(appID: "raven")] = .failure
         // A floor is the user saying "not below this". An override they set
         // before must not resurrect what the floor just excluded.
-        #expect(route(event(.info, source: .app(appID: "raven")),
-                      rules: rules, context: away, now: .now) == [.feed])
+        #expect(
+            route(
+                event(.info, source: .app(appID: "raven")),
+                rules: rules, context: away, now: .now) == [.feed])
     }
 
     @Test("inside a suppression window nothing interrupts, but the count still moves")
@@ -131,8 +145,9 @@ struct SignalRoutingTests {
         var rules = RoutingRules.default
         rules.suppression.snoozedUntil = Date().addingTimeInterval(600)
         rules.urgentBypass = [.app(appID: "rune")]
-        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
-                             rules: rules, context: away, now: .now)
+        let channels = route(
+            event(.info, source: .app(appID: "rune"), importance: .urgent),
+            rules: rules, context: away, now: .now)
         #expect(channels.contains(.banner))
     }
 
@@ -159,11 +174,13 @@ struct SignalRoutingTests {
 
     @Test("rules written before the new fields existed still decode")
     func decodesPreControlFields() throws {
-        var object = try #require(try JSONSerialization.jsonObject(
-            with: JSONEncoder().encode(RoutingRules.default)) as? [String: Any])
+        var object = try #require(
+            try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(RoutingRules.default)) as? [String: Any])
         for key in ["interruptFloor", "soundOverride", "suppression"] {
-            #expect(object.removeValue(forKey: key) != nil,
-                    "\(key) must be present today, or this test proves nothing")
+            #expect(
+                object.removeValue(forKey: key) != nil,
+                "\(key) must be present today, or this test proves nothing")
         }
         let legacy = try JSONSerialization.data(withJSONObject: object)
         let rules = try JSONDecoder().decode(RoutingRules.self, from: legacy)
@@ -178,10 +195,12 @@ struct SignalRoutingTests {
         // by hand-writing JSON: `sourceOverrides` is keyed by a non-String
         // enum, so Swift encodes it as a flat array and not an object. A
         // hand-written fixture guessed that wrong and tested nothing.
-        var object = try #require(try JSONSerialization.jsonObject(
-            with: JSONEncoder().encode(RoutingRules.default)) as? [String: Any])
-        #expect(object.removeValue(forKey: "urgentBypass") != nil,
-                "the field must be present today, or this test proves nothing")
+        var object = try #require(
+            try JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(RoutingRules.default)) as? [String: Any])
+        #expect(
+            object.removeValue(forKey: "urgentBypass") != nil,
+            "the field must be present today, or this test proves nothing")
 
         let legacy = try JSONSerialization.data(withJSONObject: object)
         let rules = try JSONDecoder().decode(RoutingRules.self, from: legacy)
@@ -200,10 +219,12 @@ struct SignalRoutingTests {
 
     @Test("focus mode silences the toast and the chime, not only the banner")
     func focusSilencesEveryInterruptingChannel() {
-        let focused = DeliveryContext(hostIsFrontmost: true, visibleAppIDs: ["raven"],
-                                      systemDoNotDisturb: false, hostFocusMode: true)
-        let channels = route(event(.failure, source: .app(appID: "raven")),
-                             rules: .default, context: focused)
+        let focused = DeliveryContext(
+            hostIsFrontmost: true, visibleAppIDs: ["raven"],
+            systemDoNotDisturb: false, hostFocusMode: true)
+        let channels = route(
+            event(.failure, source: .app(appID: "raven")),
+            rules: .default, context: focused)
         #expect(!channels.contains(.toast))
         #expect(!channels.contains(.sound))
         #expect(!channels.contains(.banner))
@@ -214,10 +235,12 @@ struct SignalRoutingTests {
     func urgentBypassesFocus() {
         var rules = RoutingRules.default
         rules.urgentBypass = [.app(appID: "rune")]
-        let focused = DeliveryContext(hostIsFrontmost: true, visibleAppIDs: [],
-                                      systemDoNotDisturb: false, hostFocusMode: true)
-        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
-                             rules: rules, context: focused)
+        let focused = DeliveryContext(
+            hostIsFrontmost: true, visibleAppIDs: [],
+            systemDoNotDisturb: false, hostFocusMode: true)
+        let channels = route(
+            event(.info, source: .app(appID: "rune"), importance: .urgent),
+            rules: rules, context: focused)
         #expect(channels.contains(.toast))
         #expect(channels.contains(.feed))
     }
@@ -226,10 +249,12 @@ struct SignalRoutingTests {
     func bypassIsUrgentOnly() {
         var rules = RoutingRules.default
         rules.urgentBypass = [.app(appID: "rune")]
-        let focused = DeliveryContext(hostIsFrontmost: true, visibleAppIDs: [],
-                                      systemDoNotDisturb: false, hostFocusMode: true)
-        let channels = route(event(.warning, source: .app(appID: "rune")),
-                             rules: rules, context: focused)
+        let focused = DeliveryContext(
+            hostIsFrontmost: true, visibleAppIDs: [],
+            systemDoNotDisturb: false, hostFocusMode: true)
+        let channels = route(
+            event(.warning, source: .app(appID: "rune")),
+            rules: rules, context: focused)
         #expect(!channels.contains(.toast))
         #expect(!channels.contains(.sound))
     }
@@ -238,10 +263,12 @@ struct SignalRoutingTests {
     func bypassIsPerSource() {
         var rules = RoutingRules.default
         rules.urgentBypass = [.app(appID: "rune")]
-        let focused = DeliveryContext(hostIsFrontmost: true, visibleAppIDs: [],
-                                      systemDoNotDisturb: false, hostFocusMode: true)
-        let channels = route(event(.info, source: .app(appID: "raven"), importance: .urgent),
-                             rules: rules, context: focused)
+        let focused = DeliveryContext(
+            hostIsFrontmost: true, visibleAppIDs: [],
+            systemDoNotDisturb: false, hostFocusMode: true)
+        let channels = route(
+            event(.info, source: .app(appID: "raven"), importance: .urgent),
+            rules: rules, context: focused)
         #expect(!channels.contains(.toast))
         #expect(channels.contains(.feed))
     }
@@ -287,8 +314,9 @@ struct SignalRoutingTests {
         var rules = RoutingRules.default
         rules.sourceOverrides[.host] = [.feed]
         let channels = route(event(.info, importance: .urgent), rules: rules, context: frontmost)
-        #expect(channels == [.feed],
-                "the emitter proposes; the user decides — that is the whole design")
+        #expect(
+            channels == [.feed],
+            "the emitter proposes; the user decides — that is the whole design")
     }
 
     @Test("a muted source stays muted however urgent the emitter claims to be")
@@ -326,17 +354,20 @@ struct SignalRoutingTests {
         // sound to `.failure` alone, so without the urgent branch adding it
         // this is a silent interruption -- which is what shipped: the toast
         // appeared and nothing was heard.
-        let channels = route(event(.info, source: .app(appID: "rune"),
-                                   kind: "terminal.agent-attention", importance: .urgent),
-                             rules: RoutingRules(), context: frontmost)
+        let channels = route(
+            event(
+                .info, source: .app(appID: "rune"),
+                kind: "terminal.agent-attention", importance: .urgent),
+            rules: RoutingRules(), context: frontmost)
         #expect(channels.contains(.sound))
         #expect(channels.contains(.toast))
     }
 
     @Test("an urgent event is audible when the user is away, too")
     func urgentIsAudibleWhenAway() {
-        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
-                             rules: RoutingRules(), context: away)
+        let channels = route(
+            event(.info, source: .app(appID: "rune"), importance: .urgent),
+            rules: RoutingRules(), context: away)
         #expect(channels.contains(.sound))
         #expect(channels.contains(.banner))
     }
@@ -348,26 +379,31 @@ struct SignalRoutingTests {
         // still gets the last word.
         var rules = RoutingRules()
         let now = Date()
-        rules.suppression = SuppressionWindow(mode: .everything,
-                                              snoozedUntil: now.addingTimeInterval(3600))
-        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
-                             rules: rules, context: frontmost, now: now)
+        rules.suppression = SuppressionWindow(
+            mode: .everything,
+            snoozedUntil: now.addingTimeInterval(3600))
+        let channels = route(
+            event(.info, source: .app(appID: "rune"), importance: .urgent),
+            rules: rules, context: frontmost, now: now)
         #expect(!channels.contains(.sound))
     }
 
     @Test("urgent does NOT chime through Focus")
     func urgentStaysQuietDuringFocus() {
-        let focus = DeliveryContext(hostIsFrontmost: true, visibleAppIDs: [],
-                                    systemDoNotDisturb: false, hostFocusMode: true)
-        let channels = route(event(.info, source: .app(appID: "rune"), importance: .urgent),
-                             rules: RoutingRules(), context: focus)
+        let focus = DeliveryContext(
+            hostIsFrontmost: true, visibleAppIDs: [],
+            systemDoNotDisturb: false, hostFocusMode: true)
+        let channels = route(
+            event(.info, source: .app(appID: "rune"), importance: .urgent),
+            rules: RoutingRules(), context: focus)
         #expect(!channels.contains(.sound))
     }
 
     @Test("a background event stays silent no matter what")
     func backgroundStaysSilent() {
-        let channels = route(event(.failure, source: .app(appID: "rune"), importance: .background),
-                             rules: RoutingRules(), context: frontmost)
+        let channels = route(
+            event(.failure, source: .app(appID: "rune"), importance: .background),
+            rules: RoutingRules(), context: frontmost)
         #expect(!channels.contains(.sound))
     }
 }

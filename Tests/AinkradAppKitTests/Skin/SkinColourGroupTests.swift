@@ -1,7 +1,8 @@
-// design-lint: allow-file hex-color,raw-color,radius-literal,font-size,padding-literal,spacing-literal,opacity-literal,frame-literal,chamfer-literal,motion-literal theme layer — skin colour group tests
-import Testing
 import Foundation
 import SwiftUI
+// design-lint: allow-file hex-color,raw-color,radius-literal,font-size,padding-literal,spacing-literal,opacity-literal,frame-literal,chamfer-literal,motion-literal theme layer — skin colour group tests
+import Testing
+
 @testable import AinkradAppKitUI
 
 @Suite("SkinColourGroupTests")

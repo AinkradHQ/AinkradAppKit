@@ -1,7 +1,7 @@
-import SwiftUI
-import Observation
-import Foundation
 import AinkradAppKitContract
+import Foundation
+import Observation
+import SwiftUI
 
 /// A single queued toast — identity, message, status color, and the instant
 /// it should auto-dismiss.
@@ -58,8 +58,8 @@ public final class AinkradToastCenter {
     }
 }
 
-public extension EnvironmentValues {
-    @Entry var ainkradToastCenter: AinkradToastCenter = AinkradToastCenter()
+extension EnvironmentValues {
+    @Entry public var ainkradToastCenter: AinkradToastCenter = AinkradToastCenter()
 }
 
 /// A single toast bubble — chamfer chip with a status-colored icon, tuned to
@@ -135,16 +135,16 @@ private struct AinkradToastHostModifier: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Renders the `\.ainkradToastCenter` queue as a materializing, top-right
     /// stack overlaid on this view. Mount once near the root of a window.
-    func ainkradToastHost() -> some View {
+    public func ainkradToastHost() -> some View {
         modifier(AinkradToastHostModifier())
     }
 }
 
-private extension AinkradStatus {
-    var iconName: String {
+extension AinkradStatus {
+    fileprivate var iconName: String {
         switch self {
         case .neutral: return "info.circle"
         case .success: return "checkmark.circle"

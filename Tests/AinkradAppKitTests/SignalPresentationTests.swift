@@ -1,14 +1,18 @@
-import Testing
-import Foundation
 import AinkradSignal
+import Foundation
+import Testing
+
 @testable import AinkradAppKitUI
 
 @Suite("Signal feed formatting")
 struct SignalFeedFormattingTests {
-    private func event(_ title: String, at seconds: TimeInterval,
-                       severity: SignalSeverity = .info) -> SignalEvent {
-        SignalEvent(timestamp: Date(timeIntervalSince1970: seconds), source: .host,
-                    kind: "test.event", severity: severity, title: title)
+    private func event(
+        _ title: String, at seconds: TimeInterval,
+        severity: SignalSeverity = .info
+    ) -> SignalEvent {
+        SignalEvent(
+            timestamp: Date(timeIntervalSince1970: seconds), source: .host,
+            kind: "test.event", severity: severity, title: title)
     }
 
     @Test("relative time is terse and never says '0 seconds ago'")
@@ -25,7 +29,7 @@ struct SignalFeedFormattingTests {
     func dayGrouping() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "UTC")!
-        let day0: TimeInterval = 1_756_684_800   // 2026-09-01 00:00 UTC
+        let day0: TimeInterval = 1_756_684_800  // 2026-09-01 00:00 UTC
         let events = [
             event("today-early", at: day0 + 3600),
             event("today-late", at: day0 + 7200),
@@ -46,8 +50,10 @@ struct SignalFeedFormattingTests {
 
     @Test("a row built with the original initialiser has no menu")
     func defaultRowHasNoMenu() {
-        let row = SignalFeedRow(event: SignalEvent(source: .host, kind: "k",
-                                                   severity: .info, title: "t"))
+        let row = SignalFeedRow(
+            event: SignalEvent(
+                source: .host, kind: "k",
+                severity: .info, title: "t"))
         // The old initialiser must keep working unchanged: it is public API in
         // a library-evolution module, and anything already linked against it
         // resolves the mangled symbol at load time, not at compile time.
@@ -57,8 +63,9 @@ struct SignalFeedFormattingTests {
     @Test("a row built with the menu initialiser carries its items")
     func menuRowCarriesItems() {
         let row = SignalFeedRow(
-            event: SignalEvent(source: .app(appID: "raven"), kind: "build.failed",
-                               severity: .failure, title: "t"),
+            event: SignalEvent(
+                source: .app(appID: "raven"), kind: "build.failed",
+                severity: .failure, title: "t"),
             repeatCount: 1, isUnread: true, now: Date(),
             onActivate: { _ in }, onAction: { _, _ in },
             menuItems: { event in
@@ -69,8 +76,10 @@ struct SignalFeedFormattingTests {
 
     @Test("a row built the original way neither pins nor expands")
     func originalRowUnchanged() {
-        let row = SignalFeedRow(event: SignalEvent(source: .host, kind: "k",
-                                                   severity: .info, title: "t"))
+        let row = SignalFeedRow(
+            event: SignalEvent(
+                source: .host, kind: "k",
+                severity: .info, title: "t"))
         // The old initialisers are public API in a library-evolution module:
         // anything already linked resolves their mangled symbols at load time.
         #expect(row.isPinned == false)

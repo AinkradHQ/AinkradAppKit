@@ -57,7 +57,8 @@ public struct AinkradDisclosureGroup<Content: View>: View {
                 .padding(.horizontal, AinkradSpacing.sm)
                 .background(
                     ChamferShape(cut: AinkradRadius.sm)
-                        .fill(theme.surfaceElevated.opacity(isHovered ? 0.5 : 0)))
+                        .fill(theme.surfaceElevated.opacity(isHovered ? 0.5 : 0))
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -70,7 +71,8 @@ public struct AinkradDisclosureGroup<Content: View>: View {
                     .transition(reduceMotion ? .identity : .opacity)
             }
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: AinkradMotion.durationBase),
-                   value: isExpanded.wrappedValue)
+        .animation(
+            reduceMotion ? nil : .easeOut(duration: AinkradMotion.durationBase),
+            value: isExpanded.wrappedValue)
     }
 }

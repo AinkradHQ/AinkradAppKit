@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("Signal health")
@@ -10,10 +11,13 @@ struct SignalHealthTests {
         return (try SignalStore(url: url), url)
     }
     private let epoch = Date(timeIntervalSince1970: 1_000_000)
-    private func event(_ kind: String, at offset: TimeInterval = 0,
-                       source: SignalSource = .app(appID: "raven")) -> SignalEvent {
-        SignalEvent(timestamp: epoch.addingTimeInterval(offset), source: source,
-                    kind: kind, severity: .info, title: kind)
+    private func event(
+        _ kind: String, at offset: TimeInterval = 0,
+        source: SignalSource = .app(appID: "raven")
+    ) -> SignalEvent {
+        SignalEvent(
+            timestamp: epoch.addingTimeInterval(offset), source: source,
+            kind: kind, severity: .info, title: kind)
     }
 
     @Test("an empty window reports nothing rather than zero percent read")
@@ -31,7 +35,9 @@ struct SignalHealthTests {
     func readRate() throws {
         let (store, url) = try makeStore()
         defer { try? FileManager.default.removeItem(at: url) }
-        let a = event("a"), b = event("b"), c = event("c", at: 1)
+        let a = event("a")
+        let b = event("b")
+        let c = event("c", at: 1)
         for e in [a, b, c] { _ = try store.insert(e) }
         store.markRead(ids: [a.id])
 
@@ -45,8 +51,9 @@ struct SignalHealthTests {
         let (store, url) = try makeStore()
         defer { try? FileManager.default.removeItem(at: url) }
         _ = try store.insert(event("a"))
-        #expect(store.health(since: epoch.addingTimeInterval(-10))
-            .medianAcknowledgeSeconds == nil)
+        #expect(
+            store.health(since: epoch.addingTimeInterval(-10))
+                .medianAcknowledgeSeconds == nil)
     }
 
     @Test("the window excludes anything older than it")
@@ -103,8 +110,9 @@ struct SignalHealthTests {
             _ = try store.insert(e)
             store.markRead(ids: [e.id])
             // markRead stamps `now`, so rewrite the stamp to a known delay.
-            try store.setReadStampForTesting(id: e.id,
-                                             at: e.timestamp.addingTimeInterval(delay))
+            try store.setReadStampForTesting(
+                id: e.id,
+                at: e.timestamp.addingTimeInterval(delay))
         }
         let median = store.health(since: epoch.addingTimeInterval(-10))
             .medianAcknowledgeSeconds
@@ -119,8 +127,9 @@ struct SignalHealthTests {
         _ = try store.insert(event("sync.failed"))
         _ = try store.insert(event("sync.failed", at: 1))
 
-        let top = try #require(store.health(since: epoch.addingTimeInterval(-10))
-            .noisiest.first)
+        let top = try #require(
+            store.health(since: epoch.addingTimeInterval(-10))
+                .noisiest.first)
 
         // Overrides are keyed by (source, kind). Without the source a mute
         // control has to guess, and a wrong guess is a button that appears to

@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Toggles a command-menu selection: tapping the already-selected item clears
 /// it, tapping any other item selects it. Pure — `AinkradCommandMenu`'s
@@ -117,13 +117,18 @@ public struct AinkradCommandMenu<T: Hashable>: View {
                     }
                 }
             }
-            .modifier(CommandMenuKeys(
-                enabled: handlesKeyPresses,
-                move: { delta in setHighlight(commandMenuHighlightMoved(highlightedIndex, delta: delta, count: items.count)) },
-                activateHighlighted: {
-                    guard let index = highlightedIndex, items.indices.contains(index) else { return false }
-                    activate(items[index]); return true
-                }))
+            .modifier(
+                CommandMenuKeys(
+                    enabled: handlesKeyPresses,
+                    move: { delta in
+                        setHighlight(commandMenuHighlightMoved(highlightedIndex, delta: delta, count: items.count))
+                    },
+                    activateHighlighted: {
+                        guard let index = highlightedIndex, items.indices.contains(index) else { return false }
+                        activate(items[index])
+                        return true
+                    })
+            )
             .onChange(of: items.count) { _, newCount in
                 guard let index = highlightedIndex else { return }
                 setHighlight(newCount == 0 ? nil : min(index, newCount - 1))
@@ -155,8 +160,14 @@ private struct CommandMenuKeys: ViewModifier {
         if enabled {
             content
                 .focusable()
-                .onKeyPress(.downArrow) { move(1); return .handled }
-                .onKeyPress(.upArrow) { move(-1); return .handled }
+                .onKeyPress(.downArrow) {
+                    move(1)
+                    return .handled
+                }
+                .onKeyPress(.upArrow) {
+                    move(-1)
+                    return .handled
+                }
                 .onKeyPress(.return) { activateHighlighted() ? .handled : .ignored }
         } else {
             content
@@ -204,16 +215,21 @@ private struct AinkradCommandMenuRow: View {
                         .foregroundStyle(theme.accentSecondary.opacity(0.85))
                 }
             }
-            .foregroundStyle(isSelected ? theme.accentPrimary.contrastingText : theme.foreground.opacity(emphasized ? 0.9 : 0.65))
+            .foregroundStyle(
+                isSelected ? theme.accentPrimary.contrastingText : theme.foreground.opacity(emphasized ? 0.9 : 0.65)
+            )
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
             .background(
                 ChamferShape(cut: 6)
-                    .fill(isSelected ? theme.accentPrimary.opacity(0.85) : theme.surfaceElevated.opacity(emphasized ? 0.5 : 0.2))
+                    .fill(
+                        isSelected
+                            ? theme.accentPrimary.opacity(0.85) : theme.surfaceElevated.opacity(emphasized ? 0.5 : 0.2))
             )
             .overlay(
                 ChamferShape(cut: 6)
-                    .strokeBorder(theme.accentSecondary.opacity(isSelected ? 0.9 : (emphasized ? 0.5 : 0)), lineWidth: 1.25)
+                    .strokeBorder(
+                        theme.accentSecondary.opacity(isSelected ? 0.9 : (emphasized ? 0.5 : 0)), lineWidth: 1.25)
             )
             .shadow(color: theme.accentSecondary.opacity(isSelected ? 0.5 : 0), radius: isSelected ? 5 : 0)
             .scanlineOverlay(active: hovering && !isSelected)
@@ -291,7 +307,10 @@ private struct AinkradNavListRow: View {
             .padding(.horizontal, AinkradSpacing.sm)
             .background(
                 RoundedRectangle(cornerRadius: AinkradRadius.sm)
-                    .fill(isSelected ? theme.surfaceElevated.opacity(0.6) : (hovering ? theme.surfaceElevated.opacity(0.3) : .clear))
+                    .fill(
+                        isSelected
+                            ? theme.surfaceElevated.opacity(0.6)
+                            : (hovering ? theme.surfaceElevated.opacity(0.3) : .clear))
             )
             .contentShape(Rectangle())
         }

@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -106,7 +107,9 @@ struct AinkradLogBufferTests {
     @Test("a 24-source burst stays bounded and intact")
     func twentyFourSourceBurst() {
         var buffer = AinkradLogBuffer(capacity: 5_000)
-        for tick in 0..<500 { for source in 1...24 { buffer.append("worker-\(source) tick \(tick)\n", source: "worker-\(source)") } }
+        for tick in 0..<500 {
+            for source in 1...24 { buffer.append("worker-\(source) tick \(tick)\n", source: "worker-\(source)") }
+        }
         #expect(buffer.count == 5_000)
         #expect(buffer.droppedLines == 12_000 - 5_000)
         #expect(buffer.all.allSatisfy { $0.plainText.contains("tick") })
@@ -127,7 +130,7 @@ struct AinkradLogBufferTests {
     /// boundary into two replacement characters. The byte path holds them.
     @Test("a UTF-8 character split across two reads is rejoined")
     func utf8SplitAcrossReads() {
-        let bytes = Data("naïve café\n".utf8)   // "ï" is bytes 2–3
+        let bytes = Data("naïve café\n".utf8)  // "ï" is bytes 2–3
         var buffer = AinkradLogBuffer()
         buffer.append(bytes.prefix(3))
         buffer.append(bytes.dropFirst(3))
@@ -152,10 +155,12 @@ struct AinkradLogBufferTests {
         #expect(buffer.all.first?.stream == .stderr)
     }
 
-    @Test("the incomplete UTF-8 tail is measured correctly", arguments: [
-        ([0x61], 0), ([0xE2], 1), ([0xE2, 0x82], 2), ([0xE2, 0x82, 0xAC], 0),
-        ([0xC3], 1), ([0xC3, 0xAF], 0), ([0xF0, 0x9F, 0x98], 3), ([], 0),
-    ] as [([UInt8], Int)])
+    @Test(
+        "the incomplete UTF-8 tail is measured correctly",
+        arguments: [
+            ([0x61], 0), ([0xE2], 1), ([0xE2, 0x82], 2), ([0xE2, 0x82, 0xAC], 0),
+            ([0xC3], 1), ([0xC3, 0xAF], 0), ([0xF0, 0x9F, 0x98], 3), ([], 0),
+        ] as [([UInt8], Int)])
     func incompleteTail(bytes: [UInt8], expected: Int) {
         #expect(AinkradLogBuffer.incompleteUTF8Tail(of: Data(bytes)) == expected)
     }

@@ -2,8 +2,8 @@
 import CoreGraphics
 import SwiftUI
 
-public extension AinkradSkin {
-    func color(
+extension AinkradSkin {
+    public func color(
         _ token: AinkradColorToken,
         tint: Color? = nil,
         state: AinkradControlState = []
@@ -11,7 +11,7 @@ public extension AinkradSkin {
         resolveColorToken(token, palette: palette, tint: tint)
     }
 
-    func color(
+    public func color(
         _ stateColor: AinkradStateColor,
         tint: Color? = nil,
         state: AinkradControlState = []
@@ -20,7 +20,7 @@ public extension AinkradSkin {
         return resolveColorToken(token, palette: palette, tint: tint)
     }
 
-    func font(
+    public func font(
         _ token: AinkradFontToken,
         typography: AinkradTypography = AinkradTypography()
     ) -> Font {
@@ -56,7 +56,7 @@ public extension AinkradSkin {
         return font
     }
 
-    func animation(_ token: AinkradAnimationToken) -> Animation {
+    public func animation(_ token: AinkradAnimationToken) -> Animation {
         var dur: Double = 0.25
         if let d = token.duration {
             dur = d
@@ -103,8 +103,6 @@ private func resolveColorToken(_ token: AinkradColorToken, palette: AinkradSkinP
         return alpha == 1.0 ? baseColor : baseColor.opacity(alpha)
     }
 }
-
-
 
 private func colorForPaletteKey(_ key: String, palette: AinkradSkinPalette) -> Color {
     switch key {

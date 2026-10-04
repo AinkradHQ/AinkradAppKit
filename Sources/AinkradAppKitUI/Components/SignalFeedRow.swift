@@ -1,9 +1,9 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradSignal
+import SwiftUI
 
 public struct SignalDayGroup: Identifiable, Equatable {
-    public let id: Date          // start of day
+    public let id: Date  // start of day
     public let events: [SignalEvent]
 }
 
@@ -89,9 +89,11 @@ public enum SignalPresentation {
     /// Ordered by each group's newest event rather than by count: the feed is
     /// a timeline, and a burst from one app should not permanently outrank an
     /// app that just said something.
-    public static func sourceGroups(_ events: [SignalEvent],
-                                    readIDs: Set<UUID>,
-                                    name: (SignalSource) -> String) -> [SignalSourceGroup] {
+    public static func sourceGroups(
+        _ events: [SignalEvent],
+        readIDs: Set<UUID>,
+        name: (SignalSource) -> String
+    ) -> [SignalSourceGroup] {
         let sorted = events.sorted { $0.timestamp > $1.timestamp }
         var order: [SignalSource] = []
         var buckets: [SignalSource: [SignalEvent]] = [:]
@@ -130,14 +132,18 @@ public enum SignalPresentation {
     /// to wait to the end of the sentence to learn whether it matters. Every
     /// row previously announced only its title — the severity was carried
     /// entirely by colour and an unlabelled symbol.
-    public static func accessibilityLabel(for event: SignalEvent,
-                                          repeatCount: Int,
-                                          isUnread: Bool,
-                                          isPinned: Bool = false,
-                                          now: Date) -> String {
-        var parts = [event.severity.rawValue.capitalized,
-                     sourceLabel(event.source),
-                     event.title]
+    public static func accessibilityLabel(
+        for event: SignalEvent,
+        repeatCount: Int,
+        isUnread: Bool,
+        isPinned: Bool = false,
+        now: Date
+    ) -> String {
+        var parts = [
+            event.severity.rawValue.capitalized,
+            sourceLabel(event.source),
+            event.title,
+        ]
         if let body = event.body, !body.isEmpty { parts.append(body) }
         parts.append(relativeTimeSpoken(event.timestamp, now: now))
         if repeatCount > 1 { parts.append("repeated \(repeatCount) times") }
@@ -208,12 +214,14 @@ public struct SignalFeedRow: View {
     /// Explicit, because a public struct's implicit memberwise
     /// initialiser is INTERNAL — the components were public and
     /// unconstructible outside the module until this existed.
-    public init(event: SignalEvent,
-                repeatCount: Int = 1,
-                isUnread: Bool = true,
-                now: Date = Date(),
-                onActivate: @escaping (SignalEvent) -> Void = { _ in },
-                onAction: @escaping (SignalEvent, SignalAction) -> Void = { _, _ in }) {
+    public init(
+        event: SignalEvent,
+        repeatCount: Int = 1,
+        isUnread: Bool = true,
+        now: Date = Date(),
+        onActivate: @escaping (SignalEvent) -> Void = { _ in },
+        onAction: @escaping (SignalEvent, SignalAction) -> Void = { _, _ in }
+    ) {
         self.event = event
         self.repeatCount = repeatCount
         self.isUnread = isUnread
@@ -228,13 +236,15 @@ public struct SignalFeedRow: View {
     /// already linked against it dies at `Bundle.load()` — source compiles
     /// either way, and only linking tells the truth. That is the
     /// `AinkradFormRow` failure recorded in AinkradQuest's project.yml.
-    public init(event: SignalEvent,
-                repeatCount: Int,
-                isUnread: Bool,
-                now: Date,
-                onActivate: @escaping (SignalEvent) -> Void,
-                onAction: @escaping (SignalEvent, SignalAction) -> Void,
-                menuItems: @escaping (SignalEvent) -> [AinkradMenuItem]) {
+    public init(
+        event: SignalEvent,
+        repeatCount: Int,
+        isUnread: Bool,
+        now: Date,
+        onActivate: @escaping (SignalEvent) -> Void,
+        onAction: @escaping (SignalEvent, SignalAction) -> Void,
+        menuItems: @escaping (SignalEvent) -> [AinkradMenuItem]
+    ) {
         self.event = event
         self.repeatCount = repeatCount
         self.isUnread = isUnread
@@ -245,16 +255,18 @@ public struct SignalFeedRow: View {
     }
 
     /// Separate again, for the same library-evolution reason as the one above.
-    public init(event: SignalEvent,
-                repeatCount: Int,
-                isUnread: Bool,
-                now: Date,
-                onActivate: @escaping (SignalEvent) -> Void,
-                onAction: @escaping (SignalEvent, SignalAction) -> Void,
-                menuItems: @escaping (SignalEvent) -> [AinkradMenuItem],
-                isPinned: Bool,
-                isExpanded: Bool,
-                onToggleExpanded: (() -> Void)?) {
+    public init(
+        event: SignalEvent,
+        repeatCount: Int,
+        isUnread: Bool,
+        now: Date,
+        onActivate: @escaping (SignalEvent) -> Void,
+        onAction: @escaping (SignalEvent, SignalAction) -> Void,
+        menuItems: @escaping (SignalEvent) -> [AinkradMenuItem],
+        isPinned: Bool,
+        isExpanded: Bool,
+        onToggleExpanded: (() -> Void)?
+    ) {
         self.event = event
         self.repeatCount = repeatCount
         self.isUnread = isUnread
@@ -269,17 +281,19 @@ public struct SignalFeedRow: View {
 
     /// Separate again — library evolution. See the note on the initialiser
     /// above.
-    public init(event: SignalEvent,
-                repeatCount: Int,
-                isUnread: Bool,
-                now: Date,
-                onActivate: @escaping (SignalEvent) -> Void,
-                onAction: @escaping (SignalEvent, SignalAction) -> Void,
-                menuItems: @escaping (SignalEvent) -> [AinkradMenuItem],
-                isPinned: Bool,
-                isExpanded: Bool,
-                onToggleExpanded: (() -> Void)?,
-                isKeyboardFocused: Bool) {
+    public init(
+        event: SignalEvent,
+        repeatCount: Int,
+        isUnread: Bool,
+        now: Date,
+        onActivate: @escaping (SignalEvent) -> Void,
+        onAction: @escaping (SignalEvent, SignalAction) -> Void,
+        menuItems: @escaping (SignalEvent) -> [AinkradMenuItem],
+        isPinned: Bool,
+        isExpanded: Bool,
+        onToggleExpanded: (() -> Void)?,
+        isKeyboardFocused: Bool
+    ) {
         self.event = event
         self.repeatCount = repeatCount
         self.isUnread = isUnread
@@ -319,7 +333,10 @@ public struct SignalFeedRow: View {
             VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
                 HStack(spacing: AinkradSpacing.xs + 2) {
                     Text(event.title)
-                        .font(AinkradFontResolver.font(size: 12.5, weight: isUnread ? .semibold : .regular, typography: typo))
+                        .font(
+                            AinkradFontResolver.font(
+                                size: 12.5, weight: isUnread ? .semibold : .regular, typography: typo)
+                        )
                         .foregroundStyle(theme.foreground)
                         .lineLimit(1)
                     if repeatCount > 1 {
@@ -360,7 +377,7 @@ public struct SignalFeedRow: View {
                 }
             }
 
-            if let onToggleExpanded, (event.body?.isEmpty == false) {
+            if let onToggleExpanded, event.body?.isEmpty == false {
                 Button(action: onToggleExpanded) {
                     Image(systemName: "chevron.down")
                         .font(.system(size: 8, weight: .bold))
@@ -396,8 +413,9 @@ public struct SignalFeedRow: View {
         // other surface in the app.
         .overlay(
             ChamferShape(cut: AinkradRadius.sm)
-                .strokeBorder(theme.accentPrimary.opacity(
-                    isFocused || isKeyboardFocused ? 0.9 : 0), lineWidth: 1.5)
+                .strokeBorder(
+                    theme.accentPrimary.opacity(
+                        isFocused || isKeyboardFocused ? 0.9 : 0), lineWidth: 1.5)
         )
         // Focusable rather than wrapped in a `Button`.
         //
@@ -410,17 +428,25 @@ public struct SignalFeedRow: View {
         // controls.
         .focusable()
         .focused($isFocused)
-        .onKeyPress(.return) { onActivate(event); return .handled }
-        .onKeyPress(.space) { onActivate(event); return .handled }
+        .onKeyPress(.return) {
+            onActivate(event)
+            return .handled
+        }
+        .onKeyPress(.space) {
+            onActivate(event)
+            return .handled
+        }
         .contentShape(ChamferShape(cut: AinkradRadius.sm))
         .onTapGesture { onActivate(event) }
         // One element, one sentence. Without this the row is a pile of
         // separate labels — glyph, title, body, source, "now" — read in
         // layout order, and the severity is never spoken at all.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(SignalPresentation.accessibilityLabel(
-            for: event, repeatCount: repeatCount, isUnread: isUnread,
-            isPinned: isPinned, now: now))
+        .accessibilityLabel(
+            SignalPresentation.accessibilityLabel(
+                for: event, repeatCount: repeatCount, isUnread: isUnread,
+                isPinned: isPinned, now: now)
+        )
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { onActivate(event) }
         // The row's own actions, reachable without hunting for a button that
@@ -430,8 +456,9 @@ public struct SignalFeedRow: View {
                 Button(action.label) { onAction(event, action) }
             }
             if let onToggleExpanded, event.body?.isEmpty == false {
-                Button(isExpanded ? "Collapse" : "Show full message",
-                       action: onToggleExpanded)
+                Button(
+                    isExpanded ? "Collapse" : "Show full message",
+                    action: onToggleExpanded)
             }
         }
         .ainkradContextMenu(menuItems(event))
@@ -448,7 +475,9 @@ public struct SignalFeedRow: View {
     /// spacing ramp, the brand face — rather than a raw capsule.
     private func rowAction(_ action: SignalAction) -> some View {
         let tint = action.isDestructive ? statusColors.danger : theme.accentPrimary
-        return Button { onAction(event, action) } label: {
+        return Button {
+            onAction(event, action)
+        } label: {
             Text(action.label)
                 .font(AinkradFontResolver.font(size: 10.5, weight: .medium, typography: typo))
                 .foregroundStyle(tint)

@@ -1,7 +1,8 @@
-import Foundation
-import Testing
 import AppKit
+import Foundation
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -11,7 +12,10 @@ private final class BuildCounter: @unchecked Sendable { var count = 0 }
 @Suite("AinkradDataTable accessory column")
 @MainActor
 struct DataTableAccessoryTests {
-    private struct Row: Identifiable { let id: Int; let name: String }
+    private struct Row: Identifiable {
+        let id: Int
+        let name: String
+    }
     private let rows = [Row(id: 0, name: "b"), Row(id: 1, name: "a"), Row(id: 2, name: "c")]
 
     @Test("the text initializer still makes a plain text column")
@@ -43,9 +47,11 @@ struct DataTableAccessoryTests {
                 return Button("Run \(row.name)") {}
             },
         ]
-        let host = NSHostingView(rootView: AinkradDataTable(rows: rows, columns: columns).frame(width: 400, height: 300))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
-                              styleMask: [.borderless], backing: .buffered, defer: false)
+        let host = NSHostingView(
+            rootView: AinkradDataTable(rows: rows, columns: columns).frame(width: 400, height: 300))
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+            styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
         #expect(counter.count >= rows.count, "accessory built \(counter.count) times for \(rows.count) rows")

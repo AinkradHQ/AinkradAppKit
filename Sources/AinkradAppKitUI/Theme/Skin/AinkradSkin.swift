@@ -97,7 +97,7 @@ public struct AinkradSkin: Codable, Equatable, Sendable {
             "sp42_88": AinkradAnimationToken(curve: "spring", response: 0.42, damping: 0.88),
             "snappy22": AinkradAnimationToken(curve: "snappy", duration: 0.22),
             "snappy26": AinkradAnimationToken(curve: "snappy", duration: 0.26),
-            "snappy32": AinkradAnimationToken(curve: "snappy", duration: 0.32)
+            "snappy32": AinkradAnimationToken(curve: "snappy", duration: 0.32),
         ]
     )
     public static let standardSettingsMetrics = AinkradChromeSettingsTokens(
@@ -148,7 +148,7 @@ public struct AinkradSkin: Codable, Equatable, Sendable {
                     .hex(0x61 / 255.0, 0xAF / 255.0, 0xEF / 255.0, 1.0),
                     .hex(0xC6 / 255.0, 0x78 / 255.0, 0xDD / 255.0, 1.0),
                     .hex(0x56 / 255.0, 0xB6 / 255.0, 0xC2 / 255.0, 1.0),
-                    .hex(1.0, 1.0, 1.0, 1.0)
+                    .hex(1.0, 1.0, 1.0, 1.0),
                 ]
             ),
             motion: standardMotion,

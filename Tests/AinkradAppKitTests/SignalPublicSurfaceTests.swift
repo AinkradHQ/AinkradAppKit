@@ -1,7 +1,4 @@
-import Testing
-import SwiftUI
-import Foundation
-import AinkradSignal
+import AinkradAppKitContract
 // NOT @testable, deliberately. This file is the plugin's vantage point: a plain
 // import sees only the public surface, so anything a plugin needs and cannot
 // reach fails to COMPILE here.
@@ -12,26 +9,32 @@ import AinkradSignal
 // `.dismiss(id:)` were internal too — so the components were importable and
 // unusable. The in-module tests could not see it; only an outside caller can.
 import AinkradAppKitUI
-import AinkradAppKitContract
+import AinkradSignal
+import Foundation
+import SwiftUI
+import Testing
 
 @MainActor
 @Suite("Signal public surface")
 struct SignalPublicSurfaceTests {
     private func event(_ title: String, _ severity: SignalSeverity = .info) -> SignalEvent {
-        SignalEvent(source: .app(appID: "probe"), kind: "test.event",
-                    severity: severity, title: title)
+        SignalEvent(
+            source: .app(appID: "probe"), kind: "test.event",
+            severity: severity, title: title)
     }
 
     @Test("a plugin can construct every feed component")
     func componentsAreConstructible() {
         let events = [event("one"), event("two", .failure)]
         _ = SignalFeedRow(event: events[0])
-        _ = SignalFeedRow(event: events[0], repeatCount: 3, isUnread: false,
-                          now: Date(), onActivate: { _ in }, onAction: { _, _ in })
+        _ = SignalFeedRow(
+            event: events[0], repeatCount: 3, isUnread: false,
+            now: Date(), onActivate: { _ in }, onAction: { _, _ in })
         _ = SignalFeedList(events: events)
-        _ = SignalFeedList(events: events, repeatCounts: [events[0].id: 2],
-                           readIDs: [events[1].id], now: Date(), calendar: .current,
-                           onActivate: { _ in }, onAction: { _, _ in })
+        _ = SignalFeedList(
+            events: events, repeatCounts: [events[0].id: 2],
+            readIDs: [events[1].id], now: Date(), calendar: .current,
+            onActivate: { _ in }, onAction: { _, _ in })
         _ = SignalToastStack(model: SignalToastModel())
     }
 

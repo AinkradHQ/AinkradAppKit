@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// Cardinal HUD switch — chamfered track (never a native `Toggle`), a
 /// luminous thumb, and an accent glow that brightens while on.
@@ -13,12 +13,16 @@ public struct AinkradToggle: View {
     public init(isOn: Binding<Bool>) { self._isOn = isOn }
 
     public var body: some View {
-        Button { isOn.toggle() } label: {
+        Button {
+            isOn.toggle()
+        } label: {
             ZStack(alignment: isOn ? .trailing : .leading) {
                 ChamferShape(cut: 6, corners: .all)
                     .fill(isOn ? theme.accentPrimary.opacity(0.9) : theme.surfaceElevated.opacity(0.6))
                 ChamferShape(cut: 6, corners: .all)
-                    .strokeBorder(isOn ? theme.accentSecondary.opacity(0.75) : theme.foreground.opacity(hovering ? 0.35 : 0.18), lineWidth: 1.25)
+                    .strokeBorder(
+                        isOn ? theme.accentSecondary.opacity(0.75) : theme.foreground.opacity(hovering ? 0.35 : 0.18),
+                        lineWidth: 1.25)
                 Circle().fill(.white).padding(3)
                     .shadow(color: isOn ? theme.accentSecondary.opacity(0.75) : .black.opacity(0.4), radius: 3)
             }
@@ -50,7 +54,8 @@ public struct AinkradSecureField: View {
     @FocusState private var isFocused: Bool
 
     public init(text: Binding<String>, placeholder: String) {
-        self._text = text; self.placeholder = placeholder
+        self._text = text
+        self.placeholder = placeholder
     }
     public var body: some View {
         HStack(spacing: AinkradSpacing.sm) {
@@ -67,7 +72,9 @@ public struct AinkradSecureField: View {
             .foregroundStyle(theme.foreground)
             .tint(theme.accentSecondary)
 
-            Button { isRevealed.toggle() } label: {
+            Button {
+                isRevealed.toggle()
+            } label: {
                 Image(systemName: isRevealed ? "eye.slash" : "eye")
                     .font(.system(size: 12))
                     .foregroundStyle(theme.foreground.opacity(0.55))
@@ -76,7 +83,10 @@ public struct AinkradSecureField: View {
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
         .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.5)))
-        .overlay(ChamferShape(cut: 6).strokeBorder(theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25))
+        .overlay(
+            ChamferShape(cut: 6).strokeBorder(
+                theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25)
+        )
         .shadow(color: theme.accentSecondary.opacity(isFocused ? 0.45 : 0), radius: isFocused ? 6 : 0)
         .animation(AinkradMotion.hover, value: isFocused)
     }
@@ -92,7 +102,8 @@ public struct AinkradTextField: View {
     @FocusState private var isFocused: Bool
 
     public init(text: Binding<String>, placeholder: String) {
-        self._text = text; self.placeholder = placeholder
+        self._text = text
+        self.placeholder = placeholder
     }
     public var body: some View {
         TextField(placeholder, text: $text)
@@ -104,7 +115,10 @@ public struct AinkradTextField: View {
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
             .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.5)))
-            .overlay(ChamferShape(cut: 6).strokeBorder(theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25))
+            .overlay(
+                ChamferShape(cut: 6).strokeBorder(
+                    theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25)
+            )
             .shadow(color: theme.accentSecondary.opacity(isFocused ? 0.45 : 0), radius: isFocused ? 6 : 0)
             .animation(AinkradMotion.hover, value: isFocused)
     }
@@ -125,8 +139,14 @@ public struct AinkradSearchField: View {
     @Environment(\.ainkradTypography) private var typo
     @FocusState private var internalFocus: Bool
 
-    public init(text: Binding<String>, placeholder: String, onSubmit: (() -> Void)? = nil, focus: FocusState<Bool>.Binding? = nil) {
-        self._text = text; self.placeholder = placeholder; self.onSubmit = onSubmit; self.externalFocus = focus
+    public init(
+        text: Binding<String>, placeholder: String, onSubmit: (() -> Void)? = nil,
+        focus: FocusState<Bool>.Binding? = nil
+    ) {
+        self._text = text
+        self.placeholder = placeholder
+        self.onSubmit = onSubmit
+        self.externalFocus = focus
     }
 
     private var isFocused: Bool { externalFocus?.wrappedValue ?? internalFocus }
@@ -140,7 +160,9 @@ public struct AinkradSearchField: View {
             textField
 
             if !text.isEmpty {
-                Button { text = "" } label: {
+                Button {
+                    text = ""
+                } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 12))
                         .foregroundStyle(theme.foreground.opacity(0.45))
@@ -151,7 +173,10 @@ public struct AinkradSearchField: View {
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
         .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.5)))
-        .overlay(ChamferShape(cut: 6).strokeBorder(theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25))
+        .overlay(
+            ChamferShape(cut: 6).strokeBorder(
+                theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25)
+        )
         .shadow(color: theme.accentSecondary.opacity(isFocused ? 0.45 : 0), radius: isFocused ? 6 : 0)
         .animation(AinkradMotion.hover, value: isFocused)
     }
@@ -213,15 +238,23 @@ public struct AinkradTextArea: View {
     /// into one defaulted-param init (that changes/drops the 2-arg symbol → ABI
     /// break). See ainkrad-hostthemetokens-abi memory.
     public init(text: Binding<String>, placeholder: String) {
-        self._text = text; self.placeholder = placeholder; self.autoFocus = false
-        self.minHeight = 80; self.maxHeight = nil; self.onSubmit = nil
+        self._text = text
+        self.placeholder = placeholder
+        self.autoFocus = false
+        self.minHeight = 80
+        self.maxHeight = nil
+        self.onSubmit = nil
     }
 
     /// `autoFocus` focuses the editor the first time it appears — for overlays
     /// (e.g. a summoned Quick-Ask) that should accept typing immediately.
     public init(text: Binding<String>, placeholder: String, autoFocus: Bool) {
-        self._text = text; self.placeholder = placeholder; self.autoFocus = autoFocus
-        self.minHeight = 80; self.maxHeight = nil; self.onSubmit = nil
+        self._text = text
+        self.placeholder = placeholder
+        self.autoFocus = autoFocus
+        self.minHeight = 80
+        self.maxHeight = nil
+        self.onSubmit = nil
     }
 
     /// Shorter/taller composer variant — `minHeight` replaces the hardcoded 80.
@@ -230,8 +263,12 @@ public struct AinkradTextArea: View {
     /// `init(text:placeholder:)`, so no ambiguity. For GitMage's compact
     /// comment composers.
     public init(text: Binding<String>, placeholder: String, minHeight: CGFloat) {
-        self._text = text; self.placeholder = placeholder; self.autoFocus = false
-        self.minHeight = minHeight; self.maxHeight = nil; self.onSubmit = nil
+        self._text = text
+        self.placeholder = placeholder
+        self.autoFocus = false
+        self.minHeight = minHeight
+        self.maxHeight = nil
+        self.onSubmit = nil
     }
 
     /// Auto-growing composer — starts at `minHeight` (one row), grows with the
@@ -240,10 +277,16 @@ public struct AinkradTextArea: View {
     /// Option+Return insert a newline). NEW symbol (carries `maxHeight:`); the
     /// inits above are untouched. `autoFocus`/`onSubmit` default so a bare
     /// `…minHeight:maxHeight:` call keeps resolving here unambiguously.
-    public init(text: Binding<String>, placeholder: String, minHeight: CGFloat, maxHeight: CGFloat,
-                autoFocus: Bool = false, onSubmit: (() -> Void)? = nil) {
-        self._text = text; self.placeholder = placeholder; self.autoFocus = autoFocus
-        self.minHeight = minHeight; self.maxHeight = maxHeight; self.onSubmit = onSubmit
+    public init(
+        text: Binding<String>, placeholder: String, minHeight: CGFloat, maxHeight: CGFloat,
+        autoFocus: Bool = false, onSubmit: (() -> Void)? = nil
+    ) {
+        self._text = text
+        self.placeholder = placeholder
+        self.autoFocus = autoFocus
+        self.minHeight = minHeight
+        self.maxHeight = maxHeight
+        self.onSubmit = onSubmit
     }
 
     /// Whether the focus ring should read as active — the AppKit editing flag in
@@ -253,7 +296,10 @@ public struct AinkradTextArea: View {
     public var body: some View {
         editorSurface
             .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.5)))
-            .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(focusRingActive ? 0.9 : 0.25), lineWidth: focusRingActive ? 1.5 : 1.25))
+            .overlay(
+                ChamferShape(cut: 8).strokeBorder(
+                    theme.accentPrimary.opacity(focusRingActive ? 0.9 : 0.25), lineWidth: focusRingActive ? 1.5 : 1.25)
+            )
             .shadow(color: theme.accentSecondary.opacity(focusRingActive ? 0.4 : 0), radius: focusRingActive ? 6 : 0)
             .animation(AinkradMotion.hover, value: focusRingActive)
             .onAppear {
@@ -455,7 +501,8 @@ public struct AinkradSlider: View {
     @State private var dragging = false
 
     public init(value: Binding<Double>, in bounds: ClosedRange<Double>) {
-        self._value = value; self.bounds = bounds
+        self._value = value
+        self.bounds = bounds
     }
 
     private var span: Double { max(bounds.upperBound - bounds.lowerBound, .leastNonzeroMagnitude) }

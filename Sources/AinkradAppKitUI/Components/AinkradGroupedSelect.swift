@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// One row's presentation in a grouped select — an option value plus its
 /// display title, optional trailing metadata (e.g. "128k · cloud"), optional
@@ -13,8 +13,10 @@ public struct AinkradGroupedRow<T: Hashable>: Hashable {
     public let swatch: Color?
     public let isEnabled: Bool
 
-    public init(value: T, title: String, detail: String? = nil, icon: String? = nil,
-                swatch: Color? = nil, isEnabled: Bool = true) {
+    public init(
+        value: T, title: String, detail: String? = nil, icon: String? = nil,
+        swatch: Color? = nil, isEnabled: Bool = true
+    ) {
         self.value = value
         self.title = title
         self.detail = detail
@@ -39,7 +41,9 @@ public struct AinkradGroupedSection<T: Hashable>: Hashable {
 /// to its matching rows; empty query returns all sections unchanged. Pure —
 /// the grouped-select analogue of `comboboxFilter`, unit-testable without
 /// SwiftUI.
-public func filterGroupedSections<T>(_ sections: [AinkradGroupedSection<T>], query: String) -> [AinkradGroupedSection<T>] {
+public func filterGroupedSections<T>(_ sections: [AinkradGroupedSection<T>], query: String) -> [AinkradGroupedSection<
+    T
+>] {
     let q = query.trimmingCharacters(in: .whitespaces).lowercased()
     guard !q.isEmpty else { return sections }
     return sections.compactMap { section in
@@ -96,8 +100,10 @@ public struct AinkradGroupedSelect<T: Hashable>: View {
     @Environment(\.ainkradTypography) private var typo
     @State private var isOpen = false
 
-    public init(sections: [AinkradGroupedSection<T>], selection: Binding<T>,
-                triggerLabel: String, searchPlaceholder: String = "Search…") {
+    public init(
+        sections: [AinkradGroupedSection<T>], selection: Binding<T>,
+        triggerLabel: String, searchPlaceholder: String = "Search…"
+    ) {
         self.sections = sections
         self._selection = selection
         self.triggerLabel = triggerLabel
@@ -108,8 +114,9 @@ public struct AinkradGroupedSelect<T: Hashable>: View {
         trigger
             .ainkradFloatingPanel(isPresented: $isOpen, autofocusTextField: true, matchAnchorWidth: true) {
                 GroupedPanelMaterialize {
-                    GroupedSelectPanelView(sections: sections, selection: $selection,
-                                           placeholder: searchPlaceholder, onClose: close)
+                    GroupedSelectPanelView(
+                        sections: sections, selection: $selection,
+                        placeholder: searchPlaceholder, onClose: close)
                 }
             }
     }
@@ -133,7 +140,9 @@ public struct AinkradGroupedSelect<T: Hashable>: View {
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
             .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.5)))
-            .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.75 : 0.3), lineWidth: 1.25))
+            .overlay(
+                ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.75 : 0.3), lineWidth: 1.25)
+            )
             .shadow(color: theme.accentPrimary.opacity(isOpen ? 0.4 : 0), radius: isOpen ? 5 : 0)
             .contentShape(ChamferShape(cut: 8))
         }
@@ -284,7 +293,9 @@ struct GroupedSelectPanelView<T: Hashable>: View {
         }
         .padding(.horizontal, AinkradSpacing.sm)
         .padding(.vertical, AinkradSpacing.xs + 2)
-        .background(ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear))
+        .background(
+            ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear)
+        )
         .contentShape(Rectangle())
 
         return Group {

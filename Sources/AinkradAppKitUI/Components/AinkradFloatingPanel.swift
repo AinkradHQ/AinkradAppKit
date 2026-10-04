@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// Positions a floating panel relative to an anchor rect, both in SCREEN
 /// coordinates (AppKit convention: origin bottom-left, y grows upward).
@@ -96,8 +96,10 @@ public func floatingPanelFrameTrailing(
 ///
 /// The window is inset by `margin` first: its frame includes the window's own
 /// border, and a panel flush with it reads as hanging off the edge.
-func floatingPanelBounds(windowFrame: CGRect, screenVisibleFrame: CGRect, contentSize: CGSize,
-                         margin: CGFloat = AinkradSpacing.sm) -> CGRect {
+func floatingPanelBounds(
+    windowFrame: CGRect, screenVisibleFrame: CGRect, contentSize: CGSize,
+    margin: CGFloat = AinkradSpacing.sm
+) -> CGRect {
     let inWindow = windowFrame.insetBy(dx: margin, dy: margin).intersection(screenVisibleFrame)
     guard !inWindow.isNull, inWindow.width >= contentSize.width, inWindow.height >= contentSize.height else {
         return screenVisibleFrame
@@ -200,23 +202,28 @@ final class AinkradFloatingPanelController: NSObject, NSWindowDelegate {
         let height = min(max(natural.height, 1), maxHeight)
         let needsScroll = natural.height > maxHeight
 
-        sized = needsScroll
+        sized =
+            needsScroll
             ? AnyView(ScrollView { content() }.frame(width: width, height: height))
             : AnyView(content().frame(width: width, height: height))
 
-        let visibleFrame = window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
+        let visibleFrame =
+            window.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
             ?? CGRect(x: 0, y: 0, width: width, height: height)
         let anchorRect = anchorScreenRectOverride ?? anchorScreenRect() ?? .zero
         let contentSize = CGSize(width: width, height: height)
-        let bounds = floatingPanelBounds(windowFrame: window.frame, screenVisibleFrame: visibleFrame,
-                                         contentSize: contentSize)
+        let bounds = floatingPanelBounds(
+            windowFrame: window.frame, screenVisibleFrame: visibleFrame,
+            contentSize: contentSize)
         switch placement {
         case .below:
-            frame = floatingPanelFrame(anchorScreenRect: anchorRect, contentSize: contentSize,
-                                       screenVisibleFrame: bounds)
+            frame = floatingPanelFrame(
+                anchorScreenRect: anchorRect, contentSize: contentSize,
+                screenVisibleFrame: bounds)
         case .trailing:
-            frame = floatingPanelFrameTrailing(anchorScreenRect: anchorRect, contentSize: contentSize,
-                                               bounds: bounds)
+            frame = floatingPanelFrameTrailing(
+                anchorScreenRect: anchorRect, contentSize: contentSize,
+                bounds: bounds)
         }
 
         let hosting = NSHostingView(rootView: sized)
@@ -224,8 +231,9 @@ final class AinkradFloatingPanelController: NSObject, NSWindowDelegate {
         hosting.wantsLayer = true
         hosting.layer?.backgroundColor = .clear
 
-        let panel = AinkradKeyablePanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel],
-                                         backing: .buffered, defer: false)
+        let panel = AinkradKeyablePanel(
+            contentRect: frame, styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered, defer: false)
         panel.isFloatingPanel = true
         panel.level = .popUpMenu
         panel.backgroundColor = .clear
@@ -330,32 +338,38 @@ final class AinkradFloatingPanelController: NSObject, NSWindowDelegate {
             self.requestDismiss()
             return nil
         }
-        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) {
+            [weak self] event in
             guard let self, self.panel === panel else { return event }
             if event.window === panel { return event }
             if self.isOutsideTriggerAndPanel(NSEvent.mouseLocation) { self.requestDismiss() }
             return event
         }
-        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) {
+            [weak self] _ in
             guard let self else { return }
             if self.isOutsideTriggerAndPanel(NSEvent.mouseLocation) { self.requestDismiss() }
         }
 
         let center = NotificationCenter.default
         parentWindowObservers = [
-            center.addObserver(forName: NSWindow.didResignKeyNotification, object: parentWindow, queue: .main) { [weak self] _ in
+            center.addObserver(forName: NSWindow.didResignKeyNotification, object: parentWindow, queue: .main) {
+                [weak self] _ in
                 self?.requestDismiss()
             },
-            center.addObserver(forName: NSWindow.willMoveNotification, object: parentWindow, queue: .main) { [weak self] _ in
+            center.addObserver(forName: NSWindow.willMoveNotification, object: parentWindow, queue: .main) {
+                [weak self] _ in
                 self?.requestDismiss()
             },
-            center.addObserver(forName: NSWindow.didMoveNotification, object: parentWindow, queue: .main) { [weak self] _ in
+            center.addObserver(forName: NSWindow.didMoveNotification, object: parentWindow, queue: .main) {
+                [weak self] _ in
                 self?.requestDismiss()
             },
             // The parent window can close (e.g. its owning surface/plugin
             // window is torn down) without ever resigning key first — clean
             // up the panel in that case too.
-            center.addObserver(forName: NSWindow.willCloseNotification, object: parentWindow, queue: .main) { [weak self] _ in
+            center.addObserver(forName: NSWindow.willCloseNotification, object: parentWindow, queue: .main) {
+                [weak self] _ in
                 self?.requestDismiss()
             },
         ]
@@ -459,8 +473,10 @@ private struct AinkradFloatingPanelModifier<PanelContent: View>: ViewModifier {
         let typo = typo
         let statusColors = statusColors
         let skinStorage = skinStorage
-        controller.present(maxHeight: maxHeight, autofocusTextField: autofocusTextField,
-                           matchAnchorWidth: matchAnchorWidth, placement: placement) {
+        controller.present(
+            maxHeight: maxHeight, autofocusTextField: autofocusTextField,
+            matchAnchorWidth: matchAnchorWidth, placement: placement
+        ) {
             panelContent()
                 .environment(\.ainkradSkinStorage, skinStorage)
                 .environment(\.ainkradTheme, theme)
@@ -472,7 +488,7 @@ private struct AinkradFloatingPanelModifier<PanelContent: View>: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Presents `content` in a top-level, custom-drawn floating panel
     /// anchored just below this view — mirrors `.popover`'s ergonomics but
     /// renders in an app-level `NSPanel` instead of an in-view `.overlay`, so
@@ -480,39 +496,47 @@ public extension View {
     /// other window/plugin surface. Content is capped at `maxHeight` and
     /// scrolls if taller. Dismisses on selection (caller sets `isPresented`
     /// false), Esc, an outside click, or the parent window losing key/moving.
-    func ainkradFloatingPanel<PanelContent: View>(
+    public func ainkradFloatingPanel<PanelContent: View>(
         isPresented: Binding<Bool>,
         maxHeight: CGFloat = 320,
         autofocusTextField: Bool = false,
         @ViewBuilder content: @escaping () -> PanelContent
     ) -> some View {
-        modifier(AinkradFloatingPanelModifier(isPresented: isPresented, maxHeight: maxHeight, autofocusTextField: autofocusTextField, panelContent: content))
+        modifier(
+            AinkradFloatingPanelModifier(
+                isPresented: isPresented, maxHeight: maxHeight, autofocusTextField: autofocusTextField,
+                panelContent: content))
     }
 
     /// Variant that additionally floors the panel's width to the trigger's own
     /// width (`matchAnchorWidth`), so a dropdown never renders narrower than
     /// the field that opened it. NEW additive overload — the label-free
     /// existing overload is byte-unchanged, keeping its exported symbol stable.
-    func ainkradFloatingPanel<PanelContent: View>(
+    public func ainkradFloatingPanel<PanelContent: View>(
         isPresented: Binding<Bool>,
         maxHeight: CGFloat = 320,
         autofocusTextField: Bool = false,
         matchAnchorWidth: Bool,
         @ViewBuilder content: @escaping () -> PanelContent
     ) -> some View {
-        modifier(AinkradFloatingPanelModifier(isPresented: isPresented, maxHeight: maxHeight, autofocusTextField: autofocusTextField, matchAnchorWidth: matchAnchorWidth, panelContent: content))
+        modifier(
+            AinkradFloatingPanelModifier(
+                isPresented: isPresented, maxHeight: maxHeight, autofocusTextField: autofocusTextField,
+                matchAnchorWidth: matchAnchorWidth, panelContent: content))
     }
 
     /// Variant that chooses where the panel opens — `.trailing` puts it beside
     /// the trigger, for triggers in a vertical rail. NEW additive overload
     /// (`placement:` has no default), so the existing symbols are unchanged.
-    func ainkradFloatingPanel<PanelContent: View>(
+    public func ainkradFloatingPanel<PanelContent: View>(
         isPresented: Binding<Bool>,
         maxHeight: CGFloat = 320,
         placement: AinkradPanelPlacement,
         @ViewBuilder content: @escaping () -> PanelContent
     ) -> some View {
-        modifier(AinkradFloatingPanelModifier(isPresented: isPresented, maxHeight: maxHeight,
-                                              placement: placement, panelContent: content))
+        modifier(
+            AinkradFloatingPanelModifier(
+                isPresented: isPresented, maxHeight: maxHeight,
+                placement: placement, panelContent: content))
     }
 }

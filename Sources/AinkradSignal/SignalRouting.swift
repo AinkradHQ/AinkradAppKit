@@ -17,8 +17,10 @@ public struct DeliveryContext: Sendable, Equatable {
     public let systemDoNotDisturb: Bool
     public let hostFocusMode: Bool
 
-    public init(hostIsFrontmost: Bool, visibleAppIDs: Set<String>,
-                systemDoNotDisturb: Bool, hostFocusMode: Bool) {
+    public init(
+        hostIsFrontmost: Bool, visibleAppIDs: Set<String>,
+        systemDoNotDisturb: Bool, hostFocusMode: Bool
+    ) {
         self.hostIsFrontmost = hostIsFrontmost
         self.visibleAppIDs = visibleAppIDs
         self.systemDoNotDisturb = systemDoNotDisturb
@@ -73,9 +75,11 @@ public struct RoutingRules: Codable, Sendable, Equatable {
     /// Quiet hours and snooze. See `SuppressionWindow`.
     public var suppression = SuppressionWindow()
 
-    public init(mutedSources: Set<SignalSource> = [],
-                sourceOverrides: [SignalSource: Set<DeliveryChannel>] = [:],
-                sourceKindOverrides: [SourceKind: Set<DeliveryChannel>] = [:]) {
+    public init(
+        mutedSources: Set<SignalSource> = [],
+        sourceOverrides: [SignalSource: Set<DeliveryChannel>] = [:],
+        sourceKindOverrides: [SourceKind: Set<DeliveryChannel>] = [:]
+    ) {
         self.mutedSources = mutedSources
         self.sourceOverrides = sourceOverrides
         self.sourceKindOverrides = sourceKindOverrides
@@ -88,10 +92,12 @@ public struct RoutingRules: Codable, Sendable, Equatable {
     /// That is the `AinkradFormRow` failure recorded in AinkradQuest's
     /// project.yml, and the pattern `SignalDeepLink.init(appID:payload:locator:)`
     /// established.
-    public init(mutedSources: Set<SignalSource>,
-                sourceOverrides: [SignalSource: Set<DeliveryChannel>],
-                sourceKindOverrides: [SourceKind: Set<DeliveryChannel>],
-                urgentBypass: Set<SignalSource>) {
+    public init(
+        mutedSources: Set<SignalSource>,
+        sourceOverrides: [SignalSource: Set<DeliveryChannel>],
+        sourceKindOverrides: [SourceKind: Set<DeliveryChannel>],
+        urgentBypass: Set<SignalSource>
+    ) {
         self.mutedSources = mutedSources
         self.sourceOverrides = sourceOverrides
         self.sourceKindOverrides = sourceKindOverrides
@@ -104,20 +110,27 @@ public struct RoutingRules: Codable, Sendable, Equatable {
     /// notification preference the user had set.
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        mutedSources = try container.decodeIfPresent(
-            Set<SignalSource>.self, forKey: .mutedSources) ?? []
-        sourceOverrides = try container.decodeIfPresent(
-            [SignalSource: Set<DeliveryChannel>].self, forKey: .sourceOverrides) ?? [:]
-        sourceKindOverrides = try container.decodeIfPresent(
-            [SourceKind: Set<DeliveryChannel>].self, forKey: .sourceKindOverrides) ?? [:]
-        urgentBypass = try container.decodeIfPresent(
-            Set<SignalSource>.self, forKey: .urgentBypass) ?? []
-        interruptFloor = try container.decodeIfPresent(
-            [SignalSource: SignalSeverity].self, forKey: .interruptFloor) ?? [:]
-        soundOverride = try container.decodeIfPresent(
-            [SignalSource: SignalSoundChoice].self, forKey: .soundOverride) ?? [:]
-        suppression = try container.decodeIfPresent(
-            SuppressionWindow.self, forKey: .suppression) ?? SuppressionWindow()
+        mutedSources =
+            try container.decodeIfPresent(
+                Set<SignalSource>.self, forKey: .mutedSources) ?? []
+        sourceOverrides =
+            try container.decodeIfPresent(
+                [SignalSource: Set<DeliveryChannel>].self, forKey: .sourceOverrides) ?? [:]
+        sourceKindOverrides =
+            try container.decodeIfPresent(
+                [SourceKind: Set<DeliveryChannel>].self, forKey: .sourceKindOverrides) ?? [:]
+        urgentBypass =
+            try container.decodeIfPresent(
+                Set<SignalSource>.self, forKey: .urgentBypass) ?? []
+        interruptFloor =
+            try container.decodeIfPresent(
+                [SignalSource: SignalSeverity].self, forKey: .interruptFloor) ?? [:]
+        soundOverride =
+            try container.decodeIfPresent(
+                [SignalSource: SignalSoundChoice].self, forKey: .soundOverride) ?? [:]
+        suppression =
+            try container.decodeIfPresent(
+                SuppressionWindow.self, forKey: .suppression) ?? SuppressionWindow()
     }
 
     public static let `default` = RoutingRules()
@@ -129,26 +142,31 @@ public struct RoutingRules: Codable, Sendable, Equatable {
 /// The pre-suppression signature, kept because it is public API in a
 /// library-evolution module: changing it would break anything already linked
 /// against the old mangled symbol at load time, not at compile time.
-public func route(_ event: SignalEvent,
-                  rules: RoutingRules,
-                  context: DeliveryContext) -> Set<DeliveryChannel> {
+public func route(
+    _ event: SignalEvent,
+    rules: RoutingRules,
+    context: DeliveryContext
+) -> Set<DeliveryChannel> {
     route(event, rules: rules, context: context, now: Date())
 }
 
 /// Pure. Given an event, the user's rules, their situation and the time, which
 /// channels deliver it. The clock is a PARAMETER — a suppression window that
 /// read `Date()` internally could not be tested at 3am.
-public func route(_ event: SignalEvent,
-                  rules: RoutingRules,
-                  context: DeliveryContext,
-                  now: Date,
-                  calendar: Calendar = .current) -> Set<DeliveryChannel> {
+public func route(
+    _ event: SignalEvent,
+    rules: RoutingRules,
+    context: DeliveryContext,
+    now: Date,
+    calendar: Calendar = .current
+) -> Set<DeliveryChannel> {
     var channels: Set<DeliveryChannel> = [.feed]
 
     // Urgency from a source the user explicitly exempted. Computed once: it
     // clears the floor, the suppression window AND Focus, and three separate
     // computations of the same thing is three places for them to disagree.
-    let bypasses = event.proposedImportance == .urgent
+    let bypasses =
+        event.proposedImportance == .urgent
         && rules.urgentBypass.contains(event.source)
 
     // A muted source logs and stops. Checked before overrides so muting is
@@ -159,7 +177,8 @@ public func route(_ event: SignalEvent,
     // saying "never below this"; an override they set earlier must not
     // resurrect what the floor has just excluded.
     if let floor = rules.interruptFloor[event.source],
-       severityRank(event.severity) < severityRank(floor), !bypasses {
+        severityRank(event.severity) < severityRank(floor), !bypasses
+    {
         return channels
     }
 
@@ -195,8 +214,10 @@ public func route(_ event: SignalEvent,
     return channels
 }
 
-private func defaultChannels(for event: SignalEvent,
-                             context: DeliveryContext) -> Set<DeliveryChannel> {
+private func defaultChannels(
+    for event: SignalEvent,
+    context: DeliveryContext
+) -> Set<DeliveryChannel> {
     var channels = severityChannels(for: event, context: context)
 
     // Importance adjusts the severity table. This is what makes
@@ -239,8 +260,10 @@ private func defaultChannels(for event: SignalEvent,
     return channels
 }
 
-private func severityChannels(for event: SignalEvent,
-                              context: DeliveryContext) -> Set<DeliveryChannel> {
+private func severityChannels(
+    for event: SignalEvent,
+    context: DeliveryContext
+) -> Set<DeliveryChannel> {
     let appIsVisible: Bool = {
         guard case .app(let id) = event.source else { return context.hostIsFrontmost }
         return context.hostIsFrontmost && context.visibleAppIDs.contains(id)
@@ -248,17 +271,17 @@ private func severityChannels(for event: SignalEvent,
     let present = context.hostIsFrontmost
 
     switch (event.severity, present, appIsVisible) {
-    case (.info, true, _):            return []
-    case (.info, false, _):           return [.badge]
-    case (.success, true, true):      return [.toast]
-    case (.success, true, false):     return [.badge]
-    case (.success, false, _):        return [.badge, .banner]
-    case (.warning, true, true):      return [.toast]
-    case (.warning, true, false):     return [.badge, .toast]
-    case (.warning, false, _):        return [.badge, .banner]
-    case (.failure, true, true):      return [.toast, .sound]
-    case (.failure, true, false):     return [.badge, .toast, .sound]
-    case (.failure, false, _):        return [.badge, .banner, .sound]
+    case (.info, true, _): return []
+    case (.info, false, _): return [.badge]
+    case (.success, true, true): return [.toast]
+    case (.success, true, false): return [.badge]
+    case (.success, false, _): return [.badge, .banner]
+    case (.warning, true, true): return [.toast]
+    case (.warning, true, false): return [.badge, .toast]
+    case (.warning, false, _): return [.badge, .banner]
+    case (.failure, true, true): return [.toast, .sound]
+    case (.failure, true, false): return [.badge, .toast, .sound]
+    case (.failure, false, _): return [.badge, .banner, .sound]
     }
 }
 

@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Maps the 16 ANSI slots `AinkradANSIParser` emits **through the host theme**,
 /// so a log pane follows the user's colours like every other Ainkrad surface.
@@ -20,22 +20,22 @@ public struct AinkradANSIPalette: Sendable {
         let warning = AinkradStatus.warning.color(in: theme, statusColors: statusColors)
         let success = AinkradStatus.success.color(in: theme, statusColors: statusColors)
         colors = [
-            foreground.opacity(0.45),          // 0 black -> dimmed foreground
-            danger,                            // 1 red
-            success,                           // 2 green
-            warning,                           // 3 yellow
-            theme.accentPrimary,               // 4 blue
-            theme.accentSecondary,             // 5 magenta
+            foreground.opacity(0.45),  // 0 black -> dimmed foreground
+            danger,  // 1 red
+            success,  // 2 green
+            warning,  // 3 yellow
+            theme.accentPrimary,  // 4 blue
+            theme.accentSecondary,  // 5 magenta
             theme.accentPrimary.opacity(0.8),  // 6 cyan
-            foreground,                        // 7 white
-            foreground.opacity(0.6),           // 8 bright black
-            danger,                            // 9
-            success,                           // 10
-            warning,                           // 11
-            theme.accentPrimary,               // 12
-            theme.accentSecondary,             // 13
+            foreground,  // 7 white
+            foreground.opacity(0.6),  // 8 bright black
+            danger,  // 9
+            success,  // 10
+            warning,  // 11
+            theme.accentPrimary,  // 12
+            theme.accentSecondary,  // 13
             theme.accentPrimary.opacity(0.9),  // 14
-            foreground,                        // 15
+            foreground,  // 15
         ]
     }
 

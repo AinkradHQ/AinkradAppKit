@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradAppKitContract
 
 @MainActor
@@ -54,20 +55,22 @@ struct MCPAppServerTests {
 
     func demoServer() -> MCPAppServer {
         let server = MCPAppServer(appID: "demo")
-        server.addTool(.init(
-            name: "echo",
-            description: "Echo the input back.",
-            schemaJSON: #"{"type":"object","properties":{"text":{"type":"string"}}}"#,
-            destructive: false, readOnly: true
-        ) { json in
-            AgentActionResult(text: "got \(json)", isError: false)
-        })
-        server.addTool(.init(
-            name: "boom", description: "Always fails.",
-            schemaJSON: #"{"type":"object"}"#, destructive: true
-        ) { _ in
-            AgentActionResult(text: "exploded", isError: true)
-        })
+        server.addTool(
+            .init(
+                name: "echo",
+                description: "Echo the input back.",
+                schemaJSON: #"{"type":"object","properties":{"text":{"type":"string"}}}"#,
+                destructive: false, readOnly: true
+            ) { json in
+                AgentActionResult(text: "got \(json)", isError: false)
+            })
+        server.addTool(
+            .init(
+                name: "boom", description: "Always fails.",
+                schemaJSON: #"{"type":"object"}"#, destructive: true
+            ) { _ in
+                AgentActionResult(text: "exploded", isError: true)
+            })
         return server
     }
 
@@ -96,12 +99,17 @@ struct MCPAppServerTests {
     @Test("tools/list emits ainkrad/requiresLiveApp for both states")
     func toolsListRequiresLiveApp() async throws {
         let server = MCPAppServer(appID: "demo")
-        server.addTool(.init(name: "headless", description: "",
-                             schemaJSON: #"{"type":"object"}"#) { _ in
-            AgentActionResult(text: "ok", isError: false)
-        })
-        var live = MCPToolSpec(name: "onscreen", description: "",
-                               schemaJSON: #"{"type":"object"}"#) { _ in
+        server.addTool(
+            .init(
+                name: "headless", description: "",
+                schemaJSON: #"{"type":"object"}"#
+            ) { _ in
+                AgentActionResult(text: "ok", isError: false)
+            })
+        var live = MCPToolSpec(
+            name: "onscreen", description: "",
+            schemaJSON: #"{"type":"object"}"#
+        ) { _ in
             AgentActionResult(text: "ok", isError: false)
         }
         live.requiresLiveApp = true
@@ -204,7 +212,8 @@ struct MCPAppServerTests {
             #"{"jsonrpc":"2.0","id":"11","method":"resources/list","params":{}}"#)
         let result = try #require(try decode(reply)["result"] as? [String: Any])
         let resources = try #require(result["resources"] as? [[String: Any]])
-        #expect(resources[0]["description"] as? String
+        #expect(
+            resources[0]["description"] as? String
                 == "Read when the workspace context shows a truncated terminal.")
         #expect(resources[1]["description"] as? String == "")
     }
@@ -260,26 +269,28 @@ struct MCPAppServerTests {
     @Test("addTool returns false and registers nothing for a duplicate name")
     func addToolDuplicateName() async throws {
         let server = demoServer()
-        let added = server.addTool(.init(
-            name: "echo", description: "A second echo.",
-            schemaJSON: #"{"type":"object"}"#
-        ) { _ in AgentActionResult(text: "second", isError: false) })
+        let added = server.addTool(
+            .init(
+                name: "echo", description: "A second echo.",
+                schemaJSON: #"{"type":"object"}"#
+            ) { _ in AgentActionResult(text: "second", isError: false) })
         #expect(added == false)
 
         let reply = await server.handle(
             #"{"jsonrpc":"2.0","id":"12","method":"tools/list","params":{}}"#)
         let result = try #require(try decode(reply)["result"] as? [String: Any])
         let tools = try #require(result["tools"] as? [[String: Any]])
-        #expect(tools.count == 2)   // still just echo + boom, not a third
+        #expect(tools.count == 2)  // still just echo + boom, not a third
     }
 
     @Test("addTool returns false and registers nothing for a malformed schemaJSON")
     func addToolMalformedSchema() async throws {
         let server = MCPAppServer(appID: "demo")
-        let added = server.addTool(.init(
-            name: "broken", description: "Bad schema.",
-            schemaJSON: "not json"
-        ) { _ in AgentActionResult(text: "n/a", isError: false) })
+        let added = server.addTool(
+            .init(
+                name: "broken", description: "Bad schema.",
+                schemaJSON: "not json"
+            ) { _ in AgentActionResult(text: "n/a", isError: false) })
         #expect(added == false)
 
         let reply = await server.handle(
@@ -308,17 +319,19 @@ struct MCPAppServerTests {
         let flags = Flags()
 
         let server = MCPAppServer(appID: "demo")
-        server.addTool(.init(
-            name: "echo", description: "Echo.",
-            schemaJSON: #"{"type":"object"}"#
-        ) { _ in
-            flags.didCallToolHandler = true
-            return AgentActionResult(text: "called", isError: false)
-        })
-        server.addResource(.init(uri: "demo://buffer", title: "Buffer") {
-            flags.didCallResourceProvider = true
-            return "called"
-        })
+        server.addTool(
+            .init(
+                name: "echo", description: "Echo.",
+                schemaJSON: #"{"type":"object"}"#
+            ) { _ in
+                flags.didCallToolHandler = true
+                return AgentActionResult(text: "called", isError: false)
+            })
+        server.addResource(
+            .init(uri: "demo://buffer", title: "Buffer") {
+                flags.didCallResourceProvider = true
+                return "called"
+            })
 
         func expectFlagsUnset(_ label: String) {
             #expect(flags.didCallToolHandler == false, "\(label) must not invoke the tool handler")

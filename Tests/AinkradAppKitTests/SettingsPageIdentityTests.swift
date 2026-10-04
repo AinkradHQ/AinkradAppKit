@@ -1,7 +1,8 @@
-import Testing
-import Foundation
-@testable import AinkradAppKit
 import AinkradAppKitContract
+import Foundation
+import Testing
+
+@testable import AinkradAppKit
 
 /// The tabbed branch of `SettingsPageView` renders ONE `SettingsGroupView` at a
 /// fixed structural position. Without a per-group `.id` SwiftUI gives every
@@ -29,8 +30,9 @@ struct SettingsPageIdentityTests {
     func tabbedGroupHasIdentity() {
         let text = source
         #expect(!text.isEmpty, "could not read SettingsPageView.swift")
-        #expect(text.contains(".id(Self.groupViewIdentity(page: page, index: index))"),
-                "the tabbed SettingsGroupView lost its per-group .id — tab state will bleed between groups")
+        #expect(
+            text.contains(".id(Self.groupViewIdentity(page: page, index: index))"),
+            "the tabbed SettingsGroupView lost its per-group .id — tab state will bleed between groups")
     }
 
     @Test("group identity varies per group")
@@ -39,10 +41,13 @@ struct SettingsPageIdentityTests {
         let page = SettingsPage(
             path: root, title: "Test", icon: "gear", group: .workspace, order: 0,
             groups: (0..<3).map { i in
-                SettingsGroup(path: root.appending("g\(i)"), title: "G\(i)", fields: [
-                    SettingsField(path: root.appending("g\(i)").appending("f"),
-                                  label: "F", kind: .toggle(.constant(false)))
-                ])
+                SettingsGroup(
+                    path: root.appending("g\(i)"), title: "G\(i)",
+                    fields: [
+                        SettingsField(
+                            path: root.appending("g\(i)").appending("f"),
+                            label: "F", kind: .toggle(.constant(false)))
+                    ])
             })
         let ids = page.groups.indices.map { SettingsPageView.groupViewIdentity(page: page, index: $0) }
         #expect(Set(ids).count == ids.count)
@@ -53,8 +58,9 @@ struct SettingsPageIdentityTests {
 @MainActor
 struct SettingsPageShapeTests {
     private func page(groups: Int) -> SettingsPage {
-        SettingsPage(path: SettingsPath(["p"]), title: "P", icon: "gear", group: .installedApps, order: 0,
-                     groups: (0..<groups).map { SettingsGroup(path: SettingsPath(["p", "\($0)"]), title: "\($0)", fields: []) })
+        SettingsPage(
+            path: SettingsPath(["p"]), title: "P", icon: "gear", group: .installedApps, order: 0,
+            groups: (0..<groups).map { SettingsGroup(path: SettingsPath(["p", "\($0)"]), title: "\($0)", fields: []) })
     }
 
     @Test("two groups are tabs; one is a plain column")

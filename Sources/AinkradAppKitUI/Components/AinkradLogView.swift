@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// A log pane backed by `NSTextView`, rendering `AinkradLogBuffer` lines
 /// through an `AinkradANSIPalette`.
@@ -31,8 +31,10 @@ public struct AinkradLogView: NSViewRepresentable {
     /// from the bottom is how someone reads what already happened.
     let isFollowing: Bool
 
-    public init(lines: [AinkradLogLine], palette: AinkradANSIPalette, foreground: Color,
-                showsSourcePrefix: Bool = false, isFollowing: Bool = true) {
+    public init(
+        lines: [AinkradLogLine], palette: AinkradANSIPalette, foreground: Color,
+        showsSourcePrefix: Bool = false, isFollowing: Bool = true
+    ) {
         self.lines = lines
         self.palette = palette
         self.foreground = foreground
@@ -54,8 +56,9 @@ public struct AinkradLogView: NSViewRepresentable {
         // makes it readable, so it scrolls horizontally instead.
         textView.isHorizontallyResizable = true
         textView.textContainer?.widthTracksTextView = false
-        textView.textContainer?.containerSize = NSSize(width: CGFloat.greatestFiniteMagnitude,
-                                                       height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.containerSize = NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude)
         textView.textContainerInset = NSSize(width: 8, height: 8)
         return scrollView
     }
@@ -64,7 +67,8 @@ public struct AinkradLogView: NSViewRepresentable {
         guard let textView = scrollView.documentView as? NSTextView else { return }
         let selected = textView.selectedRanges
         textView.textStorage?.setAttributedString(
-            Self.attributedLog(lines: lines, palette: palette, foreground: foreground, showsSourcePrefix: showsSourcePrefix))
+            Self.attributedLog(
+                lines: lines, palette: palette, foreground: foreground, showsSourcePrefix: showsSourcePrefix))
         // Preserving the selection matters: without it a follow tick wipes
         // whatever the user was in the middle of copying.
         if !isFollowing {
@@ -89,8 +93,10 @@ public struct AinkradLogView: NSViewRepresentable {
         return String(source.prefix(width - 1)) + "\u{2026}"
     }
 
-    static func attributedLog(lines: [AinkradLogLine], palette: AinkradANSIPalette, foreground: Color,
-                              showsSourcePrefix: Bool) -> NSAttributedString {
+    static func attributedLog(
+        lines: [AinkradLogLine], palette: AinkradANSIPalette, foreground: Color,
+        showsSourcePrefix: Bool
+    ) -> NSAttributedString {
         let font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
         let boldFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .semibold)
         let defaultColor = NSColor(foreground)
@@ -98,9 +104,10 @@ public struct AinkradLogView: NSViewRepresentable {
 
         for line in lines {
             if showsSourcePrefix, let source = line.source {
-                output.append(NSAttributedString(
-                    string: sourcePrefix(source) + " ",
-                    attributes: [.font: font, .foregroundColor: defaultColor.withAlphaComponent(0.45)]))
+                output.append(
+                    NSAttributedString(
+                        string: sourcePrefix(source) + " ",
+                        attributes: [.font: font, .foregroundColor: defaultColor.withAlphaComponent(0.45)]))
             }
             for run in line.runs {
                 var color = NSColor(palette.color(slot: run.colorSlot, default: foreground))
@@ -111,9 +118,10 @@ public struct AinkradLogView: NSViewRepresentable {
                     color = NSColor(palette.color(slot: 1, default: foreground))
                 }
                 if run.isDim { color = color.withAlphaComponent(0.6) }
-                output.append(NSAttributedString(
-                    string: run.text,
-                    attributes: [.font: run.isBold ? boldFont : font, .foregroundColor: color]))
+                output.append(
+                    NSAttributedString(
+                        string: run.text,
+                        attributes: [.font: run.isBold ? boldFont : font, .foregroundColor: color]))
             }
             output.append(NSAttributedString(string: "\n", attributes: [.font: font]))
         }

@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// Mono chamfer panel for a block of code — optional language caption,
 /// horizontal scroll for long lines, and a copy-to-pasteboard button

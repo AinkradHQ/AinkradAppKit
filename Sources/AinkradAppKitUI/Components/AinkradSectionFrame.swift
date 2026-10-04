@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Titled chamfer-bordered container — an accent-tick, uppercase-title header
 /// atop a chamfered-border body. No separator line between header and body;
@@ -12,7 +12,8 @@ public struct AinkradSectionFrame<Content: View>: View {
     @Environment(\.ainkradTypography) private var typo
 
     public init(title: String, @ViewBuilder content: () -> Content) {
-        self.title = title; self.content = content()
+        self.title = title
+        self.content = content()
     }
 
     public var body: some View {

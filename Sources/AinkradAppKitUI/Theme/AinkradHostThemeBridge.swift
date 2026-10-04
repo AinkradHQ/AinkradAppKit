@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Publishes a `HostTheme` into the SDK's environment keys.
 ///
@@ -20,9 +20,9 @@ import AinkradAppKitContract
 /// Status colors are derived here rather than stored on `HostThemeTokens` —
 /// that type is ABI-frozen for plugins, and `ContractFreezeTests` asserts it
 /// gains no stored fields.
-public extension View {
+extension View {
     /// Injects `theme` into `ainkradTheme` (and status colors derived from it).
-    func ainkradHostTheme(_ theme: HostTheme) -> some View {
+    public func ainkradHostTheme(_ theme: HostTheme) -> some View {
         modifier(AinkradHostThemeBridge(theme: theme))
     }
 }
@@ -36,17 +36,18 @@ public struct AinkradHostThemeBridge: ViewModifier {
         // `theme.tokens` is read here, inside `body`, so the `@Observable`
         // dependency is registered and a theme change re-renders the subtree.
         let tokens = theme.tokens
-        return content
+        return
+            content
             .environment(\.ainkradTheme, tokens)
             .environment(\.ainkradStatusColors, AinkradStatusColors(theme.statusColors))
     }
 }
 
-public extension AinkradStatusColors {
+extension AinkradStatusColors {
     /// Adapts the contract's `HostStatusColors` into the UI kit's environment
     /// value. Two types rather than one because the contract module must not
     /// depend on the UI module — the dependency runs one way only.
-    init(_ host: HostStatusColors) {
+    public init(_ host: HostStatusColors) {
         self.init(success: host.success, warning: host.warning, danger: host.danger)
     }
 }

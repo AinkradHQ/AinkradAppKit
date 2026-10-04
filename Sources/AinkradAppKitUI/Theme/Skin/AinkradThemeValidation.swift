@@ -66,7 +66,8 @@ func ainkradDecodeThemeFile(_ data: Data, bases: [String: AinkradThemeFile] = [:
             if NSNull() is NSNull, hostObj is NSNull {
                 hostData = nil
             } else {
-                hostData = try JSONSerialization.data(withJSONObject: hostObj, options: [.fragmentsAllowed, .sortedKeys])
+                hostData = try JSONSerialization.data(
+                    withJSONObject: hostObj, options: [.fragmentsAllowed, .sortedKeys])
             }
         }
     }
@@ -174,7 +175,7 @@ func ainkradPathFromContext(_ context: DecodingError.Context, appending key: Str
 
 func ainkradValidateSemanticRules(_ skin: AinkradSkin) throws {
     // ID check: non-empty [A-Za-z0-9.-]
-    let idRegex = try! NSRegularExpression(pattern: "^[A-Za-z0-9.-]+$") // design-lint: allow try-bang compile-time constant regex
+    let idRegex = try! NSRegularExpression(pattern: "^[A-Za-z0-9.-]+$")  // design-lint: allow try-bang compile-time constant regex
     let idRange = NSRange(location: 0, length: skin.id.utf16.count)
     if skin.id.isEmpty || idRegex.firstMatch(in: skin.id, options: [], range: idRange) == nil {
         throw AinkradThemeError.invalidId(path: "$.id", id: skin.id)
@@ -184,7 +185,7 @@ func ainkradValidateSemanticRules(_ skin: AinkradSkin) throws {
     let paletteKeys: Set<String> = [
         "background", "surface", "surfaceElevated", "surfaceHover", "surfacePressed", "surfaceSelected",
         "accentPrimary", "accentSecondary", "accentTertiary", "border", "borderSubtle", "borderFocus",
-        "foreground", "foregroundMuted", "foregroundFaint", "success", "warning", "danger", "black", "white"
+        "foreground", "foregroundMuted", "foregroundFaint", "success", "warning", "danger", "black", "white",
     ]
 
     // Validate colors in palette
@@ -268,7 +269,7 @@ func ainkradValidateValue(_ value: Any, paletteKeys: Set<String>, path: String) 
             ("keywordHue", syntaxTokens.keywordHue),
             ("stringHue", syntaxTokens.stringHue),
             ("typeHue", syntaxTokens.typeHue),
-            ("numberHue", syntaxTokens.numberHue)
+            ("numberHue", syntaxTokens.numberHue),
         ]
         for (name, h) in hues {
             if h < 0 || h > 360 {
@@ -296,7 +297,10 @@ func ainkradCheckDoubleRange(_ val: Double, path: String) throws {
         if val < 0 || val > 1 {
             throw AinkradThemeError.alphaOutOfRange(path: path, value: val)
         }
-    } else if lowerPath.contains("width") || lowerPath.contains("height") || lowerPath.contains("size") || lowerPath.contains("radius") || lowerPath.contains("cut") || lowerPath.contains("spacing") || lowerPath.contains("padding") || lowerPath.contains("elevation") {
+    } else if lowerPath.contains("width") || lowerPath.contains("height") || lowerPath.contains("size")
+        || lowerPath.contains("radius") || lowerPath.contains("cut") || lowerPath.contains("spacing")
+        || lowerPath.contains("padding") || lowerPath.contains("elevation")
+    {
         if val < 0 {
             throw AinkradThemeError.negativeDimension(path: path, value: val)
         }

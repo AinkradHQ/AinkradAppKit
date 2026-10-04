@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// The shared HUD panel finish: blur backing + translucent theme background +
 /// chamfered clip + luminous accent stroke + optional corner brackets +
@@ -26,14 +26,18 @@ public struct AinkradPanel<Content: View>: View {
     ///   window, so a `.withinWindow` blur has nothing to sample and renders as
     ///   a flat fill: the panel reads as an opaque slab rather than glass.
     ///   Those need `.behindWindow`.
-    public init(blur: AinkradBlurLevel = .panel,
-                blending: NSVisualEffectView.BlendingMode = .withinWindow,
-                backgroundOpacity: Double = 0.94,
-                showsBrackets: Bool = false,
-                @ViewBuilder content: () -> Content) {
-        self.blur = blur; self.blending = blending
+    public init(
+        blur: AinkradBlurLevel = .panel,
+        blending: NSVisualEffectView.BlendingMode = .withinWindow,
+        backgroundOpacity: Double = 0.94,
+        showsBrackets: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.blur = blur
+        self.blending = blending
         self.backgroundOpacity = backgroundOpacity
-        self.showsBrackets = showsBrackets; self.content = content()
+        self.showsBrackets = showsBrackets
+        self.content = content()
     }
     public var body: some View {
         content
@@ -60,12 +64,16 @@ public struct AinkradPanel<Content: View>: View {
     }
 }
 
-public extension View {
-    func ainkradPanel(blur: AinkradBlurLevel = .panel,
-                       blending: NSVisualEffectView.BlendingMode = .withinWindow,
-                       backgroundOpacity: Double = 0.94,
-                       showsBrackets: Bool = false) -> some View {
-        AinkradPanel(blur: blur, blending: blending, backgroundOpacity: backgroundOpacity,
-                     showsBrackets: showsBrackets) { self }
+extension View {
+    public func ainkradPanel(
+        blur: AinkradBlurLevel = .panel,
+        blending: NSVisualEffectView.BlendingMode = .withinWindow,
+        backgroundOpacity: Double = 0.94,
+        showsBrackets: Bool = false
+    ) -> some View {
+        AinkradPanel(
+            blur: blur, blending: blending, backgroundOpacity: backgroundOpacity,
+            showsBrackets: showsBrackets
+        ) { self }
     }
 }

@@ -21,8 +21,8 @@
 // This file re-exports both, so `import AinkradAppKit` continues to mean
 // exactly what it did — every plugin and the host compile unchanged.
 @_exported import AinkradAppKitContract
-@_exported import AinkradAppKitUI
 @_exported import AinkradAppKitHome
+@_exported import AinkradAppKitUI
 // AinkradSignal ships inside the same dynamic image. It is a dependency of
 // this umbrella rather than a standalone target for a concrete reason: a
 // target that belongs to no product and is nobody's dependency is invisible

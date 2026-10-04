@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// `value / total`, clamped into `0...1`. A non-positive `total` returns `0`
 /// rather than dividing by zero. Pure — `AinkradMeter`'s arc-fill math,
@@ -26,7 +26,9 @@ public struct AinkradMeter: View {
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var animatedFraction: Double = 0
 
-    public init(value: Double, total: Double = 1, label: String? = nil, kind: AinkradStatusBarKind = .accent, size: CGFloat = 88) {
+    public init(
+        value: Double, total: Double = 1, label: String? = nil, kind: AinkradStatusBarKind = .accent, size: CGFloat = 88
+    ) {
         self.value = value
         self.total = total
         self.label = label

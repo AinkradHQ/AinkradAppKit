@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// A `TimelineView(.animation)` that obeys `AinkradMotionBudget`.
 ///

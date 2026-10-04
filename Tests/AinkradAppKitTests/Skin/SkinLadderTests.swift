@@ -1,6 +1,7 @@
+import Foundation
 // design-lint: allow-file radius-literal,opacity-literal,frame-literal,chamfer-literal,motion-literal theme layer — skin ladder tests
 import Testing
-import Foundation
+
 @testable import AinkradAppKitUI
 
 @Suite("SkinLadderTests")

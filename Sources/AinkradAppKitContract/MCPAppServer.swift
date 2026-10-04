@@ -38,9 +38,11 @@ public struct MCPToolSpec: Sendable {
     /// Receives the call's `arguments` object as a JSON string.
     public let handler: @MainActor @Sendable (String) async -> AgentActionResult
 
-    public init(name: String, description: String, schemaJSON: String,
-                destructive: Bool = false, readOnly: Bool = false,
-                handler: @escaping @MainActor @Sendable (String) async -> AgentActionResult) {
+    public init(
+        name: String, description: String, schemaJSON: String,
+        destructive: Bool = false, readOnly: Bool = false,
+        handler: @escaping @MainActor @Sendable (String) async -> AgentActionResult
+    ) {
         self.name = name
         self.description = description
         self.schemaJSON = schemaJSON
@@ -100,8 +102,10 @@ public struct MCPResourceSpec: Sendable {
     /// every already-compiled plugin bundle links against.
     public var resultProvider: (@MainActor @Sendable () async -> MCPResourceContent)?
 
-    public init(uri: String, title: String, mimeType: String = "text/plain",
-                provider: @escaping @MainActor @Sendable () async -> String) {
+    public init(
+        uri: String, title: String, mimeType: String = "text/plain",
+        provider: @escaping @MainActor @Sendable () async -> String
+    ) {
         self.uri = uri
         self.title = title
         self.mimeType = mimeType
@@ -128,7 +132,8 @@ public struct MCPResourceSpec: Sendable {
     @discardableResult
     public func addTool(_ spec: MCPToolSpec) -> Bool {
         guard !tools.contains(where: { $0.name == spec.name }),
-              Self.parseSchema(spec.schemaJSON) != nil else { return false }
+            Self.parseSchema(spec.schemaJSON) != nil
+        else { return false }
         tools.append(spec)
         return true
     }
@@ -148,11 +153,14 @@ public struct MCPResourceSpec: Sendable {
     /// empty reply as a message.
     public func handle(_ message: String) async -> String {
         guard let data = message.data(using: .utf8),
-              let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-            return Self.encode(["jsonrpc": "2.0", "id": NSNull(),
-                                "error": ["code": -32700, "message": "parse error"]])
+            let root = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        else {
+            return Self.encode([
+                "jsonrpc": "2.0", "id": NSNull(),
+                "error": ["code": -32700, "message": "parse error"],
+            ])
         }
-        guard let id = root["id"] else { return "" }   // notification
+        guard let id = root["id"] else { return "" }  // notification
         guard let method = root["method"] as? String else {
             // Has an id but no method at all — a malformed request, not a
             // lookup against a method that simply doesn't exist.
@@ -162,40 +170,48 @@ public struct MCPResourceSpec: Sendable {
 
         switch method {
         case "initialize":
-            return Self.result(id, [
-                "protocolVersion": "2024-11-05",
-                "serverInfo": ["name": appID, "version": "1.0"],
-                "capabilities": ["tools": [String: Any](), "resources": [String: Any]()],
-            ])
+            return Self.result(
+                id,
+                [
+                    "protocolVersion": "2024-11-05",
+                    "serverInfo": ["name": appID, "version": "1.0"],
+                    "capabilities": ["tools": [String: Any](), "resources": [String: Any]()],
+                ])
 
         case "tools/list":
-            return Self.result(id, ["tools": tools.map { spec in
+            return Self.result(
+                id,
                 [
-                    "name": spec.name,
-                    "description": spec.description,
-                    // Fallback is unreachable: `addTool` already rejects specs
-                    // whose `schemaJSON` doesn't parse, so every stored spec's
-                    // schema parses here too.
-                    "inputSchema": Self.parseSchema(spec.schemaJSON) ?? ["type": "object"],
-                    // `ainkrad/requiresLiveApp` is namespaced because it is NOT
-                    // a standard MCP annotation, unlike its two neighbours — a
-                    // generic MCP client must be able to tell ours apart from
-                    // the spec'd ones. Always emitted, including `false`, so
-                    // the host reads one shape rather than inferring a default
-                    // from absence.
-                    "annotations": [
-                        "destructiveHint": spec.destructive,
-                        "readOnlyHint": spec.readOnly,
-                        "ainkrad/requiresLiveApp": spec.requiresLiveApp,
-                    ],
-                ]
-            }])
+                    "tools": tools.map { spec in
+                        [
+                            "name": spec.name,
+                            "description": spec.description,
+                            // Fallback is unreachable: `addTool` already rejects specs
+                            // whose `schemaJSON` doesn't parse, so every stored spec's
+                            // schema parses here too.
+                            "inputSchema": Self.parseSchema(spec.schemaJSON) ?? ["type": "object"],
+                            // `ainkrad/requiresLiveApp` is namespaced because it is NOT
+                            // a standard MCP annotation, unlike its two neighbours — a
+                            // generic MCP client must be able to tell ours apart from
+                            // the spec'd ones. Always emitted, including `false`, so
+                            // the host reads one shape rather than inferring a default
+                            // from absence.
+                            "annotations": [
+                                "destructiveHint": spec.destructive,
+                                "readOnlyHint": spec.readOnly,
+                                "ainkrad/requiresLiveApp": spec.requiresLiveApp,
+                            ],
+                        ]
+                    }
+                ])
 
         case "tools/call":
             guard let name = params["name"] as? String,
-                  let spec = tools.first(where: { $0.name == name }) else {
-                return Self.error(id, code: -32602,
-                                  message: "unknown tool '\(params["name"] as? String ?? "")'")
+                let spec = tools.first(where: { $0.name == name })
+            else {
+                return Self.error(
+                    id, code: -32602,
+                    message: "unknown tool '\(params["name"] as? String ?? "")'")
             }
             let arguments = params["arguments"] as? [String: Any] ?? [:]
             let argumentJSON = Self.encodeAny(arguments)
@@ -204,31 +220,39 @@ public struct MCPResourceSpec: Sendable {
             // MCP `error` means the call could not be made at all. `MCPClient`
             // relies on this split: it throws on `error`, and surfaces
             // `isError` as a visible tool result.
-            return Self.result(id, [
-                "content": [["type": "text", "text": outcome.text]],
-                "isError": outcome.isError,
-            ])
+            return Self.result(
+                id,
+                [
+                    "content": [["type": "text", "text": outcome.text]],
+                    "isError": outcome.isError,
+                ])
 
         case "resources/list":
-            return Self.result(id, ["resources": resources.map { spec in
-                // Resources have no standard MCP annotations block, but the host
-                // reads the flag the same way it does for tools, so carry it in
-                // the same namespaced key under an `annotations` object.
-                // `description` is standard MCP and always emitted, empty when
-                // the app didn't set `purpose` — one shape for the host to
-                // decode rather than a key that comes and goes.
+            return Self.result(
+                id,
                 [
-                    "uri": spec.uri, "name": spec.title, "mimeType": spec.mimeType,
-                    "description": spec.purpose,
-                    "annotations": ["ainkrad/requiresLiveApp": spec.requiresLiveApp],
-                ]
-            }])
+                    "resources": resources.map { spec in
+                        // Resources have no standard MCP annotations block, but the host
+                        // reads the flag the same way it does for tools, so carry it in
+                        // the same namespaced key under an `annotations` object.
+                        // `description` is standard MCP and always emitted, empty when
+                        // the app didn't set `purpose` — one shape for the host to
+                        // decode rather than a key that comes and goes.
+                        [
+                            "uri": spec.uri, "name": spec.title, "mimeType": spec.mimeType,
+                            "description": spec.purpose,
+                            "annotations": ["ainkrad/requiresLiveApp": spec.requiresLiveApp],
+                        ]
+                    }
+                ])
 
         case "resources/read":
             guard let uri = params["uri"] as? String,
-                  let spec = resources.first(where: { $0.uri == uri }) else {
-                return Self.error(id, code: -32002,
-                                  message: "unknown resource '\(params["uri"] as? String ?? "")'")
+                let spec = resources.first(where: { $0.uri == uri })
+            else {
+                return Self.error(
+                    id, code: -32002,
+                    message: "unknown resource '\(params["uri"] as? String ?? "")'")
             }
             // `resultProvider` wins when set; otherwise the legacy `provider`
             // runs and its text is a success by definition.
@@ -247,12 +271,14 @@ public struct MCPResourceSpec: Sendable {
             // `annotations["ainkrad/requiresLiveApp"]`, and is always emitted so
             // the host reads one shape. A generic MCP client ignores it and
             // still sees the text.
-            return Self.result(id, [
-                "contents": [
-                    ["uri": spec.uri, "mimeType": spec.mimeType, "text": outcome.text],
-                ],
-                "ainkrad/isError": outcome.isError,
-            ])
+            return Self.result(
+                id,
+                [
+                    "contents": [
+                        ["uri": spec.uri, "mimeType": spec.mimeType, "text": outcome.text]
+                    ],
+                    "ainkrad/isError": outcome.isError,
+                ])
 
         default:
             return Self.error(id, code: -32601, message: "unknown method '\(method)'")
@@ -276,13 +302,17 @@ public struct MCPResourceSpec: Sendable {
     /// because the message itself failed to parse.
     static func encode(_ object: [String: Any], id: Any? = nil) -> String {
         guard let data = try? JSONSerialization.data(withJSONObject: object),
-              let string = String(data: data, encoding: .utf8) else {
+            let string = String(data: data, encoding: .utf8)
+        else {
             let fallbackID = id ?? NSNull()
-            guard let fallbackData = try? JSONSerialization.data(withJSONObject: [
-                "jsonrpc": "2.0", "id": fallbackID,
-                "error": ["code": -32603, "message": "encode failed"],
-            ] as [String: Any]),
-                  let fallbackString = String(data: fallbackData, encoding: .utf8) else {
+            guard
+                let fallbackData = try? JSONSerialization.data(
+                    withJSONObject: [
+                        "jsonrpc": "2.0", "id": fallbackID,
+                        "error": ["code": -32603, "message": "encode failed"],
+                    ] as [String: Any]),
+                let fallbackString = String(data: fallbackData, encoding: .utf8)
+            else {
                 return #"{"jsonrpc":"2.0","id":null,"error":{"code":-32603,"message":"encode failed"}}"#
             }
             return fallbackString
@@ -296,7 +326,8 @@ public struct MCPResourceSpec: Sendable {
     /// a permissive object schema at `tools/list` time.
     static func parseSchema(_ json: String) -> [String: Any]? {
         guard let data = json.data(using: .utf8),
-              let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
+            let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        else {
             return nil
         }
         return object
@@ -304,7 +335,8 @@ public struct MCPResourceSpec: Sendable {
 
     static func encodeAny(_ object: [String: Any]) -> String {
         guard let data = try? JSONSerialization.data(withJSONObject: object),
-              let string = String(data: data, encoding: .utf8) else { return "{}" }
+            let string = String(data: data, encoding: .utf8)
+        else { return "{}" }
         return string
     }
 }

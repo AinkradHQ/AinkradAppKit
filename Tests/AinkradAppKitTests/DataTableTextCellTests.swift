@@ -1,7 +1,8 @@
-import Foundation
-import Testing
 import AppKit
+import Foundation
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -9,7 +10,10 @@ import SwiftUI
 @Suite("AinkradDataTable text cells")
 @MainActor
 struct DataTableTextCellTests {
-    private struct Row: Identifiable { let id: Int; let name: String }
+    private struct Row: Identifiable {
+        let id: Int
+        let name: String
+    }
 
     private func rowHeight(_ name: String) -> CGFloat {
         _ = NSApplication.shared

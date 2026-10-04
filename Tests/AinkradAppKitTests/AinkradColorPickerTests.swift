@@ -1,5 +1,6 @@
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -24,8 +25,8 @@ struct AinkradColorPickerHexTests {
 
     @Test("rejects malformed hex")
     func rejectsMalformed() {
-        #expect(rgbComponents(fromHex: "FFF") == nil)      // too short
-        #expect(rgbComponents(fromHex: "GGGGGG") == nil)   // non-hex
+        #expect(rgbComponents(fromHex: "FFF") == nil)  // too short
+        #expect(rgbComponents(fromHex: "GGGGGG") == nil)  // non-hex
         #expect(rgbComponents(fromHex: "1234567") == nil)  // too long
         #expect(rgbComponents(fromHex: "") == nil)
     }

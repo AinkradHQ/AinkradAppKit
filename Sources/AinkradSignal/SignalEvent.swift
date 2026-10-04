@@ -139,17 +139,19 @@ public struct SignalEvent: Codable, Sendable, Equatable, Identifiable {
     public let actions: [SignalAction]
     public let dedupeKey: String?
 
-    public init(id: UUID = UUID(),
-                timestamp: Date = Date(),
-                source: SignalSource,
-                kind: String,
-                severity: SignalSeverity,
-                title: String,
-                body: String? = nil,
-                proposedImportance: SignalImportance = .normal,
-                deepLink: SignalDeepLink? = nil,
-                actions: [SignalAction] = [],
-                dedupeKey: String? = nil) {
+    public init(
+        id: UUID = UUID(),
+        timestamp: Date = Date(),
+        source: SignalSource,
+        kind: String,
+        severity: SignalSeverity,
+        title: String,
+        body: String? = nil,
+        proposedImportance: SignalImportance = .normal,
+        deepLink: SignalDeepLink? = nil,
+        actions: [SignalAction] = [],
+        dedupeKey: String? = nil
+    ) {
         self.id = id
         self.timestamp = timestamp
         self.source = source

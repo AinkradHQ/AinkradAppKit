@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradAppKitHome
 
 @Suite("HomeLayoutMigration")
@@ -32,8 +33,10 @@ struct HomeLayoutMigrationTests {
         let fm = FileManager.default
         #expect(!fm.fileExists(atPath: vault.appending(path: "Assistant").path))
         // Every domain, not just the root: SharedDomain nests all five here.
-        for path in ["Sage/connections.json", "Sage/agents.json", "Sage/memory/USER.md",
-                     "Sage/skills", "Sage/commands", "Sage/sessions"] {
+        for path in [
+            "Sage/connections.json", "Sage/agents.json", "Sage/memory/USER.md",
+            "Sage/skills", "Sage/commands", "Sage/sessions",
+        ] {
             #expect(fm.fileExists(atPath: vault.appending(path: path).path), "missing \(path)")
         }
         let kept = try Data(contentsOf: vault.appending(path: "Sage/memory/USER.md"))
@@ -54,8 +57,9 @@ struct HomeLayoutMigrationTests {
         let kept = try Data(contentsOf: sage.appending(path: "connections.json"))
         #expect(String(decoding: kept, as: UTF8.self) == "current")
         // The old tree is left intact rather than deleted.
-        #expect(FileManager.default.fileExists(
-            atPath: vault.appending(path: "Assistant/connections.json").path))
+        #expect(
+            FileManager.default.fileExists(
+                atPath: vault.appending(path: "Assistant/connections.json").path))
     }
 
     @Test("is idempotent")
@@ -87,8 +91,9 @@ struct HomeLayoutMigrationTests {
         // migrating, every assistant-owned domain must resolve to a real path.
         let home = Home(vaultRoot: vault, cacheRoot: vault.appending(path: "cache"))
         for domain in [SharedDomain.agents, .memory, .skills, .commands, .sessions] {
-            #expect(FileManager.default.fileExists(atPath: home.shared(domain).path),
-                    "\(domain) does not exist after migration")
+            #expect(
+                FileManager.default.fileExists(atPath: home.shared(domain).path),
+                "\(domain) does not exist after migration")
         }
     }
 }
