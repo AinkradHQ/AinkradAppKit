@@ -23,8 +23,10 @@ struct SettingsPanelTests {
 
     @Test("panel draws the recessed surface at the agreed opacity")
     func surface() {
-        #expect(source.contains("surfaceElevated.opacity(0.32)"))
-        #expect(source.contains("ChamferShape(cut: AinkradRadius.md)"))
+        let panel = AinkradSkin.standard.components.settingsPanel
+        #expect(panel.fill == .palette("surfaceElevated", 0.32))
+        #expect(panel.shape == AinkradShapeToken(style: "chamfer", cut: AinkradRadius.md))
+        #expect(source.contains("AinkradSkinShape(token: p.shape).fill(skin.color(p.fill))"))
     }
 
     /// The design language forbids separator lines and borders on this

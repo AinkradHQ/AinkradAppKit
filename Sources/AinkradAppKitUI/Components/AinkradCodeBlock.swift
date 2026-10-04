@@ -9,7 +9,7 @@ public struct AinkradCodeBlock: View {
     private let code: String
     private let language: String?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @State private var copied = false
 
@@ -22,13 +22,14 @@ public struct AinkradCodeBlock: View {
     public var didJustCopy: Bool { copied }
 
     public var body: some View {
+        let block = skin.components.codeBlock
         VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
             HStack {
                 if let language {
                     Text(language.uppercased())
                         .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-                        .tracking(0.8)
-                        .foregroundStyle(theme.foreground.opacity(0.55))
+                        .tracking(block.headerFont.tracking ?? 0)
+                        .foregroundStyle(skin.color(block.headerColor))
                 }
                 Spacer(minLength: AinkradSpacing.sm)
                 AinkradIconButton(systemName: copied ? "checkmark" : "doc.on.doc", action: copyToPasteboard)
@@ -36,13 +37,15 @@ public struct AinkradCodeBlock: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 Text(code)
                     .font(AinkradFontResolver.font(.mono, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.92))
+                    .foregroundStyle(skin.color(block.codeColor))
                     .textSelection(.enabled)
             }
         }
         .padding(AinkradSpacing.md)
-        .background(ChamferShape(cut: AinkradRadius.sm).fill(theme.surface.opacity(0.9)))
-        .overlay(ChamferShape(cut: AinkradRadius.sm).strokeBorder(theme.accentSecondary.opacity(0.3), lineWidth: 1))
+        .background(AinkradSkinShape(token: block.shape).fill(skin.color(block.fill)))
+        .overlay(
+            AinkradSkinShape(token: block.shape)
+                .strokeBorder(skin.color(block.stroke.color), lineWidth: block.stroke.width.resolve([])))
     }
 
     private func copyToPasteboard() {

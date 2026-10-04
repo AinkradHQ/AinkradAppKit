@@ -19,7 +19,9 @@ extension AinkradComponentTokens {
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.25), hover: .palette("accentSecondary", 0.6),
                         selected: .palette("accentPrimary", 0.85)), width: AinkradStateDouble(rest: 1.0, selected: 1.5)),
-                hoverScale: 1.015
+                hoverScale: 1.015,
+                hoverBracketLength: 10,
+                hoverBracketInset: -2
             ),
             sectionFrame: SectionFrameTokens(
                 tickWidth: 14, tickHeight: 2,

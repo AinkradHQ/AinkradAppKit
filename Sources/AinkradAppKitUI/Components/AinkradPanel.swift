@@ -13,6 +13,7 @@ public struct AinkradPanel<Content: View>: View {
     private let showsBrackets: Bool
     private let content: Content
     @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     /// Settings → Appearance → Overlays, injected by the host. Nil means the
     /// host has not spoken, so the call site's own choice stands.
     @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
@@ -40,6 +41,7 @@ public struct AinkradPanel<Content: View>: View {
         self.content = content()
     }
     public var body: some View {
+        let p = skin.components.panel
         content
             .background {
                 ZStack {
@@ -54,7 +56,7 @@ public struct AinkradPanel<Content: View>: View {
             .clipShape(ChamferShape(cut: AinkradRadius.panel))
             .overlay(
                 ChamferShape(cut: AinkradRadius.panel)
-                    .strokeBorder(theme.accentSecondary.opacity(0.4), lineWidth: 1)
+                    .strokeBorder(skin.color(p.stroke.color), lineWidth: p.stroke.width.resolve([]))
             )
             .apply { showsBrackets ? AnyView($0.cornerBrackets()) : AnyView($0) }
             // Outer accent halo + contact shadow so every panel reads as

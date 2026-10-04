@@ -7,7 +7,7 @@ public struct AinkradLabel: View {
     private let text: String
     private let systemName: String?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(_ text: String, systemName: String? = nil) {
@@ -20,11 +20,11 @@ public struct AinkradLabel: View {
             if let systemName {
                 Image(systemName: systemName)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.accentSecondary)
+                    .foregroundStyle(skin.color(skin.palette.accentSecondary))
             }
             Text(text)
                 .font(AinkradFontResolver.font(.body, typography: typo))
-                .foregroundStyle(theme.foreground)
+                .foregroundStyle(skin.color(skin.text.primary))
         }
     }
 }
@@ -33,7 +33,7 @@ public struct AinkradLabel: View {
 public struct AinkradCaption: View {
     private let text: String
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(_ text: String) {
@@ -43,6 +43,6 @@ public struct AinkradCaption: View {
     public var body: some View {
         Text(text)
             .font(AinkradFontResolver.font(.caption, typography: typo))
-            .foregroundStyle(theme.foreground.opacity(0.55))
+            .foregroundStyle(skin.color(skin.text.muted))
     }
 }

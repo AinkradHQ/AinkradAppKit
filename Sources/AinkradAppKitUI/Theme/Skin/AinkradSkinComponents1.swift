@@ -13,6 +13,8 @@ public struct CardTokens: Codable, Equatable, Sendable {
     public var fill: AinkradColorToken
     public var stroke: AinkradStrokeToken
     public var hoverScale: Double
+    public var hoverBracketLength: Double
+    public var hoverBracketInset: Double
 }
 
 public struct SectionFrameTokens: Codable, Equatable, Sendable {

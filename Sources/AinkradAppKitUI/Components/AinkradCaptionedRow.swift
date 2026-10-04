@@ -11,7 +11,7 @@ import SwiftUI
 /// The column is a fixed width so stacked controls align down the page, which
 /// is what makes them read as a form rather than as loose buttons.
 public struct AinkradCaptionedRow<Content: View>: View {
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     /// Internal rather than private so a test can assert the row still carries
@@ -29,10 +29,11 @@ public struct AinkradCaptionedRow<Content: View>: View {
     }
 
     public var body: some View {
+        let row = skin.components.captionedRow
         HStack(alignment: .center, spacing: AinkradSpacing.md) {
             Text(caption)
                 .font(AinkradFontResolver.font(.caption, weight: .medium, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(0.45))
+                .foregroundStyle(skin.color(row.captionColor))
                 .frame(width: Self.captionColumnWidth, alignment: .leading)
                 // Hidden as its own element, but NOT discarded — it becomes the
                 // label of the group below.

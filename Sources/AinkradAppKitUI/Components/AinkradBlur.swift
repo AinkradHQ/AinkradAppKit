@@ -43,31 +43,41 @@ public struct VisualEffectBlur: NSViewRepresentable {
 
 private struct EdgeRing: ViewModifier {
     let radius: CGFloat
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     func body(content: Content) -> some View {
+        let e = skin.effects.edgeRing
         content.overlay(
             ChamferShape(cut: radius)
                 .strokeBorder(
                     LinearGradient(
                         colors: [
-                            theme.accentSecondary.opacity(0.45),
-                            theme.accentPrimary.opacity(0.18),
+                            skin.color(e.from),
+                            skin.color(e.to),
                         ],
                         startPoint: .top, endPoint: .bottom),
-                    lineWidth: 1)
+                    lineWidth: e.width)
         )
     }
 }
 
 private struct PanelGlow: ViewModifier {
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     func body(content: Content) -> some View {
+        // Match the established overlay bloom (previously host `hudPanelChrome`):
+        // a wide accent halo + a deep contact shadow, so overlays read as
+        // glowing like the Launcher/App Store panels.
         content
-            // Match the established overlay bloom (previously host `hudPanelChrome`):
-            // a wide accent halo + a deep contact shadow, so overlays read as
-            // glowing like the Launcher/App Store panels.
-            .shadow(color: theme.accentPrimary.opacity(0.35), radius: 42)
-            .shadow(color: .black.opacity(0.5), radius: 24, y: 10)
+            .ainkradShadow(skin.effects.panelGlow.first, skin: skin)
+            .ainkradShadow(skin.effects.panelGlow.dropFirst().first, skin: skin)
+    }
+}
+
+extension View {
+    /// One skin shadow; a theme that lists fewer shadows draws none here.
+    fileprivate func ainkradShadow(_ token: AinkradShadowToken?, skin: AinkradSkin) -> some View {
+        shadow(
+            color: token.map { skin.color($0.color) } ?? .clear,
+            radius: token?.radius ?? 0, x: token?.x ?? 0, y: token?.y ?? 0)
     }
 }
 

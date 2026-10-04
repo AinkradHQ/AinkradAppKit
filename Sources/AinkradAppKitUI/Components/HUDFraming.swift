@@ -37,13 +37,14 @@ private struct CornerBracketsShape: Shape {
 private struct CornerBracketsModifier: ViewModifier {
     var length: CGFloat
     var inset: CGFloat
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
 
     func body(content: Content) -> some View {
+        let b = skin.effects.brackets
         content.overlay(
             CornerBracketsShape(length: length)
-                .stroke(theme.accentSecondary, lineWidth: 1.25)
-                .shadow(color: theme.accentSecondary.opacity(0.55), radius: 2.5)
+                .stroke(skin.color(b.stroke), lineWidth: b.width)
+                .shadow(color: skin.color(b.glow), radius: b.glowRadius)
                 .padding(inset)
                 .allowsHitTesting(false)
         )
@@ -65,7 +66,7 @@ extension View {
 public struct AccentRule: View {
     public var label: String?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typography
 
     public init(label: String? = nil) {
@@ -73,17 +74,19 @@ public struct AccentRule: View {
     }
 
     public var body: some View {
+        let rule = skin.effects.accentRule
+        let tick = skin.roles.accentTick
         HStack(spacing: AinkradSpacing.xs) {
             Rectangle()
-                .fill(theme.accentSecondary)
-                .frame(width: 18, height: 2)
-                .shadow(color: theme.accentSecondary.opacity(0.6), radius: 2)
+                .fill(skin.color(tick.fill))
+                .frame(width: rule.width, height: rule.height)
+                .shadow(color: skin.color(tick.glow.color.rest), radius: tick.glow.radius.rest)
 
             if let label {
                 Text(label.uppercased())
                     .font(AinkradFontResolver.font(.caption, typography: typography))
-                    .tracking(1.5)
-                    .foregroundStyle(theme.foreground.opacity(0.7))
+                    .tracking(rule.labelFont.tracking ?? 0)
+                    .foregroundStyle(skin.color(rule.labelColor))
             }
         }
         .fixedSize()
