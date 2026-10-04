@@ -13,7 +13,7 @@ import SwiftUI
 /// tracked caps) for catalog-declared groups; this is deliberately the other
 /// one, for panes that carry prose.
 public struct AinkradSettingsPanel<Content: View>: View {
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     private let title: String
@@ -36,15 +36,16 @@ public struct AinkradSettingsPanel<Content: View>: View {
     }
 
     public var body: some View {
+        let p = skin.components.settingsPanel
         VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
             VStack(alignment: .leading, spacing: AinkradSpacing.xs) {
                 Text(title)
                     .font(AinkradFontResolver.font(.headline, weight: .medium, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.95))
+                    .foregroundStyle(skin.color(p.titleColor))
                 if let hint {
                     Text(hint)
                         .font(AinkradFontResolver.font(.caption, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.55))
+                        .foregroundStyle(skin.color(p.hintColor))
                         .lineSpacing(3)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: Self.hintReadingWidth, alignment: .leading)
@@ -53,10 +54,8 @@ public struct AinkradSettingsPanel<Content: View>: View {
 
             content
         }
-        .padding(AinkradSpacing.lg)
+        .padding(p.padding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            ChamferShape(cut: AinkradRadius.md)
-                .fill(theme.surfaceElevated.opacity(0.32)))
+        .background(AinkradSkinShape(token: p.shape).fill(skin.color(p.fill)))
     }
 }
