@@ -160,7 +160,8 @@ extension AinkradComponentTokens {
         return AinkradComponentTokens(g1: p1, g2: p2, g3: p3, g4: p4)
     }
 
-    public static var standard: AinkradComponentTokens {
-        makeStandard()
-    }
+    /// Built once: rebuilding ~50 KB of token groups per read cost a Debug
+    /// worker-thread stack its whole budget (see SkinStackDepthTests).
+    public static var standard: AinkradComponentTokens { cachedStandard }
+    private static let cachedStandard = makeStandard()
 }

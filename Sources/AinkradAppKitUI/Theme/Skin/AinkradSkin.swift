@@ -106,57 +106,57 @@ public struct AinkradSkin: Codable, Equatable, Sendable {
         sidebarWidth: 240, controlColumnWidth: 220, miniMapBreakpoint: 640, wideBreakpoint: 900
     )
 
-    public static var standard: AinkradSkin {
-        AinkradSkin(
-            schemaVersion: currentSchemaVersion,
-            id: "neonBlue",
-            name: "Neon Blue",
-            palette: .neonBlue,
-            shape: AinkradShapeToken(style: "chamfer", corners: "diagonal"),
-            spacing: standardSpacing,
-            radius: standardRadius,
-            elevation: standardElevation,
-            type: AinkradTypeTokens(
-                roles: standardTypeRoles,
-                monoFamily: "JetBrains Mono",
-                uiFamily: nil,
-                sizes: AinkradTypeSizeTokens()
-            ),
-            opacity: AinkradOpacityTokens(),
-            size: AinkradSizeTokens(),
-            cut: AinkradCutTokens(),
-            text: AinkradTextTokens(),
-            syntax: AinkradSyntaxTokens(),
-            terminal: AinkradTerminalTokens(
-                background: .hex(0x0A / 255.0, 0x0E / 255.0, 0x17 / 255.0, 1.0),
-                foreground: .hex(0xE2 / 255.0, 0xE8 / 255.0, 0xF0 / 255.0, 1.0),
-                cursor: .hex(0x22 / 255.0, 0xD3 / 255.0, 0xEE / 255.0, 1.0),
-                selection: .hex(0x3B / 255.0, 0x42 / 255.0, 0x52 / 255.0, 1.0),
-                ansi: [
-                    .hex(0x1A / 255.0, 0x1D / 255.0, 0x24 / 255.0, 1.0),
-                    .hex(0xE0 / 255.0, 0x6C / 255.0, 0x75 / 255.0, 1.0),
-                    .hex(0x98 / 255.0, 0xC3 / 255.0, 0x79 / 255.0, 1.0),
-                    .hex(0xE5 / 255.0, 0xC0 / 255.0, 0x7B / 255.0, 1.0),
-                    .hex(0x61 / 255.0, 0xAF / 255.0, 0xEF / 255.0, 1.0),
-                    .hex(0xC6 / 255.0, 0x78 / 255.0, 0xDD / 255.0, 1.0),
-                    .hex(0x56 / 255.0, 0xB6 / 255.0, 0xC2 / 255.0, 1.0),
-                    .hex(0xAB / 255.0, 0xB2 / 255.0, 0xBF / 255.0, 1.0),
-                    .hex(0x5C / 255.0, 0x63 / 255.0, 0x70 / 255.0, 1.0),
-                    .hex(0xE0 / 255.0, 0x6C / 255.0, 0x75 / 255.0, 1.0),
-                    .hex(0x98 / 255.0, 0xC3 / 255.0, 0x79 / 255.0, 1.0),
-                    .hex(0xE5 / 255.0, 0xC0 / 255.0, 0x7B / 255.0, 1.0),
-                    .hex(0x61 / 255.0, 0xAF / 255.0, 0xEF / 255.0, 1.0),
-                    .hex(0xC6 / 255.0, 0x78 / 255.0, 0xDD / 255.0, 1.0),
-                    .hex(0x56 / 255.0, 0xB6 / 255.0, 0xC2 / 255.0, 1.0),
-                    .hex(1.0, 1.0, 1.0, 1.0),
-                ]
-            ),
-            motion: standardMotion,
-            material: AinkradMaterialTokens(),
-            roles: .standard,
-            effects: .standard,
-            chrome: .standard,
-            components: .standard
-        )
-    }
+    /// Built once, for the same reason as `AinkradComponentTokens.standard`.
+    public static var standard: AinkradSkin { cachedStandard }
+    private static let cachedStandard = AinkradSkin(
+        schemaVersion: currentSchemaVersion,
+        id: "neonBlue",
+        name: "Neon Blue",
+        palette: .neonBlue,
+        shape: AinkradShapeToken(style: "chamfer", corners: "diagonal"),
+        spacing: standardSpacing,
+        radius: standardRadius,
+        elevation: standardElevation,
+        type: AinkradTypeTokens(
+            roles: standardTypeRoles,
+            monoFamily: "JetBrains Mono",
+            uiFamily: nil,
+            sizes: AinkradTypeSizeTokens()
+        ),
+        opacity: AinkradOpacityTokens(),
+        size: AinkradSizeTokens(),
+        cut: AinkradCutTokens(),
+        text: AinkradTextTokens(),
+        syntax: AinkradSyntaxTokens(),
+        terminal: AinkradTerminalTokens(
+            background: .hex(0x0A / 255.0, 0x0E / 255.0, 0x17 / 255.0, 1.0),
+            foreground: .hex(0xE2 / 255.0, 0xE8 / 255.0, 0xF0 / 255.0, 1.0),
+            cursor: .hex(0x22 / 255.0, 0xD3 / 255.0, 0xEE / 255.0, 1.0),
+            selection: .hex(0x3B / 255.0, 0x42 / 255.0, 0x52 / 255.0, 1.0),
+            ansi: [
+                .hex(0x1A / 255.0, 0x1D / 255.0, 0x24 / 255.0, 1.0),
+                .hex(0xE0 / 255.0, 0x6C / 255.0, 0x75 / 255.0, 1.0),
+                .hex(0x98 / 255.0, 0xC3 / 255.0, 0x79 / 255.0, 1.0),
+                .hex(0xE5 / 255.0, 0xC0 / 255.0, 0x7B / 255.0, 1.0),
+                .hex(0x61 / 255.0, 0xAF / 255.0, 0xEF / 255.0, 1.0),
+                .hex(0xC6 / 255.0, 0x78 / 255.0, 0xDD / 255.0, 1.0),
+                .hex(0x56 / 255.0, 0xB6 / 255.0, 0xC2 / 255.0, 1.0),
+                .hex(0xAB / 255.0, 0xB2 / 255.0, 0xBF / 255.0, 1.0),
+                .hex(0x5C / 255.0, 0x63 / 255.0, 0x70 / 255.0, 1.0),
+                .hex(0xE0 / 255.0, 0x6C / 255.0, 0x75 / 255.0, 1.0),
+                .hex(0x98 / 255.0, 0xC3 / 255.0, 0x79 / 255.0, 1.0),
+                .hex(0xE5 / 255.0, 0xC0 / 255.0, 0x7B / 255.0, 1.0),
+                .hex(0x61 / 255.0, 0xAF / 255.0, 0xEF / 255.0, 1.0),
+                .hex(0xC6 / 255.0, 0x78 / 255.0, 0xDD / 255.0, 1.0),
+                .hex(0x56 / 255.0, 0xB6 / 255.0, 0xC2 / 255.0, 1.0),
+                .hex(1.0, 1.0, 1.0, 1.0),
+            ]
+        ),
+        motion: standardMotion,
+        material: AinkradMaterialTokens(),
+        roles: .standard,
+        effects: .standard,
+        chrome: .standard,
+        components: .standard
+    )
 }
