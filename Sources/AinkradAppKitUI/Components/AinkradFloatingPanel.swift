@@ -334,7 +334,8 @@ final class AinkradFloatingPanelController: NSObject, NSWindowDelegate {
 
     private func installMonitors(panel: NSPanel, parentWindow: NSWindow) {
         localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self, self.panel === panel, event.keyCode == 53 /* Esc */ else { return event }
+            // 53 is the Esc key code.
+            guard let self, self.panel === panel, event.keyCode == 53 else { return event }
             self.requestDismiss()
             return nil
         }

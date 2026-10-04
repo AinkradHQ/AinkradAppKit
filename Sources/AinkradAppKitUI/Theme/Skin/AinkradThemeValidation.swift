@@ -175,7 +175,7 @@ func ainkradPathFromContext(_ context: DecodingError.Context, appending key: Str
 
 func ainkradValidateSemanticRules(_ skin: AinkradSkin) throws {
     // ID check: non-empty [A-Za-z0-9.-]
-    let idRegex = try! NSRegularExpression(pattern: "^[A-Za-z0-9.-]+$")  // design-lint: allow try-bang compile-time constant regex
+    let idRegex = try! NSRegularExpression(pattern: "^[A-Za-z0-9.-]+$")  // design-lint: allow try-bang constant regex
     let idRange = NSRange(location: 0, length: skin.id.utf16.count)
     if skin.id.isEmpty || idRegex.firstMatch(in: skin.id, options: [], range: idRange) == nil {
         throw AinkradThemeError.invalidId(path: "$.id", id: skin.id)
