@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Chamfer side drawer sliding in from `edge`, scoped to the host surface it's
 /// attached to (same scoped-overlay approach as `.ainkradConfirmDialog` /
@@ -55,11 +55,11 @@ private struct AinkradDrawerModifier<DrawerContent: View>: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Presents a chamfer side drawer sliding in from `edge`, scoped to THIS
     /// view's own bounds. Dim behind, slide/materialize gated on
     /// `ainkradReduceMotion`, dismiss on scrim tap or Esc.
-    func ainkradDrawer<DrawerContent: View>(
+    public func ainkradDrawer<DrawerContent: View>(
         isPresented: Binding<Bool>,
         edge: Edge = .leading,
         width: CGFloat = 280,

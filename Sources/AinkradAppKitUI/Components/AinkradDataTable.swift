@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// A single column of an `AinkradDataTable`: text cells, or — through
 /// `accessory(id:title:alignment:content:)` — views such as a per-row button,
@@ -25,8 +25,10 @@ public struct AinkradTableColumn<Row: Identifiable> {
         self.accessory = nil
     }
 
-    private init(id: String, title: String, alignment: HorizontalAlignment,
-                 accessory: @escaping @MainActor (Row) -> AnyView) {
+    private init(
+        id: String, title: String, alignment: HorizontalAlignment,
+        accessory: @escaping @MainActor (Row) -> AnyView
+    ) {
         self.id = id
         self.title = title
         self.alignment = alignment
@@ -46,8 +48,9 @@ public struct AinkradTableColumn<Row: Identifiable> {
         alignment: HorizontalAlignment = .trailing,
         @ViewBuilder content: @escaping @MainActor (Row) -> Content
     ) -> AinkradTableColumn<Row> {
-        AinkradTableColumn(id: id, title: title, alignment: alignment,
-                           accessory: { @MainActor row in AnyView(content(row)) })
+        AinkradTableColumn(
+            id: id, title: title, alignment: alignment,
+            accessory: { @MainActor row in AnyView(content(row)) })
     }
 }
 
@@ -110,7 +113,8 @@ func nextSelection<ID: Hashable>(
         return (current.symmetricDifference([clicked]), clicked)
     case .extend:
         guard let anchor, let from = orderedIDs.firstIndex(of: anchor),
-              let to = orderedIDs.firstIndex(of: clicked) else { return ([clicked], clicked) }
+            let to = orderedIDs.firstIndex(of: clicked)
+        else { return ([clicked], clicked) }
         return (Set(orderedIDs[min(from, to)...max(from, to)]), anchor)
     }
 }
@@ -147,8 +151,10 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     /// A second initializer, not a defaulted parameter on the first: adding a
     /// parameter changes the initializer's mangled name, and a plugin built
     /// against the old one would then fail to load.
-    public init(rows: [Row], columns: [AinkradTableColumn<Row>], sort: Binding<AinkradTableSort?>? = nil,
-                selection: Binding<Set<Row.ID>>) {
+    public init(
+        rows: [Row], columns: [AinkradTableColumn<Row>], sort: Binding<AinkradTableSort?>? = nil,
+        selection: Binding<Set<Row.ID>>
+    ) {
         self.rows = rows
         self.columns = columns
         self.sort = sort
@@ -215,16 +221,16 @@ public struct AinkradDataTable<Row: Identifiable>: View {
                     accessory(row)
                         .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
                 } else {
-                Text(column.cell(row))
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.9))
-                    // One line, truncated in the middle. A wrapping cell makes
-                    // its row as tall as its longest value — image names broke
-                    // mid-word onto three lines — and middle truncation keeps
-                    // both ends of an identifier, such as the tag in `name:latest`.
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
+                    Text(column.cell(row))
+                        .font(AinkradFontResolver.font(.body, typography: typo))
+                        .foregroundStyle(theme.foreground.opacity(0.9))
+                        // One line, truncated in the middle. A wrapping cell makes
+                        // its row as tall as its longest value — image names broke
+                        // mid-word onto three lines — and middle truncation keeps
+                        // both ends of an identifier, such as the tag in `name:latest`.
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
                 }
             }
         }
@@ -258,10 +264,13 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     private func click(_ id: Row.ID) {
         guard let selection else { return }
         let flags = NSEvent.modifierFlags
-        let gesture: AinkradSelectionGesture = flags.contains(.command) ? .toggle
+        let gesture: AinkradSelectionGesture =
+            flags.contains(.command)
+            ? .toggle
             : flags.contains(.shift) ? .extend : .plain
-        let next = nextSelection(current: selection.wrappedValue, anchor: selectionAnchor, clicked: id,
-                                 in: displayedRows.map(\.id), gesture: gesture)
+        let next = nextSelection(
+            current: selection.wrappedValue, anchor: selectionAnchor, clicked: id,
+            in: displayedRows.map(\.id), gesture: gesture)
         selection.wrappedValue = next.selection
         selectionAnchor = next.anchor
     }

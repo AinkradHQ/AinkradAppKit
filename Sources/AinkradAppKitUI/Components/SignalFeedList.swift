@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradSignal
+import SwiftUI
 
 /// Day-grouped list of events. Deliberately dumb: it owns no state and reads
 /// no store, because both the bell popover and the in-window island embed it.
@@ -20,13 +20,15 @@ public struct SignalFeedList: View {
     /// Explicit, because a public struct's implicit memberwise
     /// initialiser is INTERNAL — the components were public and
     /// unconstructible outside the module until this existed.
-    public init(events: [SignalEvent],
-                repeatCounts: [UUID: Int] = [:],
-                readIDs: Set<UUID> = [],
-                now: Date = Date(),
-                calendar: Calendar = .current,
-                onActivate: @escaping (SignalEvent) -> Void = { _ in },
-                onAction: @escaping (SignalEvent, SignalAction) -> Void = { _, _ in }) {
+    public init(
+        events: [SignalEvent],
+        repeatCounts: [UUID: Int] = [:],
+        readIDs: Set<UUID> = [],
+        now: Date = Date(),
+        calendar: Calendar = .current,
+        onActivate: @escaping (SignalEvent) -> Void = { _ in },
+        onAction: @escaping (SignalEvent, SignalAction) -> Void = { _, _ in }
+    ) {
         self.events = events
         self.repeatCounts = repeatCounts
         self.readIDs = readIDs
@@ -38,14 +40,16 @@ public struct SignalFeedList: View {
 
     /// Separate, not a defaulted parameter — see `SignalFeedRow`'s note on
     /// library evolution and mangled initialiser symbols.
-    public init(events: [SignalEvent],
-                repeatCounts: [UUID: Int],
-                readIDs: Set<UUID>,
-                now: Date,
-                calendar: Calendar,
-                onActivate: @escaping (SignalEvent) -> Void,
-                onAction: @escaping (SignalEvent, SignalAction) -> Void,
-                menuItems: @escaping (SignalEvent) -> [AinkradMenuItem]) {
+    public init(
+        events: [SignalEvent],
+        repeatCounts: [UUID: Int],
+        readIDs: Set<UUID>,
+        now: Date,
+        calendar: Calendar,
+        onActivate: @escaping (SignalEvent) -> Void,
+        onAction: @escaping (SignalEvent, SignalAction) -> Void,
+        menuItems: @escaping (SignalEvent) -> [AinkradMenuItem]
+    ) {
         self.events = events
         self.repeatCounts = repeatCounts
         self.readIDs = readIDs
@@ -57,16 +61,18 @@ public struct SignalFeedList: View {
     }
 
     /// Separate again, same reason.
-    public init(events: [SignalEvent],
-                repeatCounts: [UUID: Int],
-                readIDs: Set<UUID>,
-                now: Date,
-                calendar: Calendar,
-                onActivate: @escaping (SignalEvent) -> Void,
-                onAction: @escaping (SignalEvent, SignalAction) -> Void,
-                menuItems: @escaping (SignalEvent) -> [AinkradMenuItem],
-                pinnedIDs: Set<UUID>,
-                expandedIDs: Binding<Set<UUID>>) {
+    public init(
+        events: [SignalEvent],
+        repeatCounts: [UUID: Int],
+        readIDs: Set<UUID>,
+        now: Date,
+        calendar: Calendar,
+        onActivate: @escaping (SignalEvent) -> Void,
+        onAction: @escaping (SignalEvent, SignalAction) -> Void,
+        menuItems: @escaping (SignalEvent) -> [AinkradMenuItem],
+        pinnedIDs: Set<UUID>,
+        expandedIDs: Binding<Set<UUID>>
+    ) {
         self.events = events
         self.repeatCounts = repeatCounts
         self.readIDs = readIDs
@@ -95,8 +101,10 @@ public struct SignalFeedList: View {
             emptyState
         } else {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: AinkradSpacing.xs / 2,
-                           pinnedViews: [.sectionHeaders]) {
+                LazyVStack(
+                    alignment: .leading, spacing: AinkradSpacing.xs / 2,
+                    pinnedViews: [.sectionHeaders]
+                ) {
                     ForEach(groups) { group in
                         Section {
                             ForEach(group.events) { event in
@@ -132,10 +140,22 @@ public struct SignalFeedList: View {
             // each row would make Tab walk every event in the feed.
             .focusable()
             .focused($listHasFocus)
-            .onKeyPress(.downArrow) { move(by: 1); return .handled }
-            .onKeyPress(.upArrow) { move(by: -1); return .handled }
-            .onKeyPress(.return) { activateFocused(); return .handled }
-            .onKeyPress(.space) { activateFocused(); return .handled }
+            .onKeyPress(.downArrow) {
+                move(by: 1)
+                return .handled
+            }
+            .onKeyPress(.upArrow) {
+                move(by: -1)
+                return .handled
+            }
+            .onKeyPress(.return) {
+                activateFocused()
+                return .handled
+            }
+            .onKeyPress(.space) {
+                activateFocused()
+                return .handled
+            }
         }
     }
 
@@ -145,28 +165,33 @@ public struct SignalFeedList: View {
     /// to the oldest, which in a feed reads as the list having scrolled
     /// somewhere unexpected rather than as a selection moving.
     private func move(by delta: Int) {
-        keyboardFocus = Self.nextFocus(in: groups.flatMap(\.events).map(\.id),
-                                       from: keyboardFocus, by: delta)
+        keyboardFocus = Self.nextFocus(
+            in: groups.flatMap(\.events).map(\.id),
+            from: keyboardFocus, by: delta)
     }
 
     private func activateFocused() {
         guard let id = keyboardFocus,
-              let event = groups.flatMap(\.events).first(where: { $0.id == id })
+            let event = groups.flatMap(\.events).first(where: { $0.id == id })
         else { return }
         onActivate(event)
     }
 
     /// The order the arrow keys walk — day groups flattened, exactly as drawn.
     /// Exposed so the traversal is testable without a window or a key event.
-    public static func keyboardOrder(_ events: [SignalEvent],
-                                     calendar: Calendar = .current) -> [UUID] {
+    public static func keyboardOrder(
+        _ events: [SignalEvent],
+        calendar: Calendar = .current
+    ) -> [UUID] {
         SignalPresentation.dayGroups(events, calendar: calendar)
             .flatMap(\.events).map(\.id)
     }
 
     /// Where a move lands. Pure, and clamped at both ends.
-    public static func nextFocus(in order: [UUID], from current: UUID?,
-                                 by delta: Int) -> UUID? {
+    public static func nextFocus(
+        in order: [UUID], from current: UUID?,
+        by delta: Int
+    ) -> UUID? {
         guard !order.isEmpty else { return nil }
         guard let current, let index = order.firstIndex(of: current) else {
             return order.first
@@ -194,7 +219,10 @@ public struct SignalFeedList: View {
     public static func dayLabel(_ day: Date, now: Date, calendar: Calendar) -> String {
         if calendar.isDate(day, inSameDayAs: now) { return "Today" }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now)),
-           calendar.isDate(day, inSameDayAs: yesterday) { return "Yesterday" }
+            calendar.isDate(day, inSameDayAs: yesterday)
+        {
+            return "Yesterday"
+        }
         let formatter = DateFormatter()
         formatter.calendar = calendar
         formatter.dateFormat = "EEEE d MMMM"

@@ -28,7 +28,9 @@ public struct AgentActionToken: Hashable, Sendable {
 /// gone. A plugin exposes only its own actions; it cannot read the registry or
 /// other apps.
 @MainActor public protocol AgentActionProvider {
-    func register(actionID: String,
-                  handler: @escaping @MainActor (String) async -> AgentActionResult) -> AgentActionToken
+    func register(
+        actionID: String,
+        handler: @escaping @MainActor (String) async -> AgentActionResult
+    ) -> AgentActionToken
     func remove(_ token: AgentActionToken)
 }

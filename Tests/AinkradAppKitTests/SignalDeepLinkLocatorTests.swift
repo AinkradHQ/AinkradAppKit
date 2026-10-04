@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("Deep link locators")
@@ -24,9 +25,10 @@ struct SignalDeepLinkLocatorTests {
         // Every event already in the user's store was encoded without this
         // key. A synthesised decoder would refuse all of them, and adding a
         // feature would have emptied the notification history.
-        let json = Data("""
-        {"appID":"rune","payload":"eA=="}
-        """.utf8)
+        let json = Data(
+            """
+            {"appID":"rune","payload":"eA=="}
+            """.utf8)
         let decoded = try JSONDecoder().decode(SignalDeepLink.self, from: json)
         #expect(decoded.appID == "rune")
         #expect(decoded.locator == nil)
@@ -34,9 +36,10 @@ struct SignalDeepLinkLocatorTests {
 
     @Test("an explicit null locator decodes as nil rather than failing")
     func decodesNullLocator() throws {
-        let json = Data("""
-        {"appID":"rune","payload":"eA==","locator":null}
-        """.utf8)
+        let json = Data(
+            """
+            {"appID":"rune","payload":"eA==","locator":null}
+            """.utf8)
         #expect(try JSONDecoder().decode(SignalDeepLink.self, from: json).locator == nil)
     }
 

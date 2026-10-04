@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// The two rows every app shows for how the host surfaces it: **Open as**
 /// (pane or overlay) and **Open in** (basic or advanced).
@@ -33,10 +33,12 @@ public struct AinkradSurfaceSettings: View {
     @State private var modeSelection: PluginMode
     @State private var sizeSelection: PluginOverlaySize
 
-    public init(appName: String,
-                presentation: any PluginPresentationControl,
-                mode: (any PluginModeControl)? = nil,
-                overlaySize: (any PluginOverlaySizeControl)? = nil) {
+    public init(
+        appName: String,
+        presentation: any PluginPresentationControl,
+        mode: (any PluginModeControl)? = nil,
+        overlaySize: (any PluginOverlaySizeControl)? = nil
+    ) {
         self.appName = appName
         self.presentation = presentation
         self.mode = mode
@@ -48,30 +50,42 @@ public struct AinkradSurfaceSettings: View {
 
     public var body: some View {
         Group {
-            AinkradFormRow(title: "Open as",
-                           help: "Applies the next time \(appName) opens.") {
-                AinkradSegmentedPicker(items: [PluginPresentation.pane, .overlay],
-                                       selection: $presentationSelection) {
+            AinkradFormRow(
+                title: "Open as",
+                help: "Applies the next time \(appName) opens."
+            ) {
+                AinkradSegmentedPicker(
+                    items: [PluginPresentation.pane, .overlay],
+                    selection: $presentationSelection
+                ) {
                     $0 == .overlay ? "Overlay" : "Pane"
                 }
             }
             if mode != nil {
-                AinkradFormRow(title: "Open in",
-                               help: "Basic shows only what \(appName) is usually opened for. "
-                                   + "Applies the next time it opens; you can switch a pane "
-                                   + "at any time without changing this.") {
-                    AinkradSegmentedPicker(items: [PluginMode.basic, .advanced],
-                                           selection: $modeSelection) {
+                AinkradFormRow(
+                    title: "Open in",
+                    help: "Basic shows only what \(appName) is usually opened for. "
+                        + "Applies the next time it opens; you can switch a pane "
+                        + "at any time without changing this."
+                ) {
+                    AinkradSegmentedPicker(
+                        items: [PluginMode.basic, .advanced],
+                        selection: $modeSelection
+                    ) {
                         $0 == .basic ? "Basic" : "Advanced"
                     }
                 }
             }
             if overlaySize != nil, presentationSelection == .overlay {
-                AinkradFormRow(title: "Overlay size",
-                               help: "How large \(appName) is drawn when it opens as an "
-                                   + "overlay. Applies the next time it is summoned.") {
-                    AinkradSegmentedPicker(items: PluginOverlaySize.allCases,
-                                           selection: $sizeSelection) { $0.title }
+                AinkradFormRow(
+                    title: "Overlay size",
+                    help: "How large \(appName) is drawn when it opens as an "
+                        + "overlay. Applies the next time it is summoned."
+                ) {
+                    AinkradSegmentedPicker(
+                        items: PluginOverlaySize.allCases,
+                        selection: $sizeSelection
+                    ) { $0.title }
                 }
             }
         }

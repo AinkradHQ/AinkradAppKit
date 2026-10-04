@@ -1,27 +1,32 @@
 import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
 
 @Suite struct StorePolicyTests {
     private func metadata(apiVersion: Int = 7) -> PluginBundleMetadata {
-        PluginBundleMetadata(appID: "ok", displayName: "OK", iconSymbol: "star",
-                             apiVersion: apiVersion, principalClassName: "P")
+        PluginBundleMetadata(
+            appID: "ok", displayName: "OK", iconSymbol: "star",
+            apiVersion: apiVersion, principalClassName: "P")
     }
 
-    private func validInput(apiVersion: Int = 7,
-                             author: String? = "Jane Doe",
-                             description: String? = "Does a thing.",
-                             iconSymbol: String? = "star.fill",
-                             declaredSHA256: String = "abc123",
-                             computedSHA256: String = "abc123") -> StoreManifestInput {
-        StoreManifestInput(metadata: metadata(apiVersion: apiVersion),
-                           infoDictionary: ["CFBundleExecutable": "P"],
-                           author: author,
-                           description: description,
-                           iconSymbol: iconSymbol,
-                           declaredSHA256: declaredSHA256,
-                           computedSHA256: computedSHA256)
+    private func validInput(
+        apiVersion: Int = 7,
+        author: String? = "Jane Doe",
+        description: String? = "Does a thing.",
+        iconSymbol: String? = "star.fill",
+        declaredSHA256: String = "abc123",
+        computedSHA256: String = "abc123"
+    ) -> StoreManifestInput {
+        StoreManifestInput(
+            metadata: metadata(apiVersion: apiVersion),
+            infoDictionary: ["CFBundleExecutable": "P"],
+            author: author,
+            description: description,
+            iconSymbol: iconSymbol,
+            declaredSHA256: declaredSHA256,
+            computedSHA256: computedSHA256)
     }
 
     @Test func missingAuthorFails() {
@@ -35,8 +40,9 @@ import Testing
     }
 
     @Test func unresolvableIconSymbolFails() {
-        let issues = StorePolicy.check(manifest: validInput(iconSymbol: "not-a-real-symbol-xyz"),
-                                        minSupported: 7, current: 7)
+        let issues = StorePolicy.check(
+            manifest: validInput(iconSymbol: "not-a-real-symbol-xyz"),
+            minSupported: 7, current: 7)
         #expect(issues.contains(where: { $0.code == "missing-icon" }))
     }
 
@@ -46,8 +52,9 @@ import Testing
     }
 
     @Test func shaMismatchFails() {
-        let issues = StorePolicy.check(manifest: validInput(declaredSHA256: "abc123", computedSHA256: "def456"),
-                                        minSupported: 7, current: 7)
+        let issues = StorePolicy.check(
+            manifest: validInput(declaredSHA256: "abc123", computedSHA256: "def456"),
+            minSupported: 7, current: 7)
         #expect(issues.contains(where: { $0.code == "sha-mismatch" }))
     }
 
@@ -68,27 +75,30 @@ import Testing
     }
 
     @Test func invalidAppIDFailsWithCorrectCode() {
-        let invalidMetadata = PluginBundleMetadata(appID: "bad/id", displayName: "OK", iconSymbol: "star",
-                                                    apiVersion: 7, principalClassName: "P")
-        let input = StoreManifestInput(metadata: invalidMetadata,
-                                       infoDictionary: ["CFBundleExecutable": "P"],
-                                       author: "Jane Doe",
-                                       description: "Does a thing.",
-                                       iconSymbol: "star.fill",
-                                       declaredSHA256: "abc123",
-                                       computedSHA256: "abc123")
+        let invalidMetadata = PluginBundleMetadata(
+            appID: "bad/id", displayName: "OK", iconSymbol: "star",
+            apiVersion: 7, principalClassName: "P")
+        let input = StoreManifestInput(
+            metadata: invalidMetadata,
+            infoDictionary: ["CFBundleExecutable": "P"],
+            author: "Jane Doe",
+            description: "Does a thing.",
+            iconSymbol: "star.fill",
+            declaredSHA256: "abc123",
+            computedSHA256: "abc123")
         let issues = StorePolicy.check(manifest: input, minSupported: 7, current: 7)
         #expect(issues.contains(where: { $0.code == "invalid-app-id" }))
     }
 
     @Test func missingCFBundleExecutableFailsWithCorrectCode() {
-        let input = StoreManifestInput(metadata: metadata(),
-                                       infoDictionary: [:],
-                                       author: "Jane Doe",
-                                       description: "Does a thing.",
-                                       iconSymbol: "star.fill",
-                                       declaredSHA256: "abc123",
-                                       computedSHA256: "abc123")
+        let input = StoreManifestInput(
+            metadata: metadata(),
+            infoDictionary: [:],
+            author: "Jane Doe",
+            description: "Does a thing.",
+            iconSymbol: "star.fill",
+            declaredSHA256: "abc123",
+            computedSHA256: "abc123")
         let issues = StorePolicy.check(manifest: input, minSupported: 7, current: 7)
         #expect(issues.contains(where: { $0.code == "missing-executable" }))
     }

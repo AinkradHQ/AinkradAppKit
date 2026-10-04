@@ -1,7 +1,8 @@
-import Foundation
-import Testing
 import AppKit
+import Foundation
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -22,7 +23,8 @@ struct NextSelectionTests {
         let added = nextSelection(current: ["a"], anchor: "a", clicked: "c", in: order, gesture: .toggle)
         #expect(added.selection == ["a", "c"])
         #expect(added.anchor == "c")
-        let removed = nextSelection(current: added.selection, anchor: added.anchor, clicked: "a", in: order, gesture: .toggle)
+        let removed = nextSelection(
+            current: added.selection, anchor: added.anchor, clicked: "a", in: order, gesture: .toggle)
         #expect(removed.selection == ["c"])
     }
 
@@ -38,20 +40,27 @@ struct NextSelectionTests {
     @Test("⇧-click with no anchor, or an anchor no longer shown, acts as a plain click")
     func extendWithoutAnchor() {
         #expect(nextSelection(current: [], anchor: nil, clicked: "c", in: order, gesture: .extend).selection == ["c"])
-        #expect(nextSelection(current: ["z"], anchor: "z", clicked: "c", in: order, gesture: .extend).selection == ["c"])
+        #expect(
+            nextSelection(current: ["z"], anchor: "z", clicked: "c", in: order, gesture: .extend).selection == ["c"])
     }
 
     @Test("a range follows the order rows are shown in, so it respects a re-sort")
     func rangeFollowsDisplayedOrder() {
         let resorted = ["e", "d", "c", "b", "a"]
-        #expect(nextSelection(current: ["e"], anchor: "e", clicked: "c", in: resorted, gesture: .extend).selection == ["e", "d", "c"])
+        #expect(
+            nextSelection(current: ["e"], anchor: "e", clicked: "c", in: resorted, gesture: .extend).selection == [
+                "e", "d", "c",
+            ])
     }
 }
 
 @Suite("AinkradDataTable selection")
 @MainActor
 struct DataTableSelectionViewTests {
-    private struct Row: Identifiable { let id: Int; let name: String }
+    private struct Row: Identifiable {
+        let id: Int
+        let name: String
+    }
 
     @Test("a selectable table builds and lays out every row")
     func selectableTableBuilds() {
@@ -59,10 +68,17 @@ struct DataTableSelectionViewTests {
         var picked: Set<Int> = [1]
         var built = 0
         let rows = (0..<3).map { Row(id: $0, name: "row \($0)") }
-        let column = AinkradTableColumn<Row>(id: "name", title: "Name") { row in built += 1; return row.name }
+        let column = AinkradTableColumn<Row>(id: "name", title: "Name") { row in
+            built += 1
+            return row.name
+        }
         let binding = Binding(get: { picked }, set: { picked = $0 })
-        let host = NSHostingView(rootView: AinkradDataTable(rows: rows, columns: [column], selection: binding).frame(width: 300, height: 200))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200), styleMask: [.borderless], backing: .buffered, defer: false)
+        let host = NSHostingView(
+            rootView: AinkradDataTable(rows: rows, columns: [column], selection: binding).frame(width: 300, height: 200)
+        )
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200), styleMask: [.borderless], backing: .buffered,
+            defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
         #expect(built >= rows.count)

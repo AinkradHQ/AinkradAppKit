@@ -72,12 +72,12 @@ public enum PluginMode: String, Codable, Sendable, CaseIterable {
 /// setting says which mode you want on open; if reaching for advanced once
 /// rewrote that setting, the next open would silently be advanced too, and the
 /// setting would erode to whichever mode was used last.
-public extension EnvironmentValues {
+extension EnvironmentValues {
     /// The mode this pane is showing. Defaults to `.advanced` so a plugin
     /// rendered outside a host pane — previews, tests, an older host that never
     /// sets it — shows everything rather than appearing stripped.
-    @Entry var ainkradPaneMode: PluginMode = .advanced
+    @Entry public var ainkradPaneMode: PluginMode = .advanced
 
     /// Ask the host to switch THIS pane's mode. No-op outside a host pane.
-    @Entry var ainkradSetPaneMode: @MainActor (PluginMode) -> Void = { _ in }
+    @Entry public var ainkradSetPaneMode: @MainActor (PluginMode) -> Void = { _ in }
 }

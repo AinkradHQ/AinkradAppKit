@@ -1,4 +1,5 @@
 import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -23,7 +24,7 @@ struct AinkradStepperTests {
     @Test("a value off the step grid snaps down to the nearest step from the lower bound")
     func snapsToStepGrid() {
         #expect(steppedClamp(9, in: 0...10, step: 5) == 5)
-        #expect(steppedClamp(4, in: 1...10, step: 3) == 4) // 1 + 3*1 = 4, exact
+        #expect(steppedClamp(4, in: 1...10, step: 3) == 4)  // 1 + 3*1 = 4, exact
     }
 
     @Test("incrementing then clamping stops exactly at the upper bound")

@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// The control that moves a pane between basic and advanced.
 ///
@@ -29,8 +29,10 @@ public struct AinkradModeSwitch: View {
     /// - Parameters:
     ///   - expandedTitle: shown in basic mode — what pressing it gets you.
     ///   - collapsedTitle: shown in advanced mode.
-    public init(expandedTitle: String = "Show everything",
-                collapsedTitle: String = "Simplify") {
+    public init(
+        expandedTitle: String = "Show everything",
+        collapsedTitle: String = "Simplify"
+    ) {
         self.expandedTitle = expandedTitle
         self.collapsedTitle = collapsedTitle
     }
@@ -43,10 +45,12 @@ public struct AinkradModeSwitch: View {
             setMode(isBasic ? .advanced : .basic)
         } label: {
             HStack(spacing: AinkradSpacing.xs) {
-                Image(systemName: isBasic
-                      ? "arrow.down.left.and.arrow.up.right"
-                      : "arrow.up.right.and.arrow.down.left")
-                    .font(.system(size: 9, weight: .semibold))
+                Image(
+                    systemName: isBasic
+                        ? "arrow.down.left.and.arrow.up.right"
+                        : "arrow.up.right.and.arrow.down.left"
+                )
+                .font(.system(size: 9, weight: .semibold))
                 Text(title)
                     .font(AinkradFontResolver.font(.caption, weight: .medium, typography: typo))
             }
@@ -60,7 +64,10 @@ public struct AinkradModeSwitch: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering in
-            guard !reduceMotion else { isHovering = hovering; return }
+            guard !reduceMotion else {
+                isHovering = hovering
+                return
+            }
             withAnimation(.easeOut(duration: 0.12)) { isHovering = hovering }
         }
         .accessibilityLabel(title)
@@ -102,12 +109,14 @@ public struct AinkradBasicShell<Content: View, Actions: View>: View {
     ///   - actions: the primary actions. Keep to three; a fourth is a sign this
     ///     screen belongs in advanced.
     ///   - content: the one thing this mode exists to show.
-    public init(icon: String? = nil,
-                title: String,
-                subtitle: String? = nil,
-                showsModeSwitch: Bool = true,
-                @ViewBuilder actions: () -> Actions,
-                @ViewBuilder content: () -> Content) {
+    public init(
+        icon: String? = nil,
+        title: String,
+        subtitle: String? = nil,
+        showsModeSwitch: Bool = true,
+        @ViewBuilder actions: () -> Actions,
+        @ViewBuilder content: () -> Content
+    ) {
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
@@ -156,16 +165,19 @@ public struct AinkradBasicShell<Content: View, Actions: View>: View {
     }
 }
 
-public extension AinkradBasicShell where Actions == EmptyView {
+extension AinkradBasicShell where Actions == EmptyView {
     /// Convenience for a basic mode whose content carries its own actions —
     /// a document, a log, a thread.
-    init(icon: String? = nil,
-         title: String,
-         subtitle: String? = nil,
-         showsModeSwitch: Bool = true,
-         @ViewBuilder content: () -> Content) {
-        self.init(icon: icon, title: title, subtitle: subtitle,
-                  showsModeSwitch: showsModeSwitch,
-                  actions: { EmptyView() }, content: content)
+    public init(
+        icon: String? = nil,
+        title: String,
+        subtitle: String? = nil,
+        showsModeSwitch: Bool = true,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(
+            icon: icon, title: title, subtitle: subtitle,
+            showsModeSwitch: showsModeSwitch,
+            actions: { EmptyView() }, content: content)
     }
 }

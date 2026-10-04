@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Index of `selection` within `items`, or nil. Pure — unit tested.
 public func pickerSelectionIndex<T: Hashable>(items: [T], selection: T) -> Int? {
@@ -18,7 +18,9 @@ public struct AinkradSegmentedPicker<T: Hashable>: View {
     @State private var hoveredItem: T?
 
     public init(items: [T], selection: Binding<T>, label: @escaping (T) -> String) {
-        self.items = items; self._selection = selection; self.label = label
+        self.items = items
+        self._selection = selection
+        self.label = label
     }
     public var body: some View {
         // Refresh: horizontal scroll prevents the overflow-clipping bug.
@@ -32,15 +34,24 @@ public struct AinkradSegmentedPicker<T: Hashable>: View {
     @ViewBuilder private func segment(_ item: T) -> some View {
         let selected = item == selection
         let hovered = hoveredItem == item
-        Button { selection = item } label: {
+        Button {
+            selection = item
+        } label: {
             Text(label(item))
                 .font(AinkradFontResolver.font(.caption, weight: selected ? .medium : .regular, typography: typo))
                 .foregroundStyle(selected ? theme.accentPrimary.contrastingText : theme.foreground.opacity(0.75))
                 .padding(.horizontal, AinkradSpacing.md).padding(.vertical, AinkradSpacing.xs + 2)
-                .background(ChamferShape(cut: 5)
-                    .fill(selected ? theme.accentPrimary.opacity(0.9) : theme.surfaceElevated.opacity(hovered ? 0.65 : 0.5)))
-                .overlay(ChamferShape(cut: 5)
-                    .strokeBorder(theme.accentPrimary.opacity(selected ? 0 : (hovered ? 0.5 : 0.15)), lineWidth: 1))
+                .background(
+                    ChamferShape(cut: 5)
+                        .fill(
+                            selected
+                                ? theme.accentPrimary.opacity(0.9) : theme.surfaceElevated.opacity(hovered ? 0.65 : 0.5)
+                        )
+                )
+                .overlay(
+                    ChamferShape(cut: 5)
+                        .strokeBorder(theme.accentPrimary.opacity(selected ? 0 : (hovered ? 0.5 : 0.15)), lineWidth: 1)
+                )
                 .shadow(color: theme.accentPrimary.opacity(selected ? 0.4 : 0), radius: selected ? 5 : 0)
                 .contentShape(ChamferShape(cut: 5))
         }
@@ -151,23 +162,33 @@ public struct AinkradSelect<T: Hashable>: View {
     @State private var isOpen = false
 
     public init(items: [T], selection: Binding<T>, label: @escaping (T) -> String) {
-        self.items = items; self._selection = selection; self.label = label
+        self.items = items
+        self._selection = selection
+        self.label = label
     }
 
     /// Color-dot variant — option rows render a leading swatch wherever
     /// `swatch(item)` is non-nil (e.g. GitHub-label colors). NEW overload;
     /// the existing `init(items:selection:label:)` is untouched.
-    public init(items: [T], selection: Binding<T>, label: @escaping (T) -> String,
-                swatch: @escaping (T) -> Color?) {
-        self.items = items; self._selection = selection; self.label = label
+    public init(
+        items: [T], selection: Binding<T>, label: @escaping (T) -> String,
+        swatch: @escaping (T) -> Color?
+    ) {
+        self.items = items
+        self._selection = selection
+        self.label = label
         self.swatch = swatch
     }
 
     /// Variant that customizes the search field's placeholder. NEW overload;
     /// backs `AinkradSearchableSelect`'s `placeholder:` after the fold.
-    public init(items: [T], selection: Binding<T>, label: @escaping (T) -> String,
-                searchPlaceholder: String) {
-        self.items = items; self._selection = selection; self.label = label
+    public init(
+        items: [T], selection: Binding<T>, label: @escaping (T) -> String,
+        searchPlaceholder: String
+    ) {
+        self.items = items
+        self._selection = selection
+        self.label = label
         self.searchPlaceholder = searchPlaceholder
     }
 
@@ -177,8 +198,9 @@ public struct AinkradSelect<T: Hashable>: View {
             // trigger's width so the dropdown is never narrower than the field.
             .ainkradFloatingPanel(isPresented: $isOpen, autofocusTextField: true, matchAnchorWidth: true) {
                 PanelMaterialize {
-                    SearchableSelectPanelView(items: items, selection: $selection, label: label,
-                                              placeholder: searchPlaceholder, swatch: swatch, onClose: close)
+                    SearchableSelectPanelView(
+                        items: items, selection: $selection, label: label,
+                        placeholder: searchPlaceholder, swatch: swatch, onClose: close)
                 }
             }
     }
@@ -202,7 +224,9 @@ public struct AinkradSelect<T: Hashable>: View {
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
             .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.5)))
-            .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.75 : 0.3), lineWidth: 1.25))
+            .overlay(
+                ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.75 : 0.3), lineWidth: 1.25)
+            )
             .shadow(color: theme.accentPrimary.opacity(isOpen ? 0.4 : 0), radius: isOpen ? 5 : 0)
             .contentShape(ChamferShape(cut: 8))
         }
@@ -229,15 +253,21 @@ public struct AinkradMultiSelect<T: Hashable>: View {
     @State private var isOpen = false
 
     public init(items: [T], selection: Binding<Set<T>>, label: @escaping (T) -> String) {
-        self.items = items; self._selection = selection; self.label = label
+        self.items = items
+        self._selection = selection
+        self.label = label
     }
 
     /// Color-dot variant — rows render a leading swatch wherever `swatch(item)`
     /// is non-nil. NEW overload; the existing `init(items:selection:label:)` is
     /// untouched.
-    public init(items: [T], selection: Binding<Set<T>>, label: @escaping (T) -> String,
-                swatch: @escaping (T) -> Color?) {
-        self.items = items; self._selection = selection; self.label = label
+    public init(
+        items: [T], selection: Binding<Set<T>>, label: @escaping (T) -> String,
+        swatch: @escaping (T) -> Color?
+    ) {
+        self.items = items
+        self._selection = selection
+        self.label = label
         self.swatch = swatch
     }
 
@@ -274,7 +304,9 @@ public struct AinkradMultiSelect<T: Hashable>: View {
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
             .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.5)))
-            .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.75 : 0.3), lineWidth: 1.25))
+            .overlay(
+                ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.75 : 0.3), lineWidth: 1.25)
+            )
             .shadow(color: theme.accentPrimary.opacity(isOpen ? 0.4 : 0), radius: isOpen ? 5 : 0)
             .contentShape(ChamferShape(cut: 8))
         }
@@ -301,7 +333,10 @@ public struct AinkradCombobox<T: Hashable>: View {
     @State private var hoveredItem: T?
 
     public init(items: [T], selection: Binding<T?>, text: Binding<String>, label: @escaping (T) -> String) {
-        self.items = items; self._selection = selection; self._text = text; self.label = label
+        self.items = items
+        self._selection = selection
+        self._text = text
+        self.label = label
     }
 
     private var filtered: [T] { comboboxFilter(items: items, query: text, label: label) }
@@ -335,7 +370,10 @@ public struct AinkradCombobox<T: Hashable>: View {
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
             .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.5)))
-            .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isFocused ? 0.85 : 0.3), lineWidth: isFocused ? 1.5 : 1.25))
+            .overlay(
+                ChamferShape(cut: 8).strokeBorder(
+                    theme.accentPrimary.opacity(isFocused ? 0.85 : 0.3), lineWidth: isFocused ? 1.5 : 1.25)
+            )
             .shadow(color: theme.accentPrimary.opacity(isFocused ? 0.45 : 0), radius: isFocused ? 6 : 0)
     }
 
@@ -395,7 +433,10 @@ public struct AinkradSearchableSelect<T: Hashable>: View {
         label: @escaping (T) -> String,
         placeholder: String = "Search…"
     ) {
-        self.items = items; self._selection = selection; self.label = label; self.placeholder = placeholder
+        self.items = items
+        self._selection = selection
+        self.label = label
+        self.placeholder = placeholder
     }
 
     public var body: some View {

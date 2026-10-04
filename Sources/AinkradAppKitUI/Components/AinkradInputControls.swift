@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Clamps `value` into `range`, then snaps it down onto the step grid
 /// anchored at `range.lowerBound` (so `steppedClamp(9, in: 0...10, step: 5)`
@@ -33,7 +33,9 @@ public struct AinkradStepper: View {
     @Environment(\.ainkradTypography) private var typo
 
     public init(value: Binding<Int>, in bounds: ClosedRange<Int>, step: Int = 1) {
-        self._value = value; self.bounds = bounds; self.step = step
+        self._value = value
+        self.bounds = bounds
+        self.step = step
     }
 
     public var body: some View {
@@ -78,7 +80,9 @@ public struct AinkradStepper: View {
                 .foregroundStyle(enabled ? theme.accentSecondary : theme.foreground.opacity(0.25))
                 .frame(width: 20, height: 20)
                 .background(ChamferShape(cut: 4).fill(theme.surfaceElevated.opacity(0.6)))
-                .overlay(ChamferShape(cut: 4).strokeBorder(theme.accentSecondary.opacity(enabled ? 0.5 : 0.15), lineWidth: 1))
+                .overlay(
+                    ChamferShape(cut: 4).strokeBorder(theme.accentSecondary.opacity(enabled ? 0.5 : 0.15), lineWidth: 1)
+                )
                 .contentShape(ChamferShape(cut: 4))
         }
         .buttonStyle(.plain)
@@ -99,7 +103,8 @@ public struct AinkradRangeSlider: View {
     @State private var draggingUpper = false
 
     public init(range: Binding<ClosedRange<Double>>, bounds: ClosedRange<Double>) {
-        self._range = range; self.bounds = bounds
+        self._range = range
+        self.bounds = bounds
     }
 
     private var span: Double { max(bounds.upperBound - bounds.lowerBound, .leastNonzeroMagnitude) }
@@ -155,7 +160,8 @@ public struct AinkradRangeSlider: View {
             .onChanged { drag in
                 if isLower { draggingLower = true } else { draggingUpper = true }
                 let newValue = value(forFraction: drag.location.x / width, width: width)
-                let proposed: ClosedRange<Double> = isLower
+                let proposed: ClosedRange<Double> =
+                    isLower
                     ? min(newValue, range.upperBound)...range.upperBound
                     : range.lowerBound...max(newValue, range.lowerBound)
                 range = clampRange(proposed, within: bounds)

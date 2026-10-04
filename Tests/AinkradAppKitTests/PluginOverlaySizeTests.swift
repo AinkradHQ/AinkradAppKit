@@ -1,5 +1,6 @@
-import Testing
 import CoreGraphics
+import Testing
+
 @testable import AinkradAppKit
 
 /// Overlay sizes. Fixed points, capped at what fits.
@@ -17,8 +18,9 @@ struct PluginOverlaySizeTests {
         // than medium.
         let large = PluginOverlaySize.large.resolved(in: bigWindow)
         let medium = PluginOverlaySize.medium.resolved(in: bigWindow)
-        #expect(large.width > medium.width * 1.4,
-                "large must be decisively larger than medium, not a nudge")
+        #expect(
+            large.width > medium.width * 1.4,
+            "large must be decisively larger than medium, not a nudge")
         #expect(large.width >= 1200)
     }
 

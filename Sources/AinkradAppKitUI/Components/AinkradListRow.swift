@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// HUD list row — leading + trailing content flanking a title/subtitle,
 /// hover scan + selected accent. Cardinal HUD never uses a divider line to

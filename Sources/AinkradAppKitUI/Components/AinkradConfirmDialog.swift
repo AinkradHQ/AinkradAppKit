@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Confirm/cancel dialog card — a chamfer panel with a title, message, and
 /// Cancel/confirm `AinkradButton` actions (destructive requests render the
@@ -91,7 +91,7 @@ private struct AinkradConfirmDialogModifier: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Presents a confirm/cancel dialog scoped to THIS view's own bounds — a
     /// dim scrim (`Color.black.opacity(0.45)`) plus a subtle panel-level
     /// blur filling the modified view's container, with the chamfer dialog
@@ -104,7 +104,7 @@ public extension View {
     ///
     /// Tapping the scrim or Cancel dismisses; Confirm runs `onConfirm` then
     /// dismisses. `isDestructive` renders the confirm action in `.danger`.
-    func ainkradConfirmDialog(
+    public func ainkradConfirmDialog(
         isPresented: Binding<Bool>,
         title: String,
         message: String,
@@ -112,13 +112,14 @@ public extension View {
         isDestructive: Bool = false,
         onConfirm: @escaping () -> Void
     ) -> some View {
-        modifier(AinkradConfirmDialogModifier(
-            isPresented: isPresented,
-            title: title,
-            message: message,
-            confirmTitle: confirmTitle,
-            isDestructive: isDestructive,
-            onConfirm: onConfirm
-        ))
+        modifier(
+            AinkradConfirmDialogModifier(
+                isPresented: isPresented,
+                title: title,
+                message: message,
+                confirmTitle: confirmTitle,
+                isDestructive: isDestructive,
+                onConfirm: onConfirm
+            ))
     }
 }

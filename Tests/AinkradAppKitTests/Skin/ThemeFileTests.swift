@@ -1,6 +1,7 @@
+import Foundation
 // design-lint: allow-file radius-literal,opacity-literal,frame-literal,chamfer-literal,motion-literal theme layer — theme file tests
 import Testing
-import Foundation
+
 @testable import AinkradAppKitUI
 
 @Suite("ThemeFileTests")
@@ -25,16 +26,16 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let overrideJSON = """
-        {
-            "schemaVersion": 1,
-            "id": "custom-neon",
-            "name": "Custom Neon",
-            "base": "neonBlue",
-            "palette": {
-                "background": "#112233"
+            {
+                "schemaVersion": 1,
+                "id": "custom-neon",
+                "name": "Custom Neon",
+                "base": "neonBlue",
+                "palette": {
+                    "background": "#112233"
+                }
             }
-        }
-        """
+            """
 
         let bases = ["neonBlue": baseFile]
         let themeFile = try AinkradThemeFile(decoding: Data(overrideJSON.utf8), bases: bases)
@@ -70,12 +71,12 @@ struct ThemeFileTests {
     @Test("error case: unsupported schema version 2")
     func errorVersion2() {
         let json = """
-        {
-            "schemaVersion": 2,
-            "id": "test",
-            "name": "Test"
-        }
-        """
+            {
+                "schemaVersion": 2,
+                "id": "test",
+                "name": "Test"
+            }
+            """
         #expect(throws: AinkradThemeError.unsupportedSchemaVersion(path: "$.schemaVersion", version: 2)) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8))
         }
@@ -84,13 +85,13 @@ struct ThemeFileTests {
     @Test("error case: unknown base")
     func errorUnknownBase() {
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test",
-            "base": "nonExistentBase"
-        }
-        """
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test",
+                "base": "nonExistentBase"
+            }
+            """
         #expect(throws: AinkradThemeError.unknownBase(path: "$.base", baseId: "nonExistentBase")) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8))
         }
@@ -99,29 +100,30 @@ struct ThemeFileTests {
     @Test("error case: base cycle")
     func errorBaseCycle() {
         let jsonA = """
-        {
-            "schemaVersion": 1,
-            "id": "themeA",
-            "name": "Theme A",
-            "base": "themeB"
-        }
-        """
+            {
+                "schemaVersion": 1,
+                "id": "themeA",
+                "name": "Theme A",
+                "base": "themeB"
+            }
+            """
         let jsonB = """
-        {
-            "schemaVersion": 1,
-            "id": "themeB",
-            "name": "Theme B",
-            "base": "themeA"
-        }
-        """
+            {
+                "schemaVersion": 1,
+                "id": "themeB",
+                "name": "Theme B",
+                "base": "themeA"
+            }
+            """
 
         let result = ainkradLoadThemes([Data(jsonA.utf8), Data(jsonB.utf8)])
         #expect(result.themes.isEmpty)
         #expect(result.issues.count == 2)
-        #expect(result.issues.allSatisfy { issue in
-            if case .baseCycle = issue.error { return true }
-            return false
-        })
+        #expect(
+            result.issues.allSatisfy { issue in
+                if case .baseCycle = issue.error { return true }
+                return false
+            })
     }
 
     @Test("error case: unknown key at depth 3")
@@ -131,16 +133,16 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test",
-            "base": "neonBlue",
-            "spacing": {
-                "invalidSubKey": 12
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test",
+                "base": "neonBlue",
+                "spacing": {
+                    "invalidSubKey": 12
+                }
             }
-        }
-        """
+            """
         let bases = ["neonBlue": baseFile]
         #expect(throws: AinkradThemeError.unknownKey(path: "$.spacing.invalidSubKey")) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)
@@ -150,12 +152,12 @@ struct ThemeFileTests {
     @Test("error case: missing key without base")
     func errorMissingKeyWithoutBase() {
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test"
-        }
-        """
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test"
+            }
+            """
         #expect(throws: AinkradThemeError.self) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8))
         }
@@ -168,14 +170,14 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test",
-            "base": "neonBlue",
-            "spacing": null
-        }
-        """
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test",
+                "base": "neonBlue",
+                "spacing": null
+            }
+            """
         let bases = ["neonBlue": baseFile]
         #expect(throws: AinkradThemeError.nullInOverride(path: "$.spacing")) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)
@@ -189,16 +191,16 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test",
-            "base": "neonBlue",
-            "palette": {
-                "background": "not-a-hex"
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test",
+                "base": "neonBlue",
+                "palette": {
+                    "background": "not-a-hex"
+                }
             }
-        }
-        """
+            """
         let bases = ["neonBlue": baseFile]
         #expect(throws: AinkradThemeError.self) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)
@@ -212,18 +214,21 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test",
-            "base": "neonBlue",
-            "palette": {
-                "background": "nonExistentColor"
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test",
+                "base": "neonBlue",
+                "palette": {
+                    "background": "nonExistentColor"
+                }
             }
-        }
-        """
+            """
         let bases = ["neonBlue": baseFile]
-        #expect(throws: AinkradThemeError.unknownPaletteReference(path: "$.palette.background", reference: "nonExistentColor")) {
+        #expect(
+            throws: AinkradThemeError.unknownPaletteReference(
+                path: "$.palette.background", reference: "nonExistentColor")
+        ) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)
         }
     }
@@ -235,16 +240,16 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test",
-            "base": "neonBlue",
-            "palette": {
-                "background": "#1122331.2"
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test",
+                "base": "neonBlue",
+                "palette": {
+                    "background": "#1122331.2"
+                }
             }
-        }
-        """
+            """
         let bases = ["neonBlue": baseFile]
         #expect(throws: AinkradThemeError.self) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)
@@ -258,16 +263,16 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "test",
-            "name": "Test",
-            "base": "neonBlue",
-            "spacing": {
-                "xs": -4.0
+            {
+                "schemaVersion": 1,
+                "id": "test",
+                "name": "Test",
+                "base": "neonBlue",
+                "spacing": {
+                    "xs": -4.0
+                }
             }
-        }
-        """
+            """
         let bases = ["neonBlue": baseFile]
         #expect(throws: AinkradThemeError.negativeDimension(path: "$.spacing.xs", value: -4.0)) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)
@@ -281,13 +286,13 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "",
-            "name": "Test",
-            "base": "neonBlue"
-        }
-        """
+            {
+                "schemaVersion": 1,
+                "id": "",
+                "name": "Test",
+                "base": "neonBlue"
+            }
+            """
         let bases = ["neonBlue": baseFile]
         #expect(throws: AinkradThemeError.invalidId(path: "$.id", id: "")) {
             _ = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)
@@ -300,16 +305,16 @@ struct ThemeFileTests {
         let baseData = try baseEncoder.encode(AinkradSkin.standard)
 
         let brokenJSON = """
-        {
-            "schemaVersion": 1,
-            "id": "brokenTheme",
-            "name": "Broken",
-            "base": "neonBlue",
-            "spacing": {
-                "xs": -10
+            {
+                "schemaVersion": 1,
+                "id": "brokenTheme",
+                "name": "Broken",
+                "base": "neonBlue",
+                "spacing": {
+                    "xs": -10
+                }
             }
-        }
-        """
+            """
 
         let result = ainkradLoadThemes([baseData, Data(brokenJSON.utf8)])
         #expect(result.themes.count == 1)
@@ -325,21 +330,21 @@ struct ThemeFileTests {
         let baseFile = try AinkradThemeFile(decoding: baseData)
 
         let hostJSON = """
-        {
-            "skyProfile": "cyber",
-            "iconColorFamily": "purple"
-        }
-        """
+            {
+                "skyProfile": "cyber",
+                "iconColorFamily": "purple"
+            }
+            """
 
         let json = """
-        {
-            "schemaVersion": 1,
-            "id": "testHost",
-            "name": "Test Host",
-            "base": "neonBlue",
-            "host": \(hostJSON)
-        }
-        """
+            {
+                "schemaVersion": 1,
+                "id": "testHost",
+                "name": "Test Host",
+                "base": "neonBlue",
+                "host": \(hostJSON)
+            }
+            """
 
         let bases = ["neonBlue": baseFile]
         let themeFile = try AinkradThemeFile(decoding: Data(json.utf8), bases: bases)

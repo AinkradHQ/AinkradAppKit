@@ -56,10 +56,12 @@ public struct SignalWirePayload: Codable, Sendable, Equatable {
         dedupeKey = try c.decodeIfPresent(String.self, forKey: .dedupeKey)
     }
 
-    public init(token: String, kind: String, severity: SignalSeverity, title: String,
-                body: String? = nil, importance: SignalImportance = .normal,
-                deepLink: SignalDeepLink? = nil, actions: [SignalAction] = [],
-                dedupeKey: String? = nil) {
+    public init(
+        token: String, kind: String, severity: SignalSeverity, title: String,
+        body: String? = nil, importance: SignalImportance = .normal,
+        deepLink: SignalDeepLink? = nil, actions: [SignalAction] = [],
+        dedupeKey: String? = nil
+    ) {
         self.token = token
         self.kind = kind
         self.severity = severity
@@ -91,7 +93,8 @@ public enum SignalWire {
             // takes, and calling that "malformed" sends them to reread a
             // document that is already correct.
             if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               object["token"] == nil {
+                object["token"] == nil
+            {
                 return .failure(.missingToken)
             }
             return .failure(.malformed)

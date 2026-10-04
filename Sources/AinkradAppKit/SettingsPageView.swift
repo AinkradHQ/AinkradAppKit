@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradAppKitUI
+import SwiftUI
 
 /// A settings page: one scrolling column of groups with sticky headers, an
 /// optional "on this page" mini-map at width, and the deep-link scroll +
@@ -35,10 +35,11 @@ public struct SettingsPageView: View {
         if let highlightedPath, let index = Self.tabIndex(containing: highlightedPath, page: page) {
             initialTab = index
         } else if let matchedPaths, !matchedPaths.isEmpty, !page.groups.isEmpty,
-                  Self.tabHitCount(group: page.groups[0], matchedPaths: matchedPaths) == 0,
-                  let firstHit = page.groups.firstIndex(where: {
-                      Self.tabHitCount(group: $0, matchedPaths: matchedPaths) > 0
-                  }) {
+            Self.tabHitCount(group: page.groups[0], matchedPaths: matchedPaths) == 0,
+            let firstHit = page.groups.firstIndex(where: {
+                Self.tabHitCount(group: $0, matchedPaths: matchedPaths) > 0
+            })
+        {
             initialTab = firstHit
         }
         self._selectedTab = State(initialValue: initialTab)
@@ -111,9 +112,11 @@ public struct SettingsPageView: View {
         // when the one rendered slot is identified per group.
         let identities = page.groups.indices.map { groupViewIdentity(page: page, index: $0) }
         let seedingRuns = !tabbed || Set(identities).count == identities.count
-        let expanded = group.disclosure == .always
-            || (seedingRuns && SettingsGroupView.mustExpand(
-                group: group, highlightedPath: highlightedPath, matchedPaths: nil))
+        let expanded =
+            group.disclosure == .always
+            || (seedingRuns
+                && SettingsGroupView.mustExpand(
+                    group: group, highlightedPath: highlightedPath, matchedPaths: nil))
         return DeepLinkTarget(
             tabIndex: tabbed ? index : nil, groupPath: group.path, groupIsExpanded: expanded)
     }
@@ -168,35 +171,38 @@ public struct SettingsPageView: View {
                                     SettingsGroupView(
                                         group: page.groups[index], layout: layout,
                                         matchedPaths: matchedPaths,
-                                        highlightedPath: highlightedPath)
-                                        // MUST stay: the tabbed branch renders
-                                        // exactly one group at a fixed
-                                        // structural slot, so without a
-                                        // per-group identity SwiftUI treats
-                                        // every tab's group as the SAME view.
-                                        // `SettingsGroupView`'s `@State
-                                        // isExpanded` would then persist across
-                                        // tab switches and its `State(initial
-                                        // Value: … mustExpand(…))` seeding
-                                        // would never re-run — a collapsed
-                                        // group inherited from the previous tab
-                                        // renders as a bare header, and a
-                                        // deep-link into it scrolls to an id
-                                        // that isn't in the hierarchy.
-                                        // `groupViewIdentity` is the value
-                                        // `deepLinkTarget` reasons about, so
-                                        // the test and the view cannot drift.
-                                        .id(Self.groupViewIdentity(page: page, index: index))
-                                        // The tab bar switches inside its own
-                                        // 0.55s materialize animation, so the
-                                        // new identity inherited it and SwiftUI
-                                        // cross-faded the old tab out and the
-                                        // new one in over half a second, both
-                                        // on screen with their text overlapping.
-                                        // The old tab now leaves at once and the
-                                        // new one fades in fast.
-                                        .transition(.asymmetric(
-                                            insertion: .opacity.animation(reduceMotion ? nil : .easeOut(duration: 0.12)),
+                                        highlightedPath: highlightedPath
+                                    )
+                                    // MUST stay: the tabbed branch renders
+                                    // exactly one group at a fixed
+                                    // structural slot, so without a
+                                    // per-group identity SwiftUI treats
+                                    // every tab's group as the SAME view.
+                                    // `SettingsGroupView`'s `@State
+                                    // isExpanded` would then persist across
+                                    // tab switches and its `State(initial
+                                    // Value: … mustExpand(…))` seeding
+                                    // would never re-run — a collapsed
+                                    // group inherited from the previous tab
+                                    // renders as a bare header, and a
+                                    // deep-link into it scrolls to an id
+                                    // that isn't in the hierarchy.
+                                    // `groupViewIdentity` is the value
+                                    // `deepLinkTarget` reasons about, so
+                                    // the test and the view cannot drift.
+                                    .id(Self.groupViewIdentity(page: page, index: index))
+                                    // The tab bar switches inside its own
+                                    // 0.55s materialize animation, so the
+                                    // new identity inherited it and SwiftUI
+                                    // cross-faded the old tab out and the
+                                    // new one in over half a second, both
+                                    // on screen with their text overlapping.
+                                    // The old tab now leaves at once and the
+                                    // new one fades in fast.
+                                    .transition(
+                                        .asymmetric(
+                                            insertion: .opacity.animation(
+                                                reduceMotion ? nil : .easeOut(duration: 0.12)),
                                             removal: .identity))
                                 } else {
                                     ForEach(page.groups) { group in
@@ -215,7 +221,8 @@ public struct SettingsPageView: View {
                             // switch to it before the scroll, or the user is
                             // sent to an invisible row.
                             guard let path, tabbed,
-                                  let index = Self.tabIndex(containing: path, page: page) else { return }
+                                let index = Self.tabIndex(containing: path, page: page)
+                            else { return }
                             selectedTab = index
                         }
                         .onChange(of: matchedPaths) { _, matched in
@@ -224,9 +231,10 @@ public struct SettingsPageView: View {
                             // appears to match nothing.
                             guard tabbed, let matched, !matched.isEmpty else { return }
                             if Self.tabHitCount(group: page.groups[selectedTab], matchedPaths: matched) == 0,
-                               let firstHit = page.groups.firstIndex(where: {
-                                   Self.tabHitCount(group: $0, matchedPaths: matched) > 0
-                               }) {
+                                let firstHit = page.groups.firstIndex(where: {
+                                    Self.tabHitCount(group: $0, matchedPaths: matched) > 0
+                                })
+                            {
                                 if reduceMotion {
                                     selectedTab = firstHit
                                 } else {

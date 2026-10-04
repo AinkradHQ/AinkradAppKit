@@ -1,7 +1,8 @@
-// design-lint: allow-file radius-literal,opacity-literal,frame-literal,chamfer-literal,motion-literal theme layer — skin model tests
-import Testing
 import Foundation
 import SwiftUI
+// design-lint: allow-file radius-literal,opacity-literal,frame-literal,chamfer-literal,motion-literal theme layer — skin model tests
+import Testing
+
 @testable import AinkradAppKitUI
 
 @Suite("SkinModelTests")
@@ -35,7 +36,9 @@ struct SkinModelTests {
         #expect(colorState.resolve([.hover, .focused] as AinkradControlState) == .hex(0, 0, 1, 1))
         #expect(colorState.resolve([.hover, .focused, .selected] as AinkradControlState) == .hex(1, 1, 0, 1))
         #expect(colorState.resolve([.hover, .focused, .selected, .pressed] as AinkradControlState) == .hex(1, 0, 1, 1))
-        #expect(colorState.resolve([.hover, .focused, .selected, .pressed, .disabled] as AinkradControlState) == .hex(0, 1, 1, 1))
+        #expect(
+            colorState.resolve([.hover, .focused, .selected, .pressed, .disabled] as AinkradControlState)
+                == .hex(0, 1, 1, 1))
     }
 
     @Test("AinkradSkinShape produces identical CGPath to ChamferShape for every cut/corner set used")
@@ -47,7 +50,7 @@ struct SkinModelTests {
             ("diagonal", .diagonal),
             ("all", .all),
             ("top", [.topLeft, .topRight]),
-            (nil, .diagonal)
+            (nil, .diagonal),
         ]
 
         for cut in cuts {
@@ -72,7 +75,7 @@ struct SkinModelTests {
             { _ = AinkradComponentTokens.makeStandardPart3() },
             { _ = AinkradComponentTokens.makeStandardPart4() },
             { _ = AinkradComponentTokens.makeStandard() },
-            { _ = AinkradSkin.standard }
+            { _ = AinkradSkin.standard },
         ]
 
         let names = ["p1", "p2", "p3", "p4", "makeStandard", "AinkradSkin.standard"]

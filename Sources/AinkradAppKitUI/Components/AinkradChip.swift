@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Semantic status used by `AinkradBadge` (and available to any component
 /// that needs a status→color mapping). `.neutral` maps onto `HostThemeTokens`;
@@ -31,7 +31,9 @@ public struct AinkradChip: View {
     @State private var hovering = false
 
     public init(label: String, systemName: String? = nil, onRemove: (() -> Void)? = nil) {
-        self.label = label; self.systemName = systemName; self.onRemove = onRemove
+        self.label = label
+        self.systemName = systemName
+        self.onRemove = onRemove
     }
 
     /// Whether this chip shows a remove affordance.
@@ -99,7 +101,10 @@ public struct AinkradSwatchChip: View {
     @State private var hovering = false
 
     public init(label: String, swatch: Color, isOn: Bool = false, onTap: (() -> Void)? = nil) {
-        self.label = label; self.swatch = swatch; self.isOn = isOn; self.onTap = onTap
+        self.label = label
+        self.swatch = swatch
+        self.isOn = isOn
+        self.onTap = onTap
     }
 
     /// Whether this chip behaves as a tappable toggle (vs. a static tag).
@@ -117,7 +122,10 @@ public struct AinkradSwatchChip: View {
         .padding(.horizontal, AinkradSpacing.sm)
         .padding(.vertical, AinkradSpacing.xs)
         .background(ChamferShape(cut: 5).fill(theme.surfaceElevated.opacity(isOn ? 0.8 : (hovering ? 0.65 : 0.45))))
-        .overlay(ChamferShape(cut: 5).strokeBorder(borderColor.opacity(isOn ? 0.85 : (hovering ? 0.6 : 0.3)), lineWidth: isOn ? 1.25 : 1))
+        .overlay(
+            ChamferShape(cut: 5).strokeBorder(
+                borderColor.opacity(isOn ? 0.85 : (hovering ? 0.6 : 0.3)), lineWidth: isOn ? 1.25 : 1)
+        )
         .shadow(color: theme.accentPrimary.opacity(isOn ? 0.3 : 0), radius: isOn ? 4 : 0)
         .scaleEffect(hovering && !reduceMotion ? 1.03 : 1.0)
         .animation(AinkradMotion.hover, value: hovering)
@@ -150,14 +158,18 @@ public struct AinkradBadge: View {
     @Environment(\.ainkradTypography) private var typo
 
     public init(text: String, status: AinkradStatus = .neutral) {
-        self.text = text; self.status = status; self.tint = nil
+        self.text = text
+        self.status = status
+        self.tint = nil
     }
 
     /// Tint-driven variant — distinct symbol from `init(text:status:)`
     /// (different second label). Mirrors the status version's fill/text/border
     /// opacities, sourced from `tint`.
     public init(text: String, tint: Color) {
-        self.text = text; self.status = .neutral; self.tint = tint
+        self.text = text
+        self.status = .neutral
+        self.tint = tint
     }
 
     private var color: Color { tint ?? status.color(in: theme, statusColors: statusColors) }

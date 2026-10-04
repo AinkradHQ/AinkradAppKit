@@ -1,6 +1,7 @@
-import Testing
-import Foundation
 import AinkradSignal
+import Foundation
+import Testing
+
 @testable import AinkradAppKitUI
 
 @MainActor
@@ -16,8 +17,9 @@ final class SignalToastStackModelTests {
         for i in 0..<6 { model.present(event("e\(i)")) }
         #expect(model.visible.count == 3)
         #expect(model.overflowCount == 3)
-        #expect(model.visible.first?.title == "e2",
-                "arrivals past the cap queue; they do not evict a toast being read")
+        #expect(
+            model.visible.first?.title == "e2",
+            "arrivals past the cap queue; they do not evict a toast being read")
     }
 
     @Test("dismissing promotes an overflowed toast into view")
@@ -36,14 +38,16 @@ final class SignalToastStackModelTests {
         #expect(SignalToastModel.autoDismissDelay(for: .info) == 4)
         #expect(SignalToastModel.autoDismissDelay(for: .success) == 4)
         #expect(SignalToastModel.autoDismissDelay(for: .warning) == 8)
-        #expect(SignalToastModel.autoDismissDelay(for: .failure) == 30,
-                "three failures that never left filled every slot; the feed keeps them")
+        #expect(
+            SignalToastModel.autoDismissDelay(for: .failure) == 30,
+            "three failures that never left filled every slot; the feed keeps them")
     }
 
     @Test("an urgent info toast stays at least eight seconds")
     func urgentStaysLonger() {
-        let message = SignalEvent(source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
-                                  title: "Mam", proposedImportance: .urgent)
+        let message = SignalEvent(
+            source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
+            title: "Mam", proposedImportance: .urgent)
         #expect(SignalToastModel.autoDismissDelay(for: message) == 8)
         #expect(SignalToastModel.autoDismissDelay(for: event("plain")) == 4)
     }
@@ -52,8 +56,9 @@ final class SignalToastStackModelTests {
     func repeatsInPlace() {
         let model = SignalToastModel()
         func chat(_ body: String, key: String = "acct:Mam") -> SignalEvent {
-            SignalEvent(source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
-                        title: "Mam", body: body, dedupeKey: key)
+            SignalEvent(
+                source: .app(appID: "whisper"), kind: "whisper.message", severity: .info,
+                title: "Mam", body: body, dedupeKey: key)
         }
         model.present(event("other"))
         model.present(chat("one"))
@@ -72,11 +77,13 @@ final class SignalToastStackModelTests {
         for i in 0..<3 { model.present(event("info\(i)", .info)) }
         model.present(event("BUILD FAILED", .failure))
 
-        #expect(model.visible.first?.title == "BUILD FAILED",
-                "the failure must not sit behind chatty info toasts")
+        #expect(
+            model.visible.first?.title == "BUILD FAILED",
+            "the failure must not sit behind chatty info toasts")
         #expect(model.visible.count == 3)
         #expect(model.overflowCount == 1, "the displaced info toast goes back to the queue")
-        #expect(!model.visible.contains { $0.severity == .info && $0.title == "info0" }
+        #expect(
+            !model.visible.contains { $0.severity == .info && $0.title == "info0" }
                 || model.visible.filter { $0.severity == .info }.count == 2)
     }
 
@@ -121,8 +128,10 @@ final class SignalToastStackModelTests {
         // irritating thing a toast does.
         #expect(model.deadlines[event.id] == nil)
         #expect(model.visible.contains { $0.id == event.id })
-        #expect(model.remainingFraction(id: event.id, severity: .warning,
-                                        now: start.addingTimeInterval(30)) != nil)
+        #expect(
+            model.remainingFraction(
+                id: event.id, severity: .warning,
+                now: start.addingTimeInterval(30)) != nil)
     }
 
     @Test("resuming gives back the time that was left, not a fresh window")
@@ -137,8 +146,9 @@ final class SignalToastStackModelTests {
         model.resume(id: event.id, now: start.addingTimeInterval(20))
 
         #expect(held != nil)
-        let after = model.remainingFraction(id: event.id, severity: .warning,
-                                            now: start.addingTimeInterval(20))
+        let after = model.remainingFraction(
+            id: event.id, severity: .warning,
+            now: start.addingTimeInterval(20))
         // Roughly half left, both before and after — resuming must not restart
         // the clock, or hovering would make a toast immortal.
         #expect(abs((after ?? 0) - (held ?? 0)) < 0.05)

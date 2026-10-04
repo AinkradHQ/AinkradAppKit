@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
 
@@ -8,7 +9,8 @@ import SwiftUI
 public enum SkinParityRenderer {
     /// Renders a SwiftUI view into an NSBitmapImageRep at 2x scale (Retina display resolution).
     public static func render<V: View>(_ view: V, width: CGFloat = 400, height: CGFloat = 300) -> NSBitmapImageRep? {
-        let envView = view
+        let envView =
+            view
             .environment(\.ainkradMotionBudget, .frozen)
             .environment(\.ainkradTheme, .fallbackDark)
             .environment(\.ainkradStatusColors, .default)
@@ -34,18 +36,20 @@ public enum SkinParityRenderer {
         let bitmapWidth = Int(width * targetScale)
         let bitmapHeight = Int(height * targetScale)
 
-        guard let rep = NSBitmapImageRep(
-            bitmapDataPlanes: nil,
-            pixelsWide: bitmapWidth,
-            pixelsHigh: bitmapHeight,
-            bitsPerSample: 8,
-            samplesPerPixel: 4,
-            hasAlpha: true,
-            isPlanar: false,
-            colorSpaceName: .deviceRGB,
-            bytesPerRow: bitmapWidth * 4,
-            bitsPerPixel: 32
-        ) else {
+        guard
+            let rep = NSBitmapImageRep(
+                bitmapDataPlanes: nil,
+                pixelsWide: bitmapWidth,
+                pixelsHigh: bitmapHeight,
+                bitsPerSample: 8,
+                samplesPerPixel: 4,
+                hasAlpha: true,
+                isPlanar: false,
+                colorSpaceName: .deviceRGB,
+                bytesPerRow: bitmapWidth * 4,
+                bitsPerPixel: 32
+            )
+        else {
             return nil
         }
 

@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// One settings choice: a spoken title, an optional sentence saying what the
 /// user will see change, and the control.
@@ -55,7 +55,8 @@ public struct AinkradSettingsPanel<Content: View>: View {
         }
         .padding(AinkradSpacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ChamferShape(cut: AinkradRadius.md)
-            .fill(theme.surfaceElevated.opacity(0.32)))
+        .background(
+            ChamferShape(cut: AinkradRadius.md)
+                .fill(theme.surfaceElevated.opacity(0.32)))
     }
 }

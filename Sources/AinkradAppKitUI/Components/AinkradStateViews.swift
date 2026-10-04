@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Centered empty-state placeholder: icon, title, message, and an optional
 /// call-to-action button. Consolidates the various "nothing here yet" views.
@@ -12,10 +12,15 @@ public struct AinkradEmptyState: View {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
 
-    public init(icon: String, title: String, message: String,
-                actionTitle: String? = nil, action: (() -> Void)? = nil) {
-        self.icon = icon; self.title = title; self.message = message
-        self.actionTitle = actionTitle; self.action = action
+    public init(
+        icon: String, title: String, message: String,
+        actionTitle: String? = nil, action: (() -> Void)? = nil
+    ) {
+        self.icon = icon
+        self.title = title
+        self.message = message
+        self.actionTitle = actionTitle
+        self.action = action
     }
     /// Whether a call-to-action button is present.
     public var hasAction: Bool { action != nil && actionTitle != nil }
@@ -77,7 +82,9 @@ public struct AinkradErrorState: View {
     @Environment(\.ainkradStatusColors) private var statusColors
 
     public init(message: String, retryTitle: String? = nil, retry: (() -> Void)? = nil) {
-        self.message = message; self.retryTitle = retryTitle; self.retry = retry
+        self.message = message
+        self.retryTitle = retryTitle
+        self.retry = retry
     }
     /// Whether a retry action is present.
     public var hasRetry: Bool { retry != nil && retryTitle != nil }
@@ -112,7 +119,8 @@ public struct AinkradSectionHeader: View {
     @Environment(\.ainkradTypography) private var typo
 
     public init(title: String, subtitle: String? = nil) {
-        self.title = title; self.subtitle = subtitle
+        self.title = title
+        self.subtitle = subtitle
     }
     public var body: some View {
         VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {

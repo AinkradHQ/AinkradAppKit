@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("SignalStore")
@@ -13,14 +14,17 @@ struct SignalStoreTests {
         return (try SignalStore(url: url), url)
     }
 
-    private func event(_ title: String,
-                       source: SignalSource = .host,
-                       kind: String = "test.event",
-                       severity: SignalSeverity = .info,
-                       at seconds: TimeInterval = 1000,
-                       dedupeKey: String? = nil) -> SignalEvent {
-        SignalEvent(timestamp: Date(timeIntervalSince1970: seconds), source: source,
-                    kind: kind, severity: severity, title: title, dedupeKey: dedupeKey)
+    private func event(
+        _ title: String,
+        source: SignalSource = .host,
+        kind: String = "test.event",
+        severity: SignalSeverity = .info,
+        at seconds: TimeInterval = 1000,
+        dedupeKey: String? = nil
+    ) -> SignalEvent {
+        SignalEvent(
+            timestamp: Date(timeIntervalSince1970: seconds), source: source,
+            kind: kind, severity: severity, title: title, dedupeKey: dedupeKey)
     }
 
     @Test("rowStates reports pinned, so the UI can show what it set")
@@ -124,8 +128,9 @@ struct SignalStoreTests {
 
         let activity = store.kindActivity(for: raven, since: nil)
 
-        #expect(activity.map(\.kind) == ["build.failed", "build.warning"],
-                "newest first, so the thing that just happened is at the top")
+        #expect(
+            activity.map(\.kind) == ["build.failed", "build.warning"],
+            "newest first, so the thing that just happened is at the top")
         #expect(activity.first?.count == 2)
         #expect(activity.first?.lastSeen == Date(timeIntervalSince1970: 300))
         #expect(!activity.contains { $0.kind == "host.thing" }, "another source's kinds")
@@ -154,8 +159,9 @@ struct SignalStoreTests {
         _ = try store.insert(event("old", source: raven, kind: "build.failed", at: 100))
         _ = try store.insert(event("new", source: raven, kind: "build.warning", at: 900))
 
-        let activity = store.kindActivity(for: raven,
-                                          since: Date(timeIntervalSince1970: 500))
+        let activity = store.kindActivity(
+            for: raven,
+            since: Date(timeIntervalSince1970: 500))
 
         #expect(activity.map(\.kind) == ["build.warning"])
     }
@@ -171,8 +177,9 @@ struct SignalStoreTests {
     func eventByID() throws {
         let (store, url) = try makeStore()
         defer { try? FileManager.default.removeItem(at: url) }
-        let e = event("Build failed", source: .app(appID: "raven"),
-                      kind: "build.failed", severity: .failure)
+        let e = event(
+            "Build failed", source: .app(appID: "raven"),
+            kind: "build.failed", severity: .failure)
         _ = try store.insert(e)
 
         let found = try #require(store.event(id: e.id))
@@ -186,12 +193,13 @@ struct SignalStoreTests {
     func insertAndRead() throws {
         let (store, url) = try makeStore()
         defer { try? FileManager.default.removeItem(at: url) }
-        let e = SignalEvent(source: .app(appID: "raven"), kind: "build.failed",
-                            severity: .failure, title: "Build failed", body: "3 errors",
-                            proposedImportance: .urgent,
-                            deepLink: SignalDeepLink(appID: "raven", payload: Data([0x07])),
-                            actions: [SignalAction(id: "retry", label: "Retry")],
-                            dedupeKey: "b:main")
+        let e = SignalEvent(
+            source: .app(appID: "raven"), kind: "build.failed",
+            severity: .failure, title: "Build failed", body: "3 errors",
+            proposedImportance: .urgent,
+            deepLink: SignalDeepLink(appID: "raven", payload: Data([0x07])),
+            actions: [SignalAction(id: "retry", label: "Retry")],
+            dedupeKey: "b:main")
         #expect(try store.insert(e) == .inserted)
         let page = store.page(filter: .all, before: nil, limit: 10)
         #expect(page.count == 1)
@@ -231,7 +239,7 @@ struct SignalStoreTests {
         let (store, url) = try makeStore()
         defer { try? FileManager.default.removeItem(at: url) }
         _ = try store.insert(event("persisted"))
-        _ = store   // close by scope
+        _ = store  // close by scope
         let reopened = try SignalStore(url: url)
         #expect(reopened.page(filter: .all, before: nil, limit: 10).map(\.title) == ["persisted"])
     }

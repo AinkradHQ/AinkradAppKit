@@ -1,6 +1,7 @@
+import AppKit
 import Foundation
 import Testing
-import AppKit
+
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
 

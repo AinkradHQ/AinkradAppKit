@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// How many of `segments` should read as "filled" for `value` out of `total`.
 /// Clamps the ratio into `0...1` first (so overshoot/negative values never
@@ -58,8 +58,10 @@ public struct AinkradStatusBar: View {
                 ChamferShape(cut: 2, corners: .all)
                     .fill(
                         isFilled
-                            ? LinearGradient(colors: [color.opacity(0.65), color], startPoint: .leading, endPoint: .trailing)
-                            : LinearGradient(colors: [theme.foreground.opacity(0.08)], startPoint: .leading, endPoint: .trailing)
+                            ? LinearGradient(
+                                colors: [color.opacity(0.65), color], startPoint: .leading, endPoint: .trailing)
+                            : LinearGradient(
+                                colors: [theme.foreground.opacity(0.08)], startPoint: .leading, endPoint: .trailing)
                     )
                     .frame(height: 8)
                     .shadow(color: color.opacity(isFilled ? 0.5 : 0), radius: isFilled ? 2 : 0)

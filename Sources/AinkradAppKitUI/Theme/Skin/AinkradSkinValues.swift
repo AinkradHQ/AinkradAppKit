@@ -96,10 +96,10 @@ public struct AinkradControlState: OptionSet, Codable, Equatable, Sendable {
     public let rawValue: Int
     public init(rawValue: Int) { self.rawValue = rawValue }
 
-    public static let hover    = AinkradControlState(rawValue: 1 << 0)
-    public static let pressed  = AinkradControlState(rawValue: 1 << 1)
+    public static let hover = AinkradControlState(rawValue: 1 << 0)
+    public static let pressed = AinkradControlState(rawValue: 1 << 1)
     public static let selected = AinkradControlState(rawValue: 1 << 2)
-    public static let focused  = AinkradControlState(rawValue: 1 << 3)
+    public static let focused = AinkradControlState(rawValue: 1 << 3)
     public static let disabled = AinkradControlState(rawValue: 1 << 4)
 }
 
@@ -308,7 +308,7 @@ public struct AinkradFontToken: Codable, Equatable, Sendable {
     public var size: Double?
     public var sizeKey: String?
     public var weight: String?
-    public var mono: String? // "none", "family", "system"
+    public var mono: String?  // "none", "family", "system"
     public var monospacedDigits: Bool?
     public var scaled: Bool?
     public var tracking: Double?
@@ -381,7 +381,7 @@ public struct AinkradFontToken: Codable, Equatable, Sendable {
 }
 
 public struct AinkradAnimationToken: Codable, Equatable, Sendable {
-    public var curve: String // "easeIn", "easeOut", "easeInOut", "linear", "spring", "snappy"
+    public var curve: String  // "easeIn", "easeOut", "easeInOut", "linear", "spring", "snappy"
     public var duration: Double?
     public var durationKey: String?
     public var response: Double?

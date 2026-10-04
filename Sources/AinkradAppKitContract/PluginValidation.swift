@@ -13,8 +13,9 @@ public struct PluginValidationError: Error {
 public enum PluginValidation {
     /// Conservative charset for `AinkradAppID`: it is interpolated into a
     /// filesystem path segment, so it must not contain separators or traversal.
-    private static let appIDAllowed = CharacterSet(charactersIn:
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-")
+    private static let appIDAllowed = CharacterSet(
+        charactersIn:
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-")
 
     public static func isValidAppID(_ id: String) -> Bool {
         guard !id.isEmpty, id != ".", id != ".." else { return false }
@@ -23,10 +24,12 @@ public enum PluginValidation {
 
     /// Validates app-id safety, executable presence, and API-version
     /// compatibility (NOT signature — separate policy — and NOT `Bundle.load()`).
-    public static func validate(metadata: PluginBundleMetadata,
-                                infoDictionary: [String: Any],
-                                minSupported: Int,
-                                current: Int) -> Result<Void, PluginValidationError> {
+    public static func validate(
+        metadata: PluginBundleMetadata,
+        infoDictionary: [String: Any],
+        minSupported: Int,
+        current: Int
+    ) -> Result<Void, PluginValidationError> {
         guard isValidAppID(metadata.appID) else {
             return .failure(PluginValidationError(reason: "invalid app id"))
         }
@@ -36,12 +39,17 @@ public enum PluginValidation {
         guard let exe = infoDictionary["CFBundleExecutable"] as? String, !exe.isEmpty else {
             return .failure(PluginValidationError(reason: "missing CFBundleExecutable"))
         }
-        guard AinkradAppKit.isCompatible(bundleAPIVersion: metadata.apiVersion,
-                                         minSupported: minSupported,
-                                         current: current) else {
-            return .failure(PluginValidationError(reason:
-                "built against generation \(metadata.apiVersion); this host supports " +
-                "\(minSupported)\u{2013}\(current) — update the app"))
+        guard
+            AinkradAppKit.isCompatible(
+                bundleAPIVersion: metadata.apiVersion,
+                minSupported: minSupported,
+                current: current)
+        else {
+            return .failure(
+                PluginValidationError(
+                    reason:
+                        "built against generation \(metadata.apiVersion); this host supports "
+                        + "\(minSupported)\u{2013}\(current) — update the app"))
         }
         return .success(())
     }

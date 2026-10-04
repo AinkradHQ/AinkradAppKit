@@ -31,11 +31,11 @@ public enum SignalKind {
     }
 }
 
-public extension SignalEvent {
+extension SignalEvent {
     /// Returns a copy with `source` stamped by the host and over-long fields
     /// truncated. Never rejects — validation of `kind` is the caller's job
     /// (see `SignalKind.isValid`), because a rejection needs to be reported.
-    func normalized(source stamped: SignalSource) -> SignalEvent {
+    public func normalized(source stamped: SignalSource) -> SignalEvent {
         SignalEvent(
             id: id,
             timestamp: timestamp,

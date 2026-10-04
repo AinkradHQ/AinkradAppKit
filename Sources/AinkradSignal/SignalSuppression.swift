@@ -30,10 +30,12 @@ public struct SuppressionWindow: Codable, Sendable, Equatable {
     /// quietly expiring when the app restarts.
     public var snoozedUntil: Date?
 
-    public init(quietStartMinute: Int? = nil,
-                quietEndMinute: Int? = nil,
-                mode: Mode = .everything,
-                snoozedUntil: Date? = nil) {
+    public init(
+        quietStartMinute: Int? = nil,
+        quietEndMinute: Int? = nil,
+        mode: Mode = .everything,
+        snoozedUntil: Date? = nil
+    ) {
         self.quietStartMinute = quietStartMinute
         self.quietEndMinute = quietEndMinute
         self.mode = mode
@@ -58,7 +60,8 @@ public struct SuppressionWindow: Codable, Sendable, Equatable {
 
     private func isInQuietHours(at now: Date, calendar: Calendar) -> Bool {
         guard let start = quietStartMinute, let end = quietEndMinute,
-              start != end else { return false }
+            start != end
+        else { return false }
         let components = calendar.dateComponents([.hour, .minute], from: now)
         guard let hour = components.hour, let minute = components.minute else { return false }
         let current = hour * 60 + minute

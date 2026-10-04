@@ -1,13 +1,15 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradAppKitUI
 @testable import AinkradSignal
 
 @Suite("Signal keyboard navigation")
 struct SignalKeyboardNavTests {
     private func event(_ title: String, at seconds: TimeInterval) -> SignalEvent {
-        SignalEvent(timestamp: Date(timeIntervalSince1970: seconds), source: .host,
-                    kind: "k", severity: .info, title: title)
+        SignalEvent(
+            timestamp: Date(timeIntervalSince1970: seconds), source: .host,
+            kind: "k", severity: .info, title: title)
     }
     private var calendar: Calendar {
         var c = Calendar(identifier: .gregorian)
@@ -19,8 +21,10 @@ struct SignalKeyboardNavTests {
     func orderMatchesRendering() {
         // Two days, deliberately: the list groups by day, so a traversal built
         // from the raw array would jump across a header the eye does not.
-        let events = [event("newest", at: 200_000), event("older", at: 190_000),
-                      event("yesterday", at: 100_000)]
+        let events = [
+            event("newest", at: 200_000), event("older", at: 190_000),
+            event("yesterday", at: 100_000),
+        ]
         let order = SignalFeedList.keyboardOrder(events, calendar: calendar)
         let drawn = SignalPresentation.dayGroups(events, calendar: calendar)
             .flatMap(\.events).map(\.id)

@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Visual treatment for `AinkradButton`. Pure mapping to fill/border/danger
 /// intent so the logic is unit-testable without instantiating any SwiftUI view.
@@ -51,19 +51,29 @@ public struct AinkradButton: View {
     @State private var hovering = false
     @State private var pressed = false
 
-    public init(title: String, style: AinkradButtonStyle = .primary, icon: String? = nil,
-                action: @escaping () -> Void) {
-        self.title = title; self.style = style; self.icon = icon; self.action = action
+    public init(
+        title: String, style: AinkradButtonStyle = .primary, icon: String? = nil,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.style = style
+        self.icon = icon
+        self.action = action
     }
 
     /// Loading-capable variant. When `isLoading` is `true` the label crossfades
     /// in place to an `AinkradSpinner` tinted to the button's foreground and the
     /// button is disabled. NEW overload — `isLoading:` has NO default, so this is
     /// a distinct symbol from `init(title:style:icon:action:)`, which is untouched.
-    public init(title: String, style: AinkradButtonStyle = .primary, icon: String? = nil,
-                isLoading: Bool, action: @escaping () -> Void) {
-        self.title = title; self.style = style; self.icon = icon
-        self.isLoading = isLoading; self.action = action
+    public init(
+        title: String, style: AinkradButtonStyle = .primary, icon: String? = nil,
+        isLoading: Bool, action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.style = style
+        self.icon = icon
+        self.isLoading = isLoading
+        self.action = action
     }
 
     private var accentColor: Color { style.isDanger ? statusColors.danger : theme.accentPrimary }

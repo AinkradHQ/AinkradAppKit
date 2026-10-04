@@ -97,8 +97,10 @@ public struct AinkradLogBuffer {
         var parser = parsers[key] ?? AinkradANSIParser()
         for line in completed {
             let runs = parser.parse(line)
-            push(AinkradLogLine(id: nextID, stream: stream, source: source,
-                                runs: runs.isEmpty ? [AinkradStyledRun(colorSlot: nil, text: "")] : runs))
+            push(
+                AinkradLogLine(
+                    id: nextID, stream: stream, source: source,
+                    runs: runs.isEmpty ? [AinkradStyledRun(colorSlot: nil, text: "")] : runs))
             nextID += 1
         }
         parsers[key] = parser
@@ -112,8 +114,10 @@ public struct AinkradLogBuffer {
         byteCarry = [:]
         for (key, pending) in carry where !pending.isEmpty {
             var parser = parsers[key] ?? AinkradANSIParser()
-            push(AinkradLogLine(id: nextID, stream: lastStream[key] ?? .stdout,
-                                source: key.isEmpty ? nil : key, runs: parser.parse(pending)))
+            push(
+                AinkradLogLine(
+                    id: nextID, stream: lastStream[key] ?? .stdout,
+                    source: key.isEmpty ? nil : key, runs: parser.parse(pending)))
             nextID += 1
             parsers[key] = parser
         }
@@ -151,7 +155,7 @@ public struct AinkradLogBuffer {
         guard !bytes.isEmpty else { return 0 }
         for back in 1...bytes.count {
             let byte = bytes[bytes.count - back]
-            if byte & 0b1100_0000 == 0b1000_0000 { continue }   // a continuation byte
+            if byte & 0b1100_0000 == 0b1000_0000 { continue }  // a continuation byte
             let needed = byte >= 0b1111_0000 ? 4 : byte >= 0b1110_0000 ? 3 : byte >= 0b1100_0000 ? 2 : 1
             return needed > back ? back : 0
         }

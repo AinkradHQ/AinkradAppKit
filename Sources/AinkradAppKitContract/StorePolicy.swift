@@ -1,4 +1,5 @@
 import Foundation
+
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -28,13 +29,15 @@ public struct StoreManifestInput {
     public let declaredSHA256: String
     public let computedSHA256: String
 
-    public init(metadata: PluginBundleMetadata,
-                infoDictionary: [String: Any],
-                author: String?,
-                description: String?,
-                iconSymbol: String?,
-                declaredSHA256: String,
-                computedSHA256: String) {
+    public init(
+        metadata: PluginBundleMetadata,
+        infoDictionary: [String: Any],
+        author: String?,
+        description: String?,
+        iconSymbol: String?,
+        declaredSHA256: String,
+        computedSHA256: String
+    ) {
         self.metadata = metadata
         self.infoDictionary = infoDictionary
         self.author = author
@@ -54,10 +57,12 @@ public enum StorePolicy {
     public static func check(manifest: StoreManifestInput, minSupported: Int, current: Int) -> [StoreIssue] {
         var issues: [StoreIssue] = []
 
-        switch PluginValidation.validate(metadata: manifest.metadata,
-                                         infoDictionary: manifest.infoDictionary,
-                                         minSupported: minSupported,
-                                         current: current) {
+        switch PluginValidation.validate(
+            metadata: manifest.metadata,
+            infoDictionary: manifest.infoDictionary,
+            minSupported: minSupported,
+            current: current)
+        {
         case .success:
             break
         case .failure(let error):
@@ -73,13 +78,17 @@ public enum StorePolicy {
         }
 
         if !resolvesSFSymbol(manifest.iconSymbol) {
-            issues.append(StoreIssue(code: "missing-icon",
-                                     message: "Submission's icon symbol is missing or not a resolvable SF Symbol."))
+            issues.append(
+                StoreIssue(
+                    code: "missing-icon",
+                    message: "Submission's icon symbol is missing or not a resolvable SF Symbol."))
         }
 
         if manifest.declaredSHA256 != manifest.computedSHA256 {
-            issues.append(StoreIssue(code: "sha-mismatch",
-                                     message: "Computed sha256 does not match the declared sha256."))
+            issues.append(
+                StoreIssue(
+                    code: "sha-mismatch",
+                    message: "Computed sha256 does not match the declared sha256."))
         }
 
         return issues

@@ -1,5 +1,6 @@
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -13,8 +14,9 @@ struct AinkradModalTests {
     @Test("contentWidth is maxWidth minus the modifier's own padding")
     func contentWidthAccountsForPadding() {
         #expect(AinkradModalMetrics.maxWidth == 480)
-        #expect(AinkradModalMetrics.contentWidth
-            == AinkradModalMetrics.maxWidth - 2 * AinkradSpacing.lg)
+        #expect(
+            AinkradModalMetrics.contentWidth
+                == AinkradModalMetrics.maxWidth - 2 * AinkradSpacing.lg)
         #expect(AinkradModalMetrics.contentWidth == 448)
     }
 
@@ -25,7 +27,9 @@ struct AinkradModalTests {
     func bothEntryPointsExist() {
         let presented = Binding<Bool>(get: { true }, set: { _ in })
         _ = Color.clear.ainkradModal(isPresented: presented) { Text("historical") }
-        _ = Color.clear.ainkradModal(isPresented: presented,
-                                     contentWidth: 520) { Text("explicit") }
+        _ = Color.clear.ainkradModal(
+            isPresented: presented,
+            contentWidth: 520
+        ) { Text("explicit") }
     }
 }

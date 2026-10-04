@@ -21,10 +21,12 @@ public struct SignalFilter: Sendable, Equatable {
     public var kindPrefix: String?
     public var unreadOnly: Bool
 
-    public init(sources: Set<SignalSource>? = nil,
-                severities: Set<SignalSeverity>? = nil,
-                kindPrefix: String? = nil,
-                unreadOnly: Bool = false) {
+    public init(
+        sources: Set<SignalSource>? = nil,
+        severities: Set<SignalSeverity>? = nil,
+        kindPrefix: String? = nil,
+        unreadOnly: Bool = false
+    ) {
         self.sources = sources
         self.severities = severities
         self.kindPrefix = kindPrefix
@@ -95,10 +97,11 @@ public final class SignalStore {
     /// risk, only the index over them.
     private func migrateToV2() throws {
         try exec("DROP TABLE IF EXISTS events_fts;")
-        try exec("""
-        CREATE VIRTUAL TABLE events_fts
-          USING fts5(title, body, kind, content='events', content_rowid='rowid');
-        """)
+        try exec(
+            """
+            CREATE VIRTUAL TABLE events_fts
+              USING fts5(title, body, kind, content='events', content_rowid='rowid');
+            """)
         try exec("INSERT INTO events_fts(events_fts) VALUES('rebuild');")
     }
 
@@ -111,46 +114,50 @@ public final class SignalStore {
     }
 
     private func createV1() throws {
-        try exec("""
-        CREATE TABLE IF NOT EXISTS events (
-          id TEXT PRIMARY KEY,
-          timestamp REAL NOT NULL,   -- seconds since the 2001 reference date; see sqlTime
-          source_kind TEXT NOT NULL,
-          source_app_id TEXT,
-          kind TEXT NOT NULL,
-          severity TEXT NOT NULL,
-          title TEXT NOT NULL,
-          body TEXT,
-          importance TEXT NOT NULL,
-          deep_link BLOB,
-          actions BLOB,
-          dedupe_key TEXT,
-          dedupe_count INTEGER NOT NULL DEFAULT 1,
-          read_at REAL,
-          pinned INTEGER NOT NULL DEFAULT 0
-        );
-        """)
+        try exec(
+            """
+            CREATE TABLE IF NOT EXISTS events (
+              id TEXT PRIMARY KEY,
+              timestamp REAL NOT NULL,   -- seconds since the 2001 reference date; see sqlTime
+              source_kind TEXT NOT NULL,
+              source_app_id TEXT,
+              kind TEXT NOT NULL,
+              severity TEXT NOT NULL,
+              title TEXT NOT NULL,
+              body TEXT,
+              importance TEXT NOT NULL,
+              deep_link BLOB,
+              actions BLOB,
+              dedupe_key TEXT,
+              dedupe_count INTEGER NOT NULL DEFAULT 1,
+              read_at REAL,
+              pinned INTEGER NOT NULL DEFAULT 0
+            );
+            """)
         try exec("CREATE INDEX IF NOT EXISTS idx_events_ts ON events(timestamp DESC);")
-        try exec("""
-        CREATE INDEX IF NOT EXISTS idx_events_source
-          ON events(source_kind, source_app_id, timestamp DESC);
-        """)
+        try exec(
+            """
+            CREATE INDEX IF NOT EXISTS idx_events_source
+              ON events(source_kind, source_app_id, timestamp DESC);
+            """)
         try exec("CREATE INDEX IF NOT EXISTS idx_events_unread ON events(read_at) WHERE read_at IS NULL;")
         // Deliberately NOT unique: coalescing is windowed, so the same key must
         // be reusable once its window has passed. A unique constraint would
         // silently make a key unusable for the rest of the retention period.
-        try exec("""
-        CREATE INDEX IF NOT EXISTS idx_events_dedupe
-          ON events(source_kind, source_app_id, dedupe_key, timestamp DESC)
-          WHERE dedupe_key IS NOT NULL;
-        """)
+        try exec(
+            """
+            CREATE INDEX IF NOT EXISTS idx_events_dedupe
+              ON events(source_kind, source_app_id, dedupe_key, timestamp DESC)
+              WHERE dedupe_key IS NOT NULL;
+            """)
         // External-content FTS does NOT self-maintain. This class writes both
         // rows in one transaction; there are deliberately no SQL triggers, so
         // the Swift layer stays the single point of truth.
-        try exec("""
-        CREATE VIRTUAL TABLE IF NOT EXISTS events_fts
-          USING fts5(title, body, content='events', content_rowid='rowid');
-        """)
+        try exec(
+            """
+            CREATE VIRTUAL TABLE IF NOT EXISTS events_fts
+              USING fts5(title, body, content='events', content_rowid='rowid');
+            """)
     }
 
     // MARK: - insert
@@ -159,7 +166,8 @@ public final class SignalStore {
     public func insert(_ event: SignalEvent) throws -> SignalInsertOutcome {
         guard !isReadOnly else { return .inserted }
         if let key = event.dedupeKey,
-           let existing = coalescibleRow(source: event.source, key: key, at: event.timestamp) {
+            let existing = coalescibleRow(source: event.source, key: key, at: event.timestamp)
+        {
             try bumpCoalesced(rowID: existing.rowID, id: existing.id, to: event)
             return .coalesced(id: existing.id)
         }
@@ -177,10 +185,10 @@ public final class SignalStore {
 
     private func insertRow(_ e: SignalEvent) throws {
         let sql = """
-        INSERT INTO events (id, timestamp, source_kind, source_app_id, kind, severity,
-                            title, body, importance, deep_link, actions, dedupe_key)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?);
-        """
+            INSERT INTO events (id, timestamp, source_kind, source_app_id, kind, severity,
+                                title, body, importance, deep_link, actions, dedupe_key)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?);
+            """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { throw SignalStoreError.exec(lastError) }
         defer { sqlite3_finalize(stmt) }
@@ -202,9 +210,9 @@ public final class SignalStore {
 
     private func insertFTS(for e: SignalEvent) throws {
         let sql = """
-        INSERT INTO events_fts (rowid, title, body, kind)
-        SELECT rowid, title, body, kind FROM events WHERE id = ?;
-        """
+            INSERT INTO events_fts (rowid, title, body, kind)
+            SELECT rowid, title, body, kind FROM events WHERE id = ?;
+            """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { throw SignalStoreError.exec(lastError) }
         defer { sqlite3_finalize(stmt) }
@@ -228,7 +236,10 @@ public final class SignalStore {
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
         defer { sqlite3_finalize(stmt) }
         var index: Int32 = 1
-        for bindOne in binder { bindOne(stmt, index); index += 1 }
+        for bindOne in binder {
+            bindOne(stmt, index)
+            index += 1
+        }
         sqlite3_bind_int(stmt, index, Int32(max(0, min(limit, Int(Int32.max)))))
         var out: [SignalEvent] = []
         while sqlite3_step(stmt) == SQLITE_ROW { if let e = Self.event(from: stmt) { out.append(e) } }
@@ -252,13 +263,15 @@ public final class SignalStore {
     }
 
     static let columns = """
-    id, timestamp, source_kind, source_app_id, kind, severity, title, body,
-    importance, deep_link, actions, dedupe_key, dedupe_count, read_at, pinned
-    """
+        id, timestamp, source_kind, source_app_id, kind, severity, title, body,
+        importance, deep_link, actions, dedupe_key, dedupe_count, read_at, pinned
+        """
 
-    func appendFilterClauses(_ filter: SignalFilter,
-                             into clauses: inout [String],
-                             binder: inout [(OpaquePointer?, Int32) -> Void]) {
+    func appendFilterClauses(
+        _ filter: SignalFilter,
+        into clauses: inout [String],
+        binder: inout [(OpaquePointer?, Int32) -> Void]
+    ) {
         if let sources = filter.sources, !sources.isEmpty {
             let parts = sources.map { source -> String in
                 let (kindText, appID) = Self.decompose(source)
@@ -346,7 +359,10 @@ public final class SignalStore {
     }
 
     private func bindJSON<T: Encodable>(_ stmt: OpaquePointer?, _ index: Int32, _ value: T?) throws {
-        guard let value else { sqlite3_bind_null(stmt, index); return }
+        guard let value else {
+            sqlite3_bind_null(stmt, index)
+            return
+        }
         let data = try JSONEncoder().encode(value)
         _ = data.withUnsafeBytes {
             sqlite3_bind_blob(stmt, index, $0.baseAddress, Int32(data.count), Self.SQLITE_TRANSIENT)
@@ -400,10 +416,11 @@ public final class SignalStore {
         // from what is given. External content does not cascade: skip this and
         // a deleted event keeps matching searches, which the user cannot fix
         // because the thing they would delete is already gone.
-        try? exec("""
-        INSERT INTO events_fts (events_fts, rowid, title, body, kind)
-        SELECT 'delete', rowid, title, body, kind FROM events WHERE id IN (\(list));
-        """)
+        try? exec(
+            """
+            INSERT INTO events_fts (events_fts, rowid, title, body, kind)
+            SELECT 'delete', rowid, title, body, kind FROM events WHERE id IN (\(list));
+            """)
         try? exec("DELETE FROM events WHERE id IN (\(list));")
         try? exec("COMMIT;")
     }
@@ -412,15 +429,16 @@ public final class SignalStore {
         var clauses: [String] = ["read_at IS NULL"]
         var binder: [(OpaquePointer?, Int32) -> Void] = []
         appendFilterClauses(filter, into: &clauses, binder: &binder)
-        try? exec("UPDATE events SET read_at = \(Self.sqlTime(Date())) WHERE "
-                  + clauses.joined(separator: " AND ") + ";")
+        try? exec(
+            "UPDATE events SET read_at = \(Self.sqlTime(Date())) WHERE "
+                + clauses.joined(separator: " AND ") + ";")
     }
 
     public func unreadCounts() -> [SignalSource: Int] {
         let sql = """
-        SELECT source_kind, source_app_id, COUNT(*) FROM events
-        WHERE read_at IS NULL GROUP BY source_kind, source_app_id;
-        """
+            SELECT source_kind, source_app_id, COUNT(*) FROM events
+            WHERE read_at IS NULL GROUP BY source_kind, source_app_id;
+            """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [:] }
         defer { sqlite3_finalize(stmt) }
@@ -469,9 +487,9 @@ public final class SignalStore {
 
     public func rowStates(limit: Int) -> [UUID: SignalRowState] {
         let sql = """
-        SELECT id, read_at, dedupe_count, pinned FROM events
-        ORDER BY timestamp DESC LIMIT ?;
-        """
+            SELECT id, read_at, dedupe_count, pinned FROM events
+            ORDER BY timestamp DESC LIMIT ?;
+            """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [:] }
         defer { sqlite3_finalize(stmt) }
@@ -480,9 +498,10 @@ public final class SignalStore {
         while sqlite3_step(stmt) == SQLITE_ROW {
             guard let idText = Self.text(stmt, 0), let id = UUID(uuidString: idText) else { continue }
             let isRead = sqlite3_column_type(stmt, 1) != SQLITE_NULL
-            out[id] = SignalRowState(isRead: isRead,
-                                     repeatCount: Int(sqlite3_column_int(stmt, 2)),
-                                     isPinned: sqlite3_column_int(stmt, 3) != 0)
+            out[id] = SignalRowState(
+                isRead: isRead,
+                repeatCount: Int(sqlite3_column_int(stmt, 2)),
+                isPinned: sqlite3_column_int(stmt, 3) != 0)
         }
         return out
     }
@@ -496,16 +515,19 @@ public final class SignalStore {
         var binder: [(OpaquePointer?, Int32) -> Void] = []
         appendFilterClauses(filter, into: &clauses, binder: &binder)
         let sql = """
-        SELECT \(Self.columns) FROM events
-        WHERE \(clauses.joined(separator: " AND "))
-        ORDER BY timestamp DESC LIMIT ?;
-        """
+            SELECT \(Self.columns) FROM events
+            WHERE \(clauses.joined(separator: " AND "))
+            ORDER BY timestamp DESC LIMIT ?;
+            """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
         defer { sqlite3_finalize(stmt) }
         bind(stmt, 1, Self.ftsQuery(trimmed))
         var index: Int32 = 2
-        for bindOne in binder { bindOne(stmt, index); index += 1 }
+        for bindOne in binder {
+            bindOne(stmt, index)
+            index += 1
+        }
         sqlite3_bind_int(stmt, index, Int32(max(0, min(limit, Int(Int32.max)))))
         var out: [SignalEvent] = []
         while sqlite3_step(stmt) == SQLITE_ROW { if let e = Self.event(from: stmt) { out.append(e) } }
@@ -538,23 +560,26 @@ public final class SignalStore {
         // makes the statement wrong — and `try? exec` swallows the failure, so
         // the only symptom is a search index that quietly stops agreeing with
         // the table. Adding a column to `events_fts` means editing here too.
-        try? exec("""
-        INSERT INTO events_fts (events_fts, rowid, title, body, kind)
-        SELECT 'delete', rowid, title, body, kind FROM events
-        WHERE pinned = 0 AND timestamp < \(cutoff);
-        """)
+        try? exec(
+            """
+            INSERT INTO events_fts (events_fts, rowid, title, body, kind)
+            SELECT 'delete', rowid, title, body, kind FROM events
+            WHERE pinned = 0 AND timestamp < \(cutoff);
+            """)
         try? exec("DELETE FROM events WHERE pinned = 0 AND timestamp < \(cutoff);")
-        try? exec("""
-        INSERT INTO events_fts (events_fts, rowid, title, body, kind)
-        SELECT 'delete', rowid, title, body, kind FROM events WHERE pinned = 0 AND rowid NOT IN (
-          SELECT rowid FROM events WHERE pinned = 0 ORDER BY timestamp DESC LIMIT \(policy.maxEvents)
-        );
-        """)
-        try? exec("""
-        DELETE FROM events WHERE pinned = 0 AND rowid NOT IN (
-          SELECT rowid FROM events WHERE pinned = 0 ORDER BY timestamp DESC LIMIT \(policy.maxEvents)
-        );
-        """)
+        try? exec(
+            """
+            INSERT INTO events_fts (events_fts, rowid, title, body, kind)
+            SELECT 'delete', rowid, title, body, kind FROM events WHERE pinned = 0 AND rowid NOT IN (
+              SELECT rowid FROM events WHERE pinned = 0 ORDER BY timestamp DESC LIMIT \(policy.maxEvents)
+            );
+            """)
+        try? exec(
+            """
+            DELETE FROM events WHERE pinned = 0 AND rowid NOT IN (
+              SELECT rowid FROM events WHERE pinned = 0 ORDER BY timestamp DESC LIMIT \(policy.maxEvents)
+            );
+            """)
         try? exec("COMMIT;")
         return before - rowCount()
     }
@@ -568,28 +593,37 @@ public final class SignalStore {
 
     // MARK: - dedupe
 
-    struct CoalesceTarget { let rowID: Int64; let id: UUID }
+    struct CoalesceTarget {
+        let rowID: Int64
+        let id: UUID
+    }
 
     /// The most recent row with this `(source, dedupeKey)` whose timestamp is
     /// inside the window. Windowed, not global — see the non-unique index.
     func coalescibleRow(source: SignalSource, key: String, at date: Date) -> CoalesceTarget? {
         let (kindText, appID) = Self.decompose(source)
         let sql = """
-        SELECT rowid, id FROM events
-        WHERE source_kind = ? AND (? IS NULL OR source_app_id = ?)
-          AND dedupe_key = ? AND timestamp > ?
-        ORDER BY timestamp DESC LIMIT 1;
-        """
+            SELECT rowid, id FROM events
+            WHERE source_kind = ? AND (? IS NULL OR source_app_id = ?)
+              AND dedupe_key = ? AND timestamp > ?
+            ORDER BY timestamp DESC LIMIT 1;
+            """
         var stmt: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return nil }
         defer { sqlite3_finalize(stmt) }
         bind(stmt, 1, kindText)
-        if let appID { bind(stmt, 2, appID); bind(stmt, 3, appID) }
-        else { sqlite3_bind_null(stmt, 2); sqlite3_bind_null(stmt, 3) }
+        if let appID {
+            bind(stmt, 2, appID)
+            bind(stmt, 3, appID)
+        } else {
+            sqlite3_bind_null(stmt, 2)
+            sqlite3_bind_null(stmt, 3)
+        }
         bind(stmt, 4, key)
         sqlite3_bind_double(stmt, 5, Self.sqlTime(date) - Self.dedupeWindow)
         guard sqlite3_step(stmt) == SQLITE_ROW,
-              let idText = Self.text(stmt, 1), let id = UUID(uuidString: idText) else { return nil }
+            let idText = Self.text(stmt, 1), let id = UUID(uuidString: idText)
+        else { return nil }
         return CoalesceTarget(rowID: sqlite3_column_int64(stmt, 0), id: id)
     }
 
@@ -603,17 +637,20 @@ public final class SignalStore {
     func bumpCoalesced(rowID: Int64, id: UUID, to event: SignalEvent) throws {
         try exec("BEGIN IMMEDIATE;")
         do {
-            try exec("""
-            INSERT INTO events_fts (events_fts, rowid, title, body, kind)
-            SELECT 'delete', rowid, title, body, kind FROM events WHERE rowid = \(rowID);
-            """)
+            try exec(
+                """
+                INSERT INTO events_fts (events_fts, rowid, title, body, kind)
+                SELECT 'delete', rowid, title, body, kind FROM events WHERE rowid = \(rowID);
+                """)
             let sql = """
-            UPDATE events SET timestamp = ?, dedupe_count = dedupe_count + 1, read_at = NULL,
-                              title = ?, body = ?, deep_link = ?
-            WHERE rowid = ?;
-            """
+                UPDATE events SET timestamp = ?, dedupe_count = dedupe_count + 1, read_at = NULL,
+                                  title = ?, body = ?, deep_link = ?
+                WHERE rowid = ?;
+                """
             var stmt: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { throw SignalStoreError.exec(lastError) }
+            guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+                throw SignalStoreError.exec(lastError)
+            }
             defer { sqlite3_finalize(stmt) }
             sqlite3_bind_double(stmt, 1, Self.sqlTime(event.timestamp))
             bind(stmt, 2, event.title)
@@ -621,10 +658,11 @@ public final class SignalStore {
             try bindJSON(stmt, 4, event.deepLink)
             sqlite3_bind_int64(stmt, 5, rowID)
             guard sqlite3_step(stmt) == SQLITE_DONE else { throw SignalStoreError.exec(lastError) }
-            try exec("""
-            INSERT INTO events_fts (rowid, title, body, kind)
-            SELECT rowid, title, body, kind FROM events WHERE rowid = \(rowID);
-            """)
+            try exec(
+                """
+                INSERT INTO events_fts (rowid, title, body, kind)
+                SELECT rowid, title, body, kind FROM events WHERE rowid = \(rowID);
+                """)
             try exec("COMMIT;")
         } catch {
             try? exec("ROLLBACK;")

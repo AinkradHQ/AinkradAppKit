@@ -25,13 +25,15 @@ public enum Resolution: Sendable {
 public enum AinkradHome {
     /// Shared across the whole app family — note `Ainkrad`, not a bundle id.
     public static func defaultPointerDirectory() -> URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let base =
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent("Ainkrad", isDirectory: true)
     }
 
     public static func defaultCacheRoot(bundleID: String) -> URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+        let base =
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
         return base.appendingPathComponent(bundleID, isDirectory: true)
             .appendingPathComponent("Cache", isDirectory: true)
@@ -47,7 +49,8 @@ public enum AinkradHome {
 
         var isDirectory: ObjCBool = false
         guard FileManager.default.fileExists(atPath: vault.path, isDirectory: &isDirectory),
-              isDirectory.boolValue else {
+            isDirectory.boolValue
+        else {
             return .missing(path: pointer.path)
         }
         guard let marker = (try? HomeMarker.read(in: vault)) ?? nil else {
@@ -74,9 +77,10 @@ public enum AinkradHome {
         let marker = try HomeMarker.read(in: url) ?? HomeMarker()
         try marker.write(to: url)
 
-        let bookmark = try? url.bookmarkData(options: .withSecurityScope,
-                                             includingResourceValuesForKeys: nil,
-                                             relativeTo: nil)
+        let bookmark = try? url.bookmarkData(
+            options: .withSecurityScope,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil)
         try HomePointer(path: url.path, homeID: marker.homeID, bookmark: bookmark)
             .write(to: pointerDirectory)
 
@@ -101,7 +105,8 @@ public enum AinkradHome {
         }
         for forbidden in ["/System", "/Library", "/private", "/usr", "/bin", "/sbin", "/Applications"]
         where url.standardizedFileURL.path.hasPrefix(forbidden + "/")
-            || url.standardizedFileURL.path == forbidden {
+            || url.standardizedFileURL.path == forbidden
+        {
             throw HomeError.systemLocation(url)
         }
         // A directory may be claimed only when it is EMPTY, or when it is already

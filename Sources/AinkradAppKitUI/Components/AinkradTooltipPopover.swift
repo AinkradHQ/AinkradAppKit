@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Fades + scales content in on appear, then holds steady — the shared
 /// "materialize" look for content hosted in a top-level floating panel (a
@@ -87,9 +87,9 @@ private struct AinkradTooltipModifier: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Attaches a hover-delayed Cardinal HUD tooltip bubble above this view.
-    func ainkradTooltip(_ text: String) -> some View {
+    public func ainkradTooltip(_ text: String) -> some View {
         modifier(AinkradTooltipModifier(text: text))
     }
 }
@@ -120,10 +120,10 @@ public struct AinkradPopover<PopoverContent: View>: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Presents `content` as a custom, anchored Cardinal HUD popover (via
     /// `AinkradFloatingPanel` — never the system `.popover`).
-    func ainkradPopover<PopoverContent: View>(
+    public func ainkradPopover<PopoverContent: View>(
         isPresented: Binding<Bool>,
         @ViewBuilder content: @escaping () -> PopoverContent
     ) -> some View {

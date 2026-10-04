@@ -1,7 +1,8 @@
-import Foundation
-import Testing
 import AppKit
+import Foundation
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -31,7 +32,8 @@ struct AinkradLogViewTests {
     }
 
     private func render(_ lines: [AinkradLogLine], prefixed: Bool = false) -> NSAttributedString {
-        AinkradLogView.attributedLog(lines: lines, palette: palette, foreground: theme.foreground, showsSourcePrefix: prefixed)
+        AinkradLogView.attributedLog(
+            lines: lines, palette: palette, foreground: theme.foreground, showsSourcePrefix: prefixed)
     }
 
     // Ported from Thrall's "Log service column" tests.
@@ -61,9 +63,13 @@ struct AinkradLogViewTests {
 
     @Test("each line becomes one line of text, prefixed with its source when asked")
     func text() {
-        let log = lines { $0.append("hello\n", source: "api"); $0.append("world\n", source: "db") }
+        let log = lines {
+            $0.append("hello\n", source: "api")
+            $0.append("world\n", source: "db")
+        }
         #expect(render(log).string == "hello\nworld\n")
-        #expect(render(log, prefixed: true).string
+        #expect(
+            render(log, prefixed: true).string
                 == AinkradLogView.sourcePrefix("api") + " hello\n" + AinkradLogView.sourcePrefix("db") + " world\n")
     }
 
@@ -71,24 +77,33 @@ struct AinkradLogViewTests {
     /// and the reader should see which lines came from stderr.
     @Test("stderr without a colour code is drawn in the danger colour")
     func stderrIsDanger() {
-        let drawn = render(lines { $0.append("oops\n", stream: .stderr) }).attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
+        let drawn =
+            render(lines { $0.append("oops\n", stream: .stderr) }).attribute(
+                .foregroundColor, at: 0, effectiveRange: nil) as? NSColor
         #expect(sameColor(drawn, NSColor(palette.color(slot: 1, default: theme.foreground))))
     }
 
     @Test("bold runs use the semibold monospaced face")
     func bold() {
         let log = render(lines { $0.append("\u{1B}[1mloud\u{1B}[0m quiet\n") })
-        #expect(log.attribute(.font, at: 0, effectiveRange: nil) as? NSFont == NSFont.monospacedSystemFont(ofSize: 11, weight: .semibold))
-        #expect(log.attribute(.font, at: 5, effectiveRange: nil) as? NSFont == NSFont.monospacedSystemFont(ofSize: 11, weight: .regular))
+        #expect(
+            log.attribute(.font, at: 0, effectiveRange: nil) as? NSFont
+                == NSFont.monospacedSystemFont(ofSize: 11, weight: .semibold))
+        #expect(
+            log.attribute(.font, at: 5, effectiveRange: nil) as? NSFont
+                == NSFont.monospacedSystemFont(ofSize: 11, weight: .regular))
     }
 
     @Test("a hosted view shows every line of the buffer")
     func hostedShowsBuffer() throws {
         _ = NSApplication.shared
         let log = lines { for index in 0..<30 { $0.append("line \(index)\n") } }
-        let host = NSHostingView(rootView: AinkradLogView(lines: log, palette: palette, foreground: theme.foreground)
-            .frame(width: 400, height: 120))
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 120), styleMask: [.borderless], backing: .buffered, defer: false)
+        let host = NSHostingView(
+            rootView: AinkradLogView(lines: log, palette: palette, foreground: theme.foreground)
+                .frame(width: 400, height: 120))
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 120), styleMask: [.borderless], backing: .buffered,
+            defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
         RunLoop.current.run(until: Date().addingTimeInterval(0.2))

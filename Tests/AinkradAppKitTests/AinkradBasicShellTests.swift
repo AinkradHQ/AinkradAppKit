@@ -1,5 +1,6 @@
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 
 /// The shared basic-mode surface. These cover the contract an app relies on —
@@ -11,9 +12,11 @@ struct AinkradBasicShellTests {
 
     @Test("Builds with actions — the repo/branch/fetch shape")
     func buildsWithActions() {
-        let shell = AinkradBasicShell(icon: "wand.and.stars",
-                                      title: "Ainkrad",
-                                      subtitle: "development") {
+        let shell = AinkradBasicShell(
+            icon: "wand.and.stars",
+            title: "Ainkrad",
+            subtitle: "development"
+        ) {
             AinkradButton(title: "Fetch", style: .secondary) {}
             AinkradButton(title: "Pull", style: .primary) {}
         } content: {

@@ -137,7 +137,9 @@ public func ainkradLoadThemes(_ files: [Data]) -> AinkradThemeLoadResult {
     for (index, data) in files.enumerated() {
         let pathPrefix = "files[\(index)]"
         if data.count > 256 * 1024 {
-            issues.append(AinkradThemeIssue(error: .fileSizeExceedsLimit(path: pathPrefix, bytes: data.count, limitBytes: 256 * 1024)))
+            issues.append(
+                AinkradThemeIssue(
+                    error: .fileSizeExceedsLimit(path: pathPrefix, bytes: data.count, limitBytes: 256 * 1024)))
             continue
         }
 
@@ -150,7 +152,9 @@ public func ainkradLoadThemes(_ files: [Data]) -> AinkradThemeLoadResult {
         }
 
         guard let dict = jsonObject as? [String: Any] else {
-            issues.append(AinkradThemeIssue(error: .invalidJSON(path: pathPrefix, details: "Top-level JSON value must be an object")))
+            issues.append(
+                AinkradThemeIssue(
+                    error: .invalidJSON(path: pathPrefix, details: "Top-level JSON value must be an object")))
             continue
         }
 
@@ -206,7 +210,9 @@ public func ainkradLoadThemes(_ files: [Data]) -> AinkradThemeLoadResult {
                 issues.append(AinkradThemeIssue(fileId: rawFile.fileId, error: err))
                 progressMade = true
             } catch {
-                issues.append(AinkradThemeIssue(fileId: rawFile.fileId, error: .invalidJSON(path: "$", details: error.localizedDescription)))
+                issues.append(
+                    AinkradThemeIssue(
+                        fileId: rawFile.fileId, error: .invalidJSON(path: "$", details: error.localizedDescription)))
                 progressMade = true
             }
         }
@@ -234,4 +240,3 @@ struct RawThemeFileData {
     let fileId: String
     let originalIndex: Int
 }
-

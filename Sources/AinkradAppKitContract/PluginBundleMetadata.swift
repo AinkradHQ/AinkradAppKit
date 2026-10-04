@@ -56,20 +56,25 @@ public struct PluginBundleMetadata: Equatable {
     /// A defaulted parameter is source-compatible, not ABI-compatible. So the
     /// old spelling stays and delegates; generation 11's callers use the
     /// overload below.
-    public init(appID: String, displayName: String, iconSymbol: String,
-                apiVersion: Int, principalClassName: String,
-                presentation: PluginPresentation = .pane) {
-        self.init(appID: appID, displayName: displayName, iconSymbol: iconSymbol,
-                  apiVersion: apiVersion, principalClassName: principalClassName,
-                  presentation: presentation, mode: .advanced)
+    public init(
+        appID: String, displayName: String, iconSymbol: String,
+        apiVersion: Int, principalClassName: String,
+        presentation: PluginPresentation = .pane
+    ) {
+        self.init(
+            appID: appID, displayName: displayName, iconSymbol: iconSymbol,
+            apiVersion: apiVersion, principalClassName: principalClassName,
+            presentation: presentation, mode: .advanced)
     }
 
     /// Generation 11. No defaults, so it can never be ambiguous with the
     /// initializer above.
-    public init(appID: String, displayName: String, iconSymbol: String,
-                apiVersion: Int, principalClassName: String,
-                presentation: PluginPresentation,
-                mode: PluginMode) {
+    public init(
+        appID: String, displayName: String, iconSymbol: String,
+        apiVersion: Int, principalClassName: String,
+        presentation: PluginPresentation,
+        mode: PluginMode
+    ) {
         self.appID = appID
         self.displayName = displayName
         self.iconSymbol = iconSymbol
@@ -85,24 +90,32 @@ public enum PluginMetadataError: Error, Equatable {
     case invalidAPIVersion
 }
 
-public extension PluginBundleMetadata {
+extension PluginBundleMetadata {
     /// Parses and validates plugin metadata from an Info.plist dictionary.
-    static func parse(infoDictionary dict: [String: Any]) -> Result<PluginBundleMetadata, PluginMetadataError> {
+    public static func parse(infoDictionary dict: [String: Any]) -> Result<PluginBundleMetadata, PluginMetadataError> {
         func string(_ key: String) -> String? { dict[key] as? String }
         guard let appID = string(PluginInfoKey.appID) else { return .failure(.missingKey(PluginInfoKey.appID)) }
-        guard let displayName = string(PluginInfoKey.displayName) else { return .failure(.missingKey(PluginInfoKey.displayName)) }
-        guard let icon = string(PluginInfoKey.iconSymbol) else { return .failure(.missingKey(PluginInfoKey.iconSymbol)) }
-        guard let principal = string(PluginInfoKey.principalClass) else { return .failure(.missingKey(PluginInfoKey.principalClass)) }
+        guard let displayName = string(PluginInfoKey.displayName) else {
+            return .failure(.missingKey(PluginInfoKey.displayName))
+        }
+        guard let icon = string(PluginInfoKey.iconSymbol) else {
+            return .failure(.missingKey(PluginInfoKey.iconSymbol))
+        }
+        guard let principal = string(PluginInfoKey.principalClass) else {
+            return .failure(.missingKey(PluginInfoKey.principalClass))
+        }
         guard let api = dict[PluginInfoKey.apiVersion] as? Int else { return .failure(.invalidAPIVersion) }
         let presentation = PluginPresentation(rawValue: (dict[PluginInfoKey.presentation] as? String) ?? "") ?? .pane
         // Same shape as `presentation`: a missing or unrecognized value falls
         // back rather than failing the parse, so a generation-10 bundle — which
         // cannot carry this key — still loads.
         let mode = PluginMode(rawValue: (dict[PluginInfoKey.mode] as? String) ?? "") ?? .advanced
-        return .success(PluginBundleMetadata(appID: appID, displayName: displayName,
-                                             iconSymbol: icon, apiVersion: api,
-                                             principalClassName: principal,
-                                             presentation: presentation,
-                                             mode: mode))
+        return .success(
+            PluginBundleMetadata(
+                appID: appID, displayName: displayName,
+                iconSymbol: icon, apiVersion: api,
+                principalClassName: principal,
+                presentation: presentation,
+                mode: mode))
     }
 }

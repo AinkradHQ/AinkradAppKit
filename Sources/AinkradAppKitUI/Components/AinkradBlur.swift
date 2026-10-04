@@ -1,13 +1,13 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 public enum AinkradBlurLevel: Equatable, Sendable {
     case panel, hud
     public var material: NSVisualEffectView.Material {
         switch self {
         case .panel: return .hudWindow
-        case .hud:   return .fullScreenUI
+        case .hud: return .fullScreenUI
         }
     }
 }
@@ -48,9 +48,12 @@ private struct EdgeRing: ViewModifier {
         content.overlay(
             ChamferShape(cut: radius)
                 .strokeBorder(
-                    LinearGradient(colors: [theme.accentSecondary.opacity(0.45),
-                                            theme.accentPrimary.opacity(0.18)],
-                                   startPoint: .top, endPoint: .bottom),
+                    LinearGradient(
+                        colors: [
+                            theme.accentSecondary.opacity(0.45),
+                            theme.accentPrimary.opacity(0.18),
+                        ],
+                        startPoint: .top, endPoint: .bottom),
                     lineWidth: 1)
         )
     }
@@ -68,9 +71,11 @@ private struct PanelGlow: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// The shared 1-pt gradient edge highlight used by panels and cards.
-    func ainkradEdgeRing(radius: CGFloat = AinkradRadius.panel) -> some View { modifier(EdgeRing(radius: radius)) }
+    public func ainkradEdgeRing(radius: CGFloat = AinkradRadius.panel) -> some View {
+        modifier(EdgeRing(radius: radius))
+    }
     /// The shared two-layer accent glow + contact shadow for elevated panels.
-    func ainkradPanelGlow() -> some View { modifier(PanelGlow()) }
+    public func ainkradPanelGlow() -> some View { modifier(PanelGlow()) }
 }

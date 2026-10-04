@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("SignalStore read state, search and retention")
@@ -10,11 +11,14 @@ struct SignalStoreRetentionTests {
         return (try SignalStore(url: url), url)
     }
 
-    private func event(_ title: String, body: String? = nil,
-                       source: SignalSource = .host,
-                       at seconds: TimeInterval) -> SignalEvent {
-        SignalEvent(timestamp: Date(timeIntervalSince1970: seconds), source: source,
-                    kind: "test.event", severity: .info, title: title, body: body)
+    private func event(
+        _ title: String, body: String? = nil,
+        source: SignalSource = .host,
+        at seconds: TimeInterval
+    ) -> SignalEvent {
+        SignalEvent(
+            timestamp: Date(timeIntervalSince1970: seconds), source: source,
+            kind: "test.event", severity: .info, title: title, body: body)
     }
 
     @Test("unread counts are per source and drop as rows are read")
@@ -113,14 +117,18 @@ struct SignalStoreRowStateTests {
         let (store, url) = try makeStore()
         defer { try? FileManager.default.removeItem(at: url) }
         let now = Date()
-        let repeated = SignalEvent(timestamp: now, source: .host, kind: "build.failed",
-                                   severity: .failure, title: "repeated", dedupeKey: "k")
-        let plain = SignalEvent(timestamp: now.addingTimeInterval(1), source: .host,
-                                kind: "test.event", severity: .info, title: "plain")
+        let repeated = SignalEvent(
+            timestamp: now, source: .host, kind: "build.failed",
+            severity: .failure, title: "repeated", dedupeKey: "k")
+        let plain = SignalEvent(
+            timestamp: now.addingTimeInterval(1), source: .host,
+            kind: "test.event", severity: .info, title: "plain")
         _ = try store.insert(repeated)
-        _ = try store.insert(SignalEvent(timestamp: now.addingTimeInterval(2), source: .host,
-                                         kind: "build.failed", severity: .failure,
-                                         title: "repeated", dedupeKey: "k"))
+        _ = try store.insert(
+            SignalEvent(
+                timestamp: now.addingTimeInterval(2), source: .host,
+                kind: "build.failed", severity: .failure,
+                title: "repeated", dedupeKey: "k"))
         _ = try store.insert(plain)
         store.markRead(ids: [plain.id])
 

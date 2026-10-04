@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Clamps `page` into `0..<count` (or `0` when `count <= 0`, i.e. no pages).
 /// Pure — the paging math shared by `AinkradPagination` and `AinkradTabs`-
@@ -59,7 +59,9 @@ private struct AinkradTabButton: View {
                 Text(title.uppercased())
                     .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
                     .tracking(0.8)
-                    .foregroundStyle(isSelected ? theme.accentPrimary.contrastingText : theme.foreground.opacity(hovering ? 0.9 : 0.6))
+                    .foregroundStyle(
+                        isSelected
+                            ? theme.accentPrimary.contrastingText : theme.foreground.opacity(hovering ? 0.9 : 0.6))
                 Rectangle()
                     .fill(theme.accentSecondary)
                     .frame(height: 2)
@@ -70,7 +72,9 @@ private struct AinkradTabButton: View {
             .padding(.vertical, AinkradSpacing.sm)
             .background(
                 ChamferShape(cut: 6)
-                    .fill(isSelected ? theme.accentPrimary.opacity(0.85) : theme.surfaceElevated.opacity(hovering ? 0.5 : 0.25))
+                    .fill(
+                        isSelected
+                            ? theme.accentPrimary.opacity(0.85) : theme.surfaceElevated.opacity(hovering ? 0.5 : 0.25))
             )
             .contentShape(ChamferShape(cut: 6))
         }
@@ -119,8 +123,12 @@ public struct AinkradBreadcrumb: View {
             .foregroundStyle(isLast ? theme.accentSecondary : theme.foreground.opacity(0.6))
 
         if let onSelect, !isLast {
-            Button { onSelect(index) } label: { label }
-                .buttonStyle(.plain)
+            Button {
+                onSelect(index)
+            } label: {
+                label
+            }
+            .buttonStyle(.plain)
         } else {
             label
         }

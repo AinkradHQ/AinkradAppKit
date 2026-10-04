@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("Signal socket path and client")

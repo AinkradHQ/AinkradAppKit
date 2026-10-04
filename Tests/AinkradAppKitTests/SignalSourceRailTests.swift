@@ -1,12 +1,15 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradAppKitUI
 @testable import AinkradSignal
 
 @Suite("Signal source rail")
 struct SignalSourceRailTests {
-    private func event(_ source: SignalSource, _ severity: SignalSeverity = .info,
-                       id: UUID = UUID()) -> SignalEvent {
+    private func event(
+        _ source: SignalSource, _ severity: SignalSeverity = .info,
+        id: UUID = UUID()
+    ) -> SignalEvent {
         SignalEvent(id: id, source: source, kind: "k", severity: severity, title: "t")
     }
     private func name(_ source: SignalSource) -> String {
@@ -87,11 +90,14 @@ struct SignalSourceRailTests {
 struct SignalSourceGroupingTests {
     private let raven = SignalSource.app(appID: "raven")
     private let rune = SignalSource.app(appID: "rune")
-    private func event(_ source: SignalSource, at seconds: TimeInterval,
-                       _ severity: SignalSeverity = .info,
-                       id: UUID = UUID(), title: String = "t") -> SignalEvent {
-        SignalEvent(id: id, timestamp: Date(timeIntervalSince1970: seconds),
-                    source: source, kind: "k", severity: severity, title: title)
+    private func event(
+        _ source: SignalSource, at seconds: TimeInterval,
+        _ severity: SignalSeverity = .info,
+        id: UUID = UUID(), title: String = "t"
+    ) -> SignalEvent {
+        SignalEvent(
+            id: id, timestamp: Date(timeIntervalSince1970: seconds),
+            source: source, kind: "k", severity: severity, title: title)
     }
     private func name(_ source: SignalSource) -> String {
         if case .app(let id) = source { return id.capitalized }
@@ -137,8 +143,9 @@ struct SignalSourceGroupingTests {
 
     @Test("a single-event source is still a group")
     func singleEventGroup() {
-        let groups = SignalPresentation.sourceGroups([event(raven, at: 1)],
-                                                     readIDs: [], name: name)
+        let groups = SignalPresentation.sourceGroups(
+            [event(raven, at: 1)],
+            readIDs: [], name: name)
         #expect(groups.count == 1)
         #expect(groups[0].events.count == 1)
     }

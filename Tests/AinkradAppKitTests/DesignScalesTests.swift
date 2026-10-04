@@ -1,6 +1,7 @@
-import Testing
 import CoreGraphics
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -19,7 +20,10 @@ struct AinkradSpacingTests {
 
     @Test("ramp is strictly increasing")
     func monotonic() {
-        let steps = [AinkradSpacing.xs, AinkradSpacing.sm, AinkradSpacing.md, AinkradSpacing.lg, AinkradSpacing.xl, AinkradSpacing.xxl]
+        let steps = [
+            AinkradSpacing.xs, AinkradSpacing.sm, AinkradSpacing.md, AinkradSpacing.lg, AinkradSpacing.xl,
+            AinkradSpacing.xxl,
+        ]
         #expect(zip(steps, steps.dropFirst()).allSatisfy { $0 < $1 })
     }
 }

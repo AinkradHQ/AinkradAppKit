@@ -1,8 +1,8 @@
 // design-lint: allow-file hex-color,raw-color,radius-literal,font-size,padding-literal,spacing-literal,opacity-literal,frame-literal,chamfer-literal,motion-literal theme layer — standard skin foundation values
 import Foundation
 
-public extension AinkradSkinPalette {
-    static let neonBlue = AinkradSkinPalette(
+extension AinkradSkinPalette {
+    public static let neonBlue = AinkradSkinPalette(
         background: .hex(0x0A / 255.0, 0x0E / 255.0, 0x17 / 255.0, 1.0),
         surface: .hex(0x11 / 255.0, 0x18 / 255.0, 0x27 / 255.0, 1.0),
         surfaceElevated: .hex(0x1A / 255.0, 0x22 / 255.0, 0x33 / 255.0, 1.0),
@@ -18,18 +18,22 @@ public extension AinkradSkinPalette {
     )
 }
 
-public extension AinkradRoleTokens {
-    static let standard = AinkradRoleTokens(
+extension AinkradRoleTokens {
+    public static let standard = AinkradRoleTokens(
         popover: AinkradPopoverRoleTokens(
             shape: AinkradShapeToken(style: "chamfer", cut: 8),
             fill: .palette("surfaceElevated", 0.97),
-            stroke: AinkradStrokeToken(color: AinkradStateColor(rest: .palette("accentSecondary", 0.55)), width: AinkradStateDouble(rest: 1.25)),
+            stroke: AinkradStrokeToken(
+                color: AinkradStateColor(rest: .palette("accentSecondary", 0.55)), width: AinkradStateDouble(rest: 1.25)
+            ),
             shadow: AinkradShadowToken(color: .palette("accentSecondary", 0.35), radius: 10, x: 0, y: 4)
         ),
         bubble: AinkradBubbleRoleTokens(
             shape: AinkradShapeToken(style: "chamfer", cut: 6),
             fill: .palette("surfaceElevated", 0.97),
-            stroke: AinkradStrokeToken(color: AinkradStateColor(rest: .palette("accentSecondary", 0.55)), width: AinkradStateDouble(rest: 1.25)),
+            stroke: AinkradStrokeToken(
+                color: AinkradStateColor(rest: .palette("accentSecondary", 0.55)), width: AinkradStateDouble(rest: 1.25)
+            ),
             shadow: AinkradShadowToken(color: .palette("accentSecondary", 0.35), radius: 8, x: 0, y: 3)
         ),
         materialize: AinkradMaterializeRoleTokens(
@@ -40,20 +44,33 @@ public extension AinkradRoleTokens {
         field: AinkradFieldRoleTokens(
             shape: AinkradShapeToken(style: "chamfer", cut: 6),
             fill: .palette("surfaceElevated", 0.5),
-            stroke: AinkradStrokeToken(color: AinkradStateColor(rest: .palette("accentPrimary", 0.25), focused: .palette("accentPrimary", 0.9)), width: AinkradStateDouble(rest: 1.25, focused: 1.5)),
-            glow: AinkradGlowToken(color: AinkradStateColor(rest: .palette("accentSecondary", 0.0), focused: .palette("accentSecondary", 0.45)), radius: AinkradStateDouble(rest: 0, focused: 6))
+            stroke: AinkradStrokeToken(
+                color: AinkradStateColor(
+                    rest: .palette("accentPrimary", 0.25), focused: .palette("accentPrimary", 0.9)),
+                width: AinkradStateDouble(rest: 1.25, focused: 1.5)),
+            glow: AinkradGlowToken(
+                color: AinkradStateColor(
+                    rest: .palette("accentSecondary", 0.0), focused: .palette("accentSecondary", 0.45)),
+                radius: AinkradStateDouble(rest: 0, focused: 6))
         ),
         trigger: AinkradTriggerRoleTokens(
             shape: AinkradShapeToken(style: "chamfer", cut: 8),
             fill: .palette("surfaceElevated", 0.5),
-            stroke: AinkradStrokeToken(color: AinkradStateColor(rest: .palette("accentPrimary", 0.3), selected: .palette("accentPrimary", 0.75)), width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
-            glow: AinkradGlowToken(color: AinkradStateColor(rest: .palette("accentPrimary", 0.0), selected: .palette("accentPrimary", 0.4)), radius: AinkradStateDouble(rest: 0, selected: 5)),
+            stroke: AinkradStrokeToken(
+                color: AinkradStateColor(
+                    rest: .palette("accentPrimary", 0.3), selected: .palette("accentPrimary", 0.75)),
+                width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
+            glow: AinkradGlowToken(
+                color: AinkradStateColor(
+                    rest: .palette("accentPrimary", 0.0), selected: .palette("accentPrimary", 0.4)),
+                radius: AinkradStateDouble(rest: 0, selected: 5)),
             chevron: AinkradFontToken(size: 10, weight: "semibold", scaled: false),
             chevronColor: .palette("accentSecondary", 0.85)
         ),
         optionRow: AinkradOptionRowRoleTokens(
             shape: AinkradShapeToken(style: "chamfer", cut: 4),
-            fill: AinkradStateColor(rest: .clear, hover: .palette("accentSecondary", 0.18), selected: .palette("accentSecondary", 0.18)),
+            fill: AinkradStateColor(
+                rest: .clear, hover: .palette("accentSecondary", 0.18), selected: .palette("accentSecondary", 0.18)),
             paddingV: 6,
             selectedDot: AinkradFontToken(size: 6, scaled: false),
             swatchDotSize: 9
@@ -61,13 +78,15 @@ public extension AinkradRoleTokens {
         panelSearch: AinkradPanelSearchRoleTokens(
             shape: AinkradShapeToken(style: "chamfer", cut: 4),
             fill: .palette("surface", 0.7),
-            stroke: AinkradStrokeToken(color: AinkradStateColor(rest: .palette("accentPrimary", 0.3)), width: AinkradStateDouble(rest: 1.0)),
+            stroke: AinkradStrokeToken(
+                color: AinkradStateColor(rest: .palette("accentPrimary", 0.3)), width: AinkradStateDouble(rest: 1.0)),
             paddingV: 6
         ),
         selectedFill: .palette("accentPrimary", 0.16),
         accentTick: AinkradAccentTickRoleTokens(
             fill: .palette("accentSecondary", 1.0),
-            glow: AinkradGlowToken(color: AinkradStateColor(rest: .palette("accentSecondary", 0.6)), radius: AinkradStateDouble(rest: 2.0))
+            glow: AinkradGlowToken(
+                color: AinkradStateColor(rest: .palette("accentSecondary", 0.6)), radius: AinkradStateDouble(rest: 2.0))
         ),
         scrim: AinkradScrimRoleTokens(
             material: "panel",
@@ -77,7 +96,10 @@ public extension AinkradRoleTokens {
         thumb: AinkradThumbRoleTokens(
             size: 14,
             fill: .palette("accentSecondary", 1.0),
-            glow: AinkradGlowToken(color: AinkradStateColor(rest: .palette("accentSecondary", 0.55), pressed: .palette("accentSecondary", 0.8)), radius: AinkradStateDouble(rest: 4.0, pressed: 8.0)),
+            glow: AinkradGlowToken(
+                color: AinkradStateColor(
+                    rest: .palette("accentSecondary", 0.55), pressed: .palette("accentSecondary", 0.8)),
+                radius: AinkradStateDouble(rest: 4.0, pressed: 8.0)),
             dragGlowRadius: 8.0,
             dragScale: 1.15,
             offset: 7
@@ -91,11 +113,11 @@ public extension AinkradRoleTokens {
     )
 }
 
-public extension AinkradEffectTokens {
-    static let standard = AinkradEffectTokens(
+extension AinkradEffectTokens {
+    public static let standard = AinkradEffectTokens(
         panelGlow: [
             AinkradShadowToken(color: .palette("accentPrimary", 0.35), radius: 42, x: 0, y: 0),
-            AinkradShadowToken(color: .palette("black", 0.5), radius: 24, x: 0, y: 10)
+            AinkradShadowToken(color: .palette("black", 0.5), radius: 24, x: 0, y: 10),
         ],
         edgeRing: AinkradEdgeRingEffectTokens(
             from: .palette("accentSecondary", 0.45),
@@ -138,15 +160,16 @@ public extension AinkradEffectTokens {
     )
 }
 
-public extension AinkradChromeTokens {
-    static let standard = AinkradChromeTokens(
+extension AinkradChromeTokens {
+    public static let standard = AinkradChromeTokens(
         settings: AinkradSkin.standardSettingsMetrics,
         overlay: AinkradChromeOverlayTokens(
             cutKey: "panel", backdropOpacity: 0.42, backgroundOpacity: 0.94,
             edgeFrom: .palette("accentSecondary", 0.55), edgeTo: .palette("accentPrimary", 0.28), edgeWidth: 1
         ),
         pane: AinkradChromePaneTokens(
-            horizontalInsetKey: "sm", topInsetKey: "xs", bottomInsetKey: "sm", tabStripHeight: 30, tabStripSpacingKey: "xs"
+            horizontalInsetKey: "sm", topInsetKey: "xs", bottomInsetKey: "sm", tabStripHeight: 30,
+            tabStripSpacingKey: "xs"
         ),
         hudBarHeight: 30
     )

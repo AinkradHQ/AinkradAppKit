@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Flips a boolean. Pure — the reducer `AinkradCheckbox` calls on tap,
 /// unit-testable without SwiftUI.
@@ -76,7 +76,9 @@ public struct AinkradRadioGroup<T: Hashable>: View {
     @State private var hoveredOption: T?
 
     public init(options: [T], selection: Binding<T>, label: @escaping (T) -> String) {
-        self.options = options; self._selection = selection; self.label = label
+        self.options = options
+        self._selection = selection
+        self.label = label
     }
 
     public var body: some View {
@@ -94,7 +96,8 @@ public struct AinkradRadioGroup<T: Hashable>: View {
             HStack(spacing: AinkradSpacing.sm) {
                 ZStack {
                     Circle()
-                        .strokeBorder(theme.accentSecondary.opacity(isSelected || isHovered ? 0.9 : 0.4), lineWidth: 1.25)
+                        .strokeBorder(
+                            theme.accentSecondary.opacity(isSelected || isHovered ? 0.9 : 0.4), lineWidth: 1.25)
                     if isSelected {
                         // Diamond marker — the Cardinal HUD radio "on" glyph,
                         // drawn (not a native radio dot).

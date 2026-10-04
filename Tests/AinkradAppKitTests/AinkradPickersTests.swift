@@ -1,5 +1,6 @@
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -8,8 +9,8 @@ import SwiftUI
 struct AinkradPickerTests {
     @Test("selectionIndex finds the current item")
     func index() {
-        #expect(pickerSelectionIndex(items: ["a","b","c"], selection: "b") == 1)
-        #expect(pickerSelectionIndex(items: ["a","b"], selection: "z") == nil)
+        #expect(pickerSelectionIndex(items: ["a", "b", "c"], selection: "b") == 1)
+        #expect(pickerSelectionIndex(items: ["a", "b"], selection: "z") == nil)
     }
 }
 
@@ -28,10 +29,12 @@ struct AinkradSwatchSelectTests {
         _ = AinkradSelect(items: ["a", "b"], selection: .constant("a"), label: { $0 })
         _ = AinkradMultiSelect(items: ["a", "b"], selection: .constant([]), label: { $0 })
         // NEW color-dot overloads.
-        _ = AinkradSelect(items: ["a", "b"], selection: .constant("a"), label: { $0 },
-                          swatch: { $0 == "a" ? .green : nil })
-        _ = AinkradMultiSelect(items: ["a", "b"], selection: .constant([]), label: { $0 },
-                               swatch: { _ in .purple })
+        _ = AinkradSelect(
+            items: ["a", "b"], selection: .constant("a"), label: { $0 },
+            swatch: { $0 == "a" ? .green : nil })
+        _ = AinkradMultiSelect(
+            items: ["a", "b"], selection: .constant([]), label: { $0 },
+            swatch: { _ in .purple })
     }
 }
 

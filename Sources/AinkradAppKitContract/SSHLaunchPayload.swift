@@ -66,7 +66,8 @@ public struct SSHLaunchPayload: Codable, Equatable, Sendable {
 
     public init?(json: String?) {
         guard let json, let data = json.data(using: .utf8),
-              let decoded = try? JSONDecoder().decode(SSHLaunchPayload.self, from: data) else { return nil }
+            let decoded = try? JSONDecoder().decode(SSHLaunchPayload.self, from: data)
+        else { return nil }
         self = decoded
     }
 

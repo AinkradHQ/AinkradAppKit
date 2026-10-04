@@ -28,17 +28,18 @@ public enum PluginOverlaySize: String, Codable, Sendable, CaseIterable {
     /// would otherwise sit edge to edge with no scrim left to click.
     public var points: CGSize {
         switch self {
-        case .small:  return CGSize(width: 520, height: 400)
+        case .small: return CGSize(width: 520, height: 400)
         case .medium: return CGSize(width: 780, height: 600)
-        case .large:  return CGSize(width: 1280, height: 960)
+        case .large: return CGSize(width: 1280, height: 960)
         }
     }
 
     /// The size to actually draw inside `available`, never larger than 90% of
     /// it on either axis so the scrim stays reachable.
     public func resolved(in available: CGSize) -> CGSize {
-        CGSize(width: min(points.width, available.width * 0.9),
-               height: min(points.height, available.height * 0.9))
+        CGSize(
+            width: min(points.width, available.width * 0.9),
+            height: min(points.height, available.height * 0.9))
     }
 
     /// `medium` is the default. It is close to, but not identical to, the
@@ -49,9 +50,9 @@ public enum PluginOverlaySize: String, Codable, Sendable, CaseIterable {
 
     public var title: String {
         switch self {
-        case .small:  return "Small"
+        case .small: return "Small"
         case .medium: return "Medium"
-        case .large:  return "Large"
+        case .large: return "Large"
         }
     }
 }

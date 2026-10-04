@@ -1,5 +1,6 @@
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -9,7 +10,9 @@ struct AinkradGroupedSelectTests {
     typealias Row = AinkradGroupedRow<String>
     typealias Section = AinkradGroupedSection<String>
     let sections = [
-        Section(header: "OpenAI", rows: [Row(value: "gpt-4o", title: "gpt-4o"), Row(value: "o3", title: "o3", isEnabled: false)]),
+        Section(
+            header: "OpenAI",
+            rows: [Row(value: "gpt-4o", title: "gpt-4o"), Row(value: "o3", title: "o3", isEnabled: false)]),
         Section(header: "Ollama", rows: [Row(value: "llama3", title: "llama3")]),
     ]
 
@@ -35,9 +38,13 @@ struct AinkradGroupedSelectTests {
 @Suite("Grouped select construction")
 struct AinkradGroupedSelectConstructTests {
     @Test("constructs; existing selects unchanged") func constructs() {
-        _ = AinkradGroupedSelect(sections: [AinkradGroupedSection(header: "H",
-              rows: [AinkradGroupedRow(value: "a", title: "A", detail: "x", icon: "cloud", isEnabled: true)])],
-              selection: .constant("a"), triggerLabel: "Pick")
+        _ = AinkradGroupedSelect(
+            sections: [
+                AinkradGroupedSection(
+                    header: "H",
+                    rows: [AinkradGroupedRow(value: "a", title: "A", detail: "x", icon: "cloud", isEnabled: true)])
+            ],
+            selection: .constant("a"), triggerLabel: "Pick")
         _ = AinkradSelect(items: ["a"], selection: .constant("a"), label: { $0 })  // byte-unchanged
     }
 }

@@ -110,7 +110,8 @@ public struct AinkradTerminalTokens: Codable, Equatable, Sendable {
         self.selection = try container.decode(AinkradColorToken.self, forKey: .selection)
         self.ansi = try container.decode([AinkradColorToken].self, forKey: .ansi)
         if ansi.count != 16 {
-            throw DecodingError.dataCorruptedError(forKey: .ansi, in: container, debugDescription: "ansi must have 16 tokens")
+            throw DecodingError.dataCorruptedError(
+                forKey: .ansi, in: container, debugDescription: "ansi must have 16 tokens")
         }
     }
 
