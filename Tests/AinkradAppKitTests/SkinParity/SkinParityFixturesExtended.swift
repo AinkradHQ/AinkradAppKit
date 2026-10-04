@@ -192,8 +192,18 @@ enum SkinParityFixturesExtended {
         )))
 
         // --- Signal Family ---
+        // Time-stable: event timestamps are anchored to the fixture render
+        // time and every view that takes a clock gets the same `now`, so the
+        // relative readouts ("2m", "5m") and day headers ("Today") are
+        // identical on any calendar day. Fixed epoch timestamps drifted
+        // ("1d" -> "2d") as the real `now` moved on.
+        // SignalFeedView takes no `now` (it renders against Date() at draw
+        // time), so its events stay relative to the real clock too: fixture
+        // build and render happen seconds apart in one process, well inside
+        // the minute buckets.
+        let fixtureNow = Date()
         let sampleEvent1 = SignalEvent(
-            timestamp: Date(timeIntervalSince1970: 1700000000),
+            timestamp: fixtureNow.addingTimeInterval(-120),
             source: .app(appID: "com.ainkrad.app"),
             kind: "build",
             severity: .success,
@@ -201,7 +211,7 @@ enum SkinParityFixturesExtended {
             body: "Project compiled in 1.2s"
         )
         let sampleEvent2 = SignalEvent(
-            timestamp: Date(timeIntervalSince1970: 1700000060),
+            timestamp: fixtureNow.addingTimeInterval(-300),
             source: .host,
             kind: "task",
             severity: .failure,
@@ -210,14 +220,14 @@ enum SkinParityFixturesExtended {
         )
 
         list.append(SkinParityFixture(name: "signalFeedRow-unread", view: AnyView(
-            SignalFeedRow(event: sampleEvent1, repeatCount: 1, isUnread: true)
+            SignalFeedRow(event: sampleEvent1, repeatCount: 1, isUnread: true, now: fixtureNow)
         )))
         list.append(SkinParityFixture(name: "signalFeedRow-read", view: AnyView(
-            SignalFeedRow(event: sampleEvent2, repeatCount: 1, isUnread: false)
+            SignalFeedRow(event: sampleEvent2, repeatCount: 1, isUnread: false, now: fixtureNow)
         )))
 
         list.append(SkinParityFixture(name: "signalFeedList-default", view: AnyView(
-            SignalFeedList(events: [sampleEvent1, sampleEvent2])
+            SignalFeedList(events: [sampleEvent1, sampleEvent2], now: fixtureNow)
         )))
 
         let railItems = SignalSourceRailItem.build(
@@ -232,7 +242,7 @@ enum SkinParityFixturesExtended {
         let toastModel = SignalToastModel()
         toastModel.present(sampleEvent1)
         list.append(SkinParityFixture(name: "signalToastStack-default", view: AnyView(
-            SignalToastStack(model: toastModel)
+            SignalToastStack(model: toastModel, now: fixtureNow)
         )))
 
         let dummyEvents = [sampleEvent1, sampleEvent2]
