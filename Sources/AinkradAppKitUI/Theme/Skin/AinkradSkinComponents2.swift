@@ -102,6 +102,9 @@ public struct ListRowTokens: Codable, Equatable, Sendable {
     public var subtitleColor: AinkradColorToken
     public var shape: AinkradShapeToken
     public var fill: AinkradStateColor
+    public var edgeWidth: AinkradStateDouble
+    public var edgeGlow: AinkradGlowToken
+    public var gap: Double
 }
 
 public struct StatRowTokens: Codable, Equatable, Sendable {
@@ -113,6 +116,7 @@ public struct StatRowTokens: Codable, Equatable, Sendable {
 public struct IconGlyphTokens: Codable, Equatable, Sendable {
     public var size: Double
     public var glyphRatio: Double
+    public var glyphColor: AinkradColorToken
     public var shape: AinkradShapeToken
     public var fill: AinkradColorToken
     public var stroke: AinkradStrokeToken
@@ -124,10 +128,14 @@ public struct DataTableTokens: Codable, Equatable, Sendable {
     public var headerFont: AinkradFontToken
     public var headerColor: AinkradColorToken
     public var sortGlyphFont: AinkradFontToken
+    public var headerCellGap: Double
     public var cellFont: AinkradFontToken
     public var cellColor: AinkradColorToken
     public var rowShape: AinkradShapeToken
     public var rowFill: AinkradStateColor
+    public var rowGap: Double
+    public var edgeWidth: Double
+    public var edgeGlow: AinkradGlowToken
 }
 
 public struct DisclosureGroupTokens: Codable, Equatable, Sendable {
@@ -137,6 +145,8 @@ public struct DisclosureGroupTokens: Codable, Equatable, Sendable {
     public var titleColor: AinkradColorToken
     public var headerShape: AinkradShapeToken
     public var headerFill: AinkradStateColor
+    public var hoverAnimation: AinkradAnimationToken
+    public var expandAnimation: AinkradAnimationToken
 }
 
 public struct EmptyStateTokens: Codable, Equatable, Sendable {
@@ -149,6 +159,7 @@ public struct EmptyStateTokens: Codable, Equatable, Sendable {
 
 public struct LoadingStateTokens: Codable, Equatable, Sendable {
     public var spinnerSize: Double
+    public var captionFont: AinkradFontToken
     public var captionColor: AinkradColorToken
 }
 
@@ -174,7 +185,9 @@ public struct SectionHeaderTokens: Codable, Equatable, Sendable {
 public struct StatusBarTokens: Codable, Equatable, Sendable {
     public var segments: Int
     public var height: Double
+    public var gap: Double
     public var shape: AinkradShapeToken
+    public var gradientFrom: AinkradColorToken
     public var emptyFill: AinkradColorToken
     public var glow: AinkradGlowToken
 }
@@ -182,6 +195,8 @@ public struct StatusBarTokens: Codable, Equatable, Sendable {
 public struct SpinnerTokens: Codable, Equatable, Sendable {
     public var size: Double
     public var trackColor: AinkradColorToken
+    public var lineMinWidth: Double
+    public var lineWidthRatio: Double
     public var arcTrim: Double
     public var defaultColor: AinkradColorToken
     public var glow: AinkradGlowToken
@@ -193,14 +208,18 @@ public struct SpinnerTokens: Codable, Equatable, Sendable {
 public struct MeterTokens: Codable, Equatable, Sendable {
     public var size: Double
     public var trackColor: AinkradColorToken
+    public var lineMinWidth: Double
+    public var lineWidthRatio: Double
     public var arcGlow: AinkradGlowToken
     public var valueFont: AinkradFontToken
     public var labelFont: AinkradFontToken
     public var labelColor: AinkradColorToken
+    public var gap: Double
 }
 
 public struct StackedStatusBarTokens: Codable, Equatable, Sendable {
     public var height: Double
+    public var gap: Double
     public var minRun: Double
     public var trackColor: AinkradColorToken
 }

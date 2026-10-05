@@ -68,34 +68,40 @@ private struct AinkradToastView: View {
     let item: AinkradToastItem
     let onDismiss: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
-    private var color: Color { item.status.color(in: theme, statusColors: statusColors) }
+    private var color: Color {
+        item.status.color(in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
+    }
 
     var body: some View {
-        HStack(spacing: AinkradSpacing.sm) {
+        let toast = skin.components.toast
+        let shape = AinkradSkinShape(token: toast.shape)
+        HStack(spacing: skin.spacing.sm) {
             Image(systemName: item.status.iconName)
-                .font(.system(size: 12, weight: .semibold))
+                .font(skin.font(toast.iconFont, typography: typo))
                 .foregroundStyle(color)
             Text(item.message)
-                .font(AinkradFontResolver.font(.body, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(0.9))
+                .font(skin.font(toast.bodyFont, typography: typo))
+                .foregroundStyle(skin.color(toast.bodyColor))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Image(systemName: "xmark")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(theme.foreground.opacity(0.5))
+                .font(skin.font(toast.closeFont, typography: typo))
+                .foregroundStyle(skin.color(toast.closeColor))
                 .contentShape(Rectangle())
                 .onTapGesture(perform: onDismiss)
         }
-        .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
-        .frame(minWidth: 220, maxWidth: 340)
-        .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.92)))
-        .overlay(ChamferShape(cut: 8).strokeBorder(color.opacity(0.6), lineWidth: 1.25))
-        .shadow(color: color.opacity(0.4), radius: 6)
+        .padding(.horizontal, skin.spacing.md)
+        .padding(.vertical, skin.spacing.sm)
+        .frame(minWidth: toast.minWidth, maxWidth: toast.maxWidth)
+        .background(shape.fill(skin.color(toast.fill)))
+        .overlay(
+            shape.strokeBorder(
+                skin.color(toast.stroke.color, tint: color), lineWidth: toast.stroke.width.resolve([]))
+        )
+        .shadow(color: skin.color(toast.glow.color, tint: color), radius: toast.glow.radius.resolve([]))
     }
 }
 
@@ -109,13 +115,14 @@ private struct AinkradToastHostModifier: ViewModifier {
     /// instance each time, since nothing above ever set a concrete one) and
     /// mutate a center this modifier never renders.
     @State private var center = AinkradToastCenter()
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .environment(\.ainkradToastCenter, center)
             .overlay(alignment: .topTrailing) {
-                VStack(alignment: .trailing, spacing: AinkradSpacing.sm) {
+                VStack(alignment: .trailing, spacing: skin.spacing.sm) {
                     ForEach(center.items) { item in
                         AinkradToastView(item: item) { center.dismiss(item.id) }
                             .transition(
@@ -128,8 +135,11 @@ private struct AinkradToastHostModifier: ViewModifier {
                             )
                     }
                 }
-                .padding(AinkradSpacing.lg)
-                .animation(reduceMotion ? nil : AinkradMotion.materialize, value: center.items.map(\.id))
+                .padding(skin.spacing.lg)
+                .animation(
+                    reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation),
+                    value: center.items.map(\.id)
+                )
                 .allowsHitTesting(!center.items.isEmpty)
             }
     }
@@ -161,8 +171,7 @@ public struct AinkradBanner: View {
     private let status: AinkradStatus
     private let onDismiss: (() -> Void)?
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(message: String, status: AinkradStatus = .neutral, onDismiss: (() -> Void)? = nil) {
@@ -171,29 +180,35 @@ public struct AinkradBanner: View {
         self.onDismiss = onDismiss
     }
 
-    private var color: Color { status.color(in: theme, statusColors: statusColors) }
+    private var color: Color {
+        status.color(in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
+    }
 
     public var body: some View {
-        HStack(spacing: AinkradSpacing.sm) {
+        let banner = skin.components.banner
+        let shape = AinkradSkinShape(token: banner.shape)
+        HStack(spacing: skin.spacing.sm) {
             Image(systemName: status.iconName)
-                .font(.system(size: 14, weight: .semibold))
+                .font(skin.font(banner.iconFont, typography: typo))
                 .foregroundStyle(color)
             Text(message)
-                .font(AinkradFontResolver.font(.body, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(0.9))
+                .font(skin.font(banner.bodyFont, typography: typo))
+                .foregroundStyle(skin.color(banner.bodyColor))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             if let onDismiss {
                 Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(theme.foreground.opacity(0.5))
+                    .font(skin.font(banner.closeFont, typography: typo))
+                    .foregroundStyle(skin.color(banner.closeColor))
                     .contentShape(Rectangle())
                     .onTapGesture(perform: onDismiss)
             }
         }
-        .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
-        .background(ChamferShape(cut: 8).fill(color.opacity(0.12)))
-        .overlay(ChamferShape(cut: 8).strokeBorder(color.opacity(0.5), lineWidth: 1.25))
+        .padding(.horizontal, skin.spacing.md)
+        .padding(.vertical, skin.spacing.sm)
+        .background(shape.fill(skin.color(banner.fill, tint: color)))
+        .overlay(
+            shape.strokeBorder(
+                skin.color(banner.stroke.color, tint: color), lineWidth: banner.stroke.width.resolve([])))
     }
 }

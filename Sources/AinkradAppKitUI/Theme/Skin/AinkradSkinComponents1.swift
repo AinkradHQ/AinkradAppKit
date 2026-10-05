@@ -58,6 +58,7 @@ public struct ModalTokens: Codable, Equatable, Sendable {
     public var maxWidth: Double
     public var contentWidthPadding: Double
     public var edgeSheetWidth: Double
+    public var transitionScale: Double
 }
 
 public struct DrawerTokens: Codable, Equatable, Sendable {
@@ -70,6 +71,7 @@ public struct ConfirmDialogTokens: Codable, Equatable, Sendable {
     public var titleFont: AinkradFontToken
     public var messageFont: AinkradFontToken
     public var messageColor: AinkradColorToken
+    public var transitionScale: Double
 }
 
 public struct ButtonTokens: Codable, Equatable, Sendable {

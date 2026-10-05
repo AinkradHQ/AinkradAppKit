@@ -20,8 +20,7 @@ public struct AinkradMeter: View {
     private let kind: AinkradStatusBarKind
     private let size: CGFloat
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var animatedFraction: Double = 0
@@ -37,27 +36,29 @@ public struct AinkradMeter: View {
     }
 
     private var fraction: Double { meterFraction(value: value, total: total) }
-    private var color: Color { kind.color(theme: theme, statusColors: statusColors) }
-    private var lineWidth: CGFloat { max(3, size * 0.07) }
+    private var color: Color { kind.color(skin: skin) }
+    private var lineWidth: CGFloat { max(meter.lineMinWidth, size * meter.lineWidthRatio) }
+
+    private var meter: MeterTokens { skin.components.meter }
 
     public var body: some View {
         ZStack {
             Circle()
-                .stroke(theme.foreground.opacity(0.1), lineWidth: lineWidth)
+                .stroke(skin.color(meter.trackColor), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: animatedFraction)
                 .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-                .shadow(color: color.opacity(0.55), radius: 4)
+                .shadow(color: skin.color(meter.arcGlow.color, tint: color), radius: meter.arcGlow.radius.resolve([]))
                 .rotationEffect(.degrees(-90))
-            VStack(spacing: 2) {
+            VStack(spacing: meter.gap) {
                 Text("\(Int((fraction * 100).rounded()))%")
-                    .font(AinkradFontResolver.font(.headline, weight: .semibold, typography: typo))
-                    .foregroundStyle(theme.foreground)
+                    .font(skin.font(meter.valueFont, typography: typo))
+                    .foregroundStyle(skin.color(skin.text.primary))
                 if let label {
                     Text(label.uppercased())
-                        .font(AinkradFontResolver.font(.caption, typography: typo))
-                        .tracking(0.6)
-                        .foregroundStyle(theme.foreground.opacity(0.55))
+                        .font(skin.font(meter.labelFont, typography: typo))
+                        .tracking(meter.labelFont.tracking ?? 0)
+                        .foregroundStyle(skin.color(meter.labelColor))
                 }
             }
         }
@@ -71,6 +72,6 @@ public struct AinkradMeter: View {
             animatedFraction = newValue
             return
         }
-        withAnimation(AinkradMotion.materialize) { animatedFraction = newValue }
+        withAnimation(skin.animation(skin.motion.materializeAnimation)) { animatedFraction = newValue }
     }
 }

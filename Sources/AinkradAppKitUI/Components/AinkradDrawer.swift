@@ -11,19 +11,21 @@ private struct AinkradDrawerModifier<DrawerContent: View>: ViewModifier {
     var width: CGFloat
     @ViewBuilder var drawerContent: () -> DrawerContent
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
+        let drawer = skin.components.drawer
         content.overlay {
             if isPresented {
                 ZStack(alignment: alignment) {
-                    Color.black.opacity(0.45)
+                    skin.color(drawer.scrimColor)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture { isPresented = false }
 
                     drawerContent()
-                        .padding(AinkradSpacing.lg)
+                        .padding(skin.spacing.lg)
                         .frame(width: width)
                         .frame(maxHeight: .infinity, alignment: .top)
                         .ainkradPanel(showsBrackets: true)
@@ -40,7 +42,8 @@ private struct AinkradDrawerModifier<DrawerContent: View>: ViewModifier {
                         .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(reduceMotion ? nil : AinkradMotion.materialize, value: isPresented)
+                .animation(
+                    reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation), value: isPresented)
             }
         }
     }

@@ -36,16 +36,19 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
     var contentWidth: CGFloat?
     @ViewBuilder var modalContent: () -> ModalContent
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
+        let modal = skin.components.modal
+        let scrim = skin.roles.scrim
         content.overlay {
             if isPresented {
                 ZStack {
                     VisualEffectBlur(level: .panel, blendingMode: .withinWindow)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .opacity(0.6)
-                    Color.black.opacity(0.45)
+                        .opacity(scrim.opacity)
+                    skin.color(scrim.color)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture { isPresented = false }
@@ -55,13 +58,14 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
                         .transition(
                             reduceMotion
                                 ? .opacity
-                                : .scale(scale: 0.94, anchor: .center).combined(with: .opacity)
+                                : .scale(scale: modal.transitionScale, anchor: .center).combined(with: .opacity)
                         )
 
                     dismissKey
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(reduceMotion ? nil : AinkradMotion.materialize, value: isPresented)
+                .animation(
+                    reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation), value: isPresented)
             }
         }
     }
@@ -73,10 +77,10 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
         if let contentWidth {
             modalContent()
                 .frame(maxWidth: contentWidth)
-                .padding(AinkradSpacing.lg)
+                .padding(skin.spacing.lg)
         } else {
             modalContent()
-                .padding(AinkradSpacing.lg)
+                .padding(skin.spacing.lg)
                 .frame(maxWidth: AinkradModalMetrics.maxWidth)
         }
     }
@@ -101,20 +105,22 @@ private struct AinkradSheetModifier<SheetContent: View>: ViewModifier {
     var edge: Edge
     @ViewBuilder var sheetContent: () -> SheetContent
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
+        let modal = skin.components.modal
         content.overlay {
             if isPresented {
                 ZStack(alignment: alignment) {
-                    Color.black.opacity(0.45)
+                    skin.color(skin.roles.scrim.color)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture { isPresented = false }
 
                     sheetContent()
-                        .padding(AinkradSpacing.lg)
-                        .frame(maxWidth: isHorizontalEdge ? .infinity : 360)
+                        .padding(skin.spacing.lg)
+                        .frame(maxWidth: isHorizontalEdge ? .infinity : modal.edgeSheetWidth)
                         .ainkradPanel(showsBrackets: true)
                         .transition(
                             reduceMotion
@@ -129,7 +135,8 @@ private struct AinkradSheetModifier<SheetContent: View>: ViewModifier {
                         .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(reduceMotion ? nil : AinkradMotion.materialize, value: isPresented)
+                .animation(
+                    reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation), value: isPresented)
             }
         }
     }
