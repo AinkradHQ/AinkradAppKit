@@ -98,7 +98,7 @@ extension AinkradRoleTokens {
             fill: .palette("accentSecondary", 1.0),
             glow: AinkradGlowToken(
                 color: AinkradStateColor(
-                    rest: .palette("accentSecondary", 0.55), pressed: .palette("accentSecondary", 0.8)),
+                    rest: .palette("accentSecondary", 0.55), pressed: .palette("accentSecondary", 0.9)),
                 radius: AinkradStateDouble(rest: 4.0, pressed: 8.0)),
             dragGlowRadius: 8.0,
             dragScale: 1.15,

@@ -179,7 +179,9 @@ public struct ToggleControlTokens: Codable, Equatable, Sendable {
     public var fill: AinkradStateColor
     public var stroke: AinkradStrokeToken
     public var knobColor: AinkradColorToken
+    public var knobInset: Double
     public var knobShadow: AinkradShadowToken
+    public var knobSelectedShadowColor: AinkradColorToken
     public var glow: AinkradGlowToken
 }
 
@@ -200,6 +202,9 @@ public struct TextAreaTokens: Codable, Equatable, Sendable {
     public var glow: AinkradGlowToken
     public var placeholderFont: AinkradFontToken
     public var placeholderColor: AinkradColorToken
+    public var placeholderPadHAutoGrow: Double = 17
+    public var placeholderPadHLegacy: Double = 16
+    public var placeholderPadVLegacy: Double = 12
     public var minHeight: Double
     public var caretColor: AinkradColorToken
 }
@@ -211,17 +216,28 @@ public struct SliderTokens: Codable, Equatable, Sendable {
 }
 
 public struct FormRowTokens: Codable, Equatable, Sendable {
+    public var tickWidth: Double = 2
+    public var tickHeight: Double = 12
     public var tickColor: AinkradColorToken
     public var labelFont: AinkradFontToken
     public var hintFont: AinkradFontToken
     public var hintColor: AinkradColorToken
+    public var hintLeading: Double = 6
 }
 
 public struct StepperTokens: Codable, Equatable, Sendable {
     public var valueFont: AinkradFontToken
+    public var valueMinWidth: Double = 28
     public var shape: AinkradShapeToken
     public var fill: AinkradColorToken
     public var stroke: AinkradStrokeToken
+    public var buttonSize: Double = 20
+    public var buttonShape: AinkradShapeToken = AinkradShapeToken(style: "chamfer", cut: 4)
+    public var buttonFill: AinkradColorToken = .palette("surfaceElevated", 0.6)
+    public var buttonStroke: AinkradStrokeToken = AinkradStrokeToken(
+        color: AinkradStateColor(
+            rest: .palette("accentSecondary", 0.5), disabled: .palette("accentSecondary", 0.15)),
+        width: AinkradStateDouble(rest: 1.0))
     public var buttonGlyphFont: AinkradFontToken
     public var buttonGlyphColor: AinkradStateColor
 }
@@ -258,5 +274,9 @@ public struct ColorPickerControlTokens: Codable, Equatable, Sendable {
     public var previewHeight: Double
     public var previewShape: AinkradShapeToken
     public var previewStroke: AinkradStrokeToken
+    public var channelTickWidth: Double = 2
+    public var channelTickHeight: Double = 10
     public var channelTickColor: AinkradColorToken
+    public var labelColor: AinkradColorToken = .palette("foreground", 0.8)
+    public var valueColor: AinkradColorToken = .palette("foreground", 0.6)
 }
