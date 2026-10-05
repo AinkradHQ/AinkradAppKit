@@ -92,9 +92,11 @@ public enum SignalSocketClient {
 
         guard !payload.isEmpty else { return }
         try payload.withUnsafeBytes { raw in
+            // Non-empty (guarded above), so the buffer has a base address.
+            guard let base = raw.baseAddress else { return }
             var sent = 0
             while sent < raw.count {
-                let wrote = write(fd, raw.baseAddress!.advanced(by: sent), raw.count - sent)
+                let wrote = write(fd, base.advanced(by: sent), raw.count - sent)
                 if wrote <= 0 { throw SendFailure.writeFailed(errno: errno) }
                 sent += wrote
             }

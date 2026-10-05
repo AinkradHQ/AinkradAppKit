@@ -159,16 +159,16 @@ extension AinkradComponentTokens {
                 resetGlyphColor: .palette("accentSecondary", 0.9),
                 valueFont: AinkradFontToken(role: "mono"),
                 valueColor: .palette("foreground", 0.8)
-            )
+            ),
+            label: LabelTokens(glyphFont: AinkradFontToken(size: 12, weight: "medium", scaled: false))
         )
     }
 
     public static func makeStandard() -> AinkradComponentTokens {
-        let p1 = makeStandardPart1()
-        let p2 = makeStandardPart2()
-        let p3 = makeStandardPart3()
-        let p4 = makeStandardPart4()
-        return AinkradComponentTokens(g1: p1, g2: p2, g3: p3, g4: p4)
+        // No locals: in Debug each one is a ~15 KB stack slot, and the skin is
+        // first built on whichever thread asks (SkinStackDepthTests).
+        AinkradComponentTokens(
+            g1: makeStandardPart1(), g2: makeStandardPart2(), g3: makeStandardPart3(), g4: makeStandardPart4())
     }
 
     /// Built once: rebuilding ~50 KB of token groups per read cost a Debug
