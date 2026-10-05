@@ -147,3 +147,30 @@ public struct SettingsRowTokens: Codable, Equatable, Sendable {
 public struct LabelTokens: Codable, Equatable, Sendable {
     public var glyphFont: AinkradFontToken
 }
+
+public struct RailItemTokens: Codable, Equatable, Sendable {
+    public var size: Double
+    public var shape: AinkradShapeToken
+    public var fill: AinkradStateColor
+    public var stroke: AinkradStrokeToken
+    public var glow: AinkradGlowToken
+    public var glyphFont: AinkradFontToken
+    public var glyphSelectedFont: AinkradFontToken
+    public var glyphColor: AinkradStateColor
+    public var glyphDimmedColor: AinkradColorToken
+    public var glyphGlow: AinkradGlowToken
+    public var hoverScale: Double
+    public var badgeScale: Double
+    public var badgeOffsetX: Double
+    public var badgeOffsetY: Double
+    public var badgeOpacity: AinkradStateDouble
+    public var cornerFont: AinkradFontToken
+    public var cornerColor: AinkradColorToken
+    public var cornerFill: AinkradColorToken
+    public var cornerPadding: Double
+    public var cornerOffset: Double
+    public var edgeColor: AinkradColorToken
+    public var edgeWidth: Double
+    public var edgeHeight: AinkradStateDouble
+    public var edgeGlow: AinkradGlowToken
+}

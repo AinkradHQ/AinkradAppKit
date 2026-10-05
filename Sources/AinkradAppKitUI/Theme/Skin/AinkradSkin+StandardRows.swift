@@ -229,6 +229,46 @@ extension AinkradComponentTokens {
                 fill: .tint(0.12),
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(rest: .tint(0.5)), width: AinkradStateDouble(rest: 1.25))
+            ),
+            railItem: RailItemTokens(
+                size: 42,
+                shape: AinkradShapeToken(style: "chamfer", cut: 7),
+                fill: AinkradStateColor(
+                    rest: .clear, hover: .palette("surfaceElevated", 0.6), selected: .palette("accentPrimary", 0.18)),
+                stroke: AinkradStrokeToken(
+                    color: AinkradStateColor(
+                        rest: .clear, hover: .palette("accentSecondary", 0.35),
+                        selected: .palette("accentSecondary", 0.6)),
+                    width: AinkradStateDouble(rest: 1)),
+                glow: AinkradGlowToken(
+                    color: AinkradStateColor(
+                        rest: .clear, hover: .palette("accentPrimary", 0.35), selected: .palette("accentPrimary", 0.5)),
+                    radius: AinkradStateDouble(rest: 0, hover: 8, selected: 8)),
+                glyphFont: AinkradFontToken(size: 17, weight: "regular", scaled: false),
+                glyphSelectedFont: AinkradFontToken(size: 17, weight: "semibold", scaled: false),
+                glyphColor: AinkradStateColor(
+                    rest: .palette("foreground", 0.65), hover: .palette("foreground", 0.9),
+                    selected: .palette("accentSecondary", 1.0)),
+                glyphDimmedColor: .palette("foreground", 0.45),
+                glyphGlow: AinkradGlowToken(
+                    color: AinkradStateColor(rest: .clear, selected: .palette("accentSecondary", 0.5)),
+                    radius: AinkradStateDouble(rest: 4)),
+                hoverScale: 1.06,
+                badgeScale: 0.8,
+                badgeOffsetX: 5,
+                badgeOffsetY: -5,
+                badgeOpacity: AinkradStateDouble(rest: 1, hover: 0.45, selected: 0.45),
+                cornerFont: AinkradFontToken(size: 8, weight: "bold", scaled: false),
+                cornerColor: .palette("foreground", 0.7),
+                cornerFill: .palette("surfaceElevated", 1.0),
+                cornerPadding: 3,
+                cornerOffset: 4,
+                edgeColor: .palette("accentSecondary", 1.0),
+                edgeWidth: 3,
+                edgeHeight: AinkradStateDouble(rest: 0, hover: 10, selected: 22),
+                edgeGlow: AinkradGlowToken(
+                    color: AinkradStateColor(rest: .clear, selected: .palette("accentSecondary", 0.7)),
+                    radius: AinkradStateDouble(rest: 3))
             )
         )
     }

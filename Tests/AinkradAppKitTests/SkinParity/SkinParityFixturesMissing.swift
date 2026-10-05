@@ -118,6 +118,27 @@ enum SkinParityFixturesMissing {
                     AinkradToggleButton(isOn: .constant(true), systemName: "star", title: "Favorite")
                 )))
 
+        // 8. AinkradRailItem (rest, selected, unread, capped unread, muted)
+        let rail: [(String, AinkradRailItem)] = [
+            ("rest", AinkradRailItem(systemName: "message", help: "Chat", isSelected: false, action: nil)),
+            ("selected", AinkradRailItem(systemName: "message", help: "Chat", isSelected: true, action: nil)),
+            ("unread", AinkradRailItem(systemName: "message", help: "Chat", isSelected: false, unread: 3, action: nil)),
+            (
+                "unread-capped",
+                AinkradRailItem(systemName: "message", help: "Chat", isSelected: false, unread: 120, action: nil)
+            ),
+            (
+                "muted",
+                AinkradRailItem(
+                    systemName: "message", help: "Chat", isSelected: false, isDimmed: true,
+                    cornerSymbol: "bell.slash.fill", action: nil)
+            ),
+        ]
+        for (name, item) in rail {
+            list.append(
+                SkinParityFixture(name: "railItem-\(name)", view: AnyView(item.frame(width: 60))))
+        }
+
         return list
     }
 }

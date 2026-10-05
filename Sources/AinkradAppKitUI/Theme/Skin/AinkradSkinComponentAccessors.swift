@@ -246,6 +246,10 @@ extension AinkradComponentTokens {
         get { storage.g3.banner }
         set { mutatingStorage().g3.banner = newValue }
     }
+    public var railItem: RailItemTokens {
+        get { storage.g3.railItem }
+        set { mutatingStorage().g3.railItem = newValue }
+    }
 
     public var logView: LogViewTokens {
         get { storage.g4.logView }

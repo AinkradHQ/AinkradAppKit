@@ -68,6 +68,7 @@ package struct AinkradComponentGroup3: Equatable, Sendable {
     var stackedStatusBar: StackedStatusBarTokens
     var toast: ToastTokens
     var banner: BannerTokens
+    var railItem: RailItemTokens
 }
 
 package struct AinkradComponentGroup4: Equatable, Sendable {

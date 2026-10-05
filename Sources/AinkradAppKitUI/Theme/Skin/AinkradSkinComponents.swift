@@ -31,6 +31,7 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             case multiSelectCheck, groupedSelectRows, contextMenu, tooltipPopover, commandMenuRow, navListRow, tabs
             case breadcrumb, pagination, listRow, statRow, iconGlyph, dataTable, disclosureGroup, emptyState
             case loadingState, errorState, sectionHeader, statusBar, spinner, meter, stackedStatusBar, toast, banner
+            case railItem
             case logView, signalFeedList, signalFeedRow, signalFeedRowAction, signalSourceRail, signalToast
             case settingsGroup, settingsPage, settingsRow
             case label
@@ -103,7 +104,8 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
                 meter: try container.decode(MeterTokens.self, forKey: .meter),
                 stackedStatusBar: try container.decode(StackedStatusBarTokens.self, forKey: .stackedStatusBar),
                 toast: try container.decode(ToastTokens.self, forKey: .toast),
-                banner: try container.decode(BannerTokens.self, forKey: .banner)
+                banner: try container.decode(BannerTokens.self, forKey: .banner),
+                railItem: try container.decode(RailItemTokens.self, forKey: .railItem)
             )
             let g4 = AinkradComponentGroup4(
                 logView: try container.decode(LogViewTokens.self, forKey: .logView),
@@ -187,6 +189,7 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             try container.encode(g3.stackedStatusBar, forKey: .stackedStatusBar)
             try container.encode(g3.toast, forKey: .toast)
             try container.encode(g3.banner, forKey: .banner)
+            try container.encode(g3.railItem, forKey: .railItem)
 
             try container.encode(g4.logView, forKey: .logView)
             try container.encode(g4.signalFeedList, forKey: .signalFeedList)
@@ -269,7 +272,8 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             listRow: listRow, statRow: statRow, iconGlyph: iconGlyph, dataTable: dataTable,
             disclosureGroup: disclosureGroup, emptyState: emptyState, loadingState: loadingState,
             errorState: errorState, sectionHeader: sectionHeader, statusBar: statusBar, spinner: spinner,
-            meter: meter, stackedStatusBar: stackedStatusBar, toast: toast, banner: banner
+            meter: meter, stackedStatusBar: stackedStatusBar, toast: toast, banner: banner,
+            railItem: AinkradComponentTokens.standard.railItem
         )
         let g4 = AinkradComponentGroup4(
             logView: logView, signalFeedList: signalFeedList, signalFeedRow: signalFeedRow,
