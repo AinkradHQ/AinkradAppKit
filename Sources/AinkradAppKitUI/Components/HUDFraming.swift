@@ -1,12 +1,20 @@
 import AinkradAppKitContract
 import SwiftUI
 
-/// Draws the four L-shaped corner brackets used by `View.cornerBrackets(_:_:)`.
-/// A `Shape`, not a `View`, so it can be stroked/shadowed like any path.
-private struct CornerBracketsShape: Shape {
-    var length: CGFloat
+/// The targeting-bracket shape — four L-shaped corner brackets, the Cardinal
+/// HUD "targeting frame" motif drawn by the host Launcher and others. A `Shape`,
+/// not a `View`, so call sites can stroke, shadow and inset it like any path.
+/// Carries no tokens: call sites stroke it with color and shape tokens (see
+/// `View.cornerBrackets(_:_:)`).
+public struct AinkradCornerBrackets: Shape {
+    /// Length of each bracket arm.
+    public var length: CGFloat
 
-    func path(in rect: CGRect) -> Path {
+    public init(length: CGFloat = 8) {
+        self.length = length
+    }
+
+    public func path(in rect: CGRect) -> Path {
         let l = max(0, min(length, min(rect.width, rect.height) / 2))
         var path = Path()
 
@@ -42,7 +50,7 @@ private struct CornerBracketsModifier: ViewModifier {
     func body(content: Content) -> some View {
         let b = skin.effects.brackets
         content.overlay(
-            CornerBracketsShape(length: length)
+            AinkradCornerBrackets(length: length)
                 .stroke(skin.color(b.stroke), lineWidth: b.width)
                 .shadow(color: skin.color(b.glow), radius: b.glowRadius)
                 .padding(inset)

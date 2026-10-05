@@ -183,6 +183,15 @@ enum SkinParityFixturesMissing {
             list.append(SkinParityFixture(name: "overlayChrome-\(name)", view: view))
         }
 
+        // 9. AinkradCornerBrackets at the Gallery lengths (7, 9, 13)
+        for length: CGFloat in [7, 9, 13] {
+            list.append(
+                SkinParityFixture(
+                    name: "cornerBrackets-\(Int(length))",
+                    view: AnyView(
+                        Color.clear.frame(width: 120, height: 80).cornerBrackets(length: length))))
+        }
+
         return list
     }
 }
