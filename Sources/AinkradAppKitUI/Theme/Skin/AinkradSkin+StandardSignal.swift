@@ -160,7 +160,21 @@ extension AinkradComponentTokens {
                 valueFont: AinkradFontToken(role: "mono"),
                 valueColor: .palette("foreground", 0.8)
             ),
-            label: LabelTokens(glyphFont: AinkradFontToken(size: 12, weight: "medium", scaled: false))
+            label: LabelTokens(glyphFont: AinkradFontToken(size: 12, weight: "medium", scaled: false)),
+            commandField: CommandFieldTokens(
+                height: 56,
+                horizontalPadding: 18,
+                gap: 12,
+                font: AinkradFontToken(size: 17, weight: "regular"),
+                foreground: .palette("foreground", 1.0),
+                tint: .palette("accentSecondary", 1.0),
+                markColor: .palette("accentSecondary", 1.0),
+                markGlow: AinkradGlowToken(
+                    color: AinkradStateColor(rest: .palette("accentSecondary", 0.9)),
+                    radius: AinkradStateDouble(rest: 6)),
+                markWidth: 16,
+                markHeight: 14
+            )
         )
     }
 

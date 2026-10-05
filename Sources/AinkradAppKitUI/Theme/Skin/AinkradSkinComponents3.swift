@@ -174,3 +174,16 @@ public struct RailItemTokens: Codable, Equatable, Sendable {
     public var edgeHeight: AinkradStateDouble
     public var edgeGlow: AinkradGlowToken
 }
+
+public struct CommandFieldTokens: Codable, Equatable, Sendable {
+    public var height: Double
+    public var horizontalPadding: Double
+    public var gap: Double
+    public var font: AinkradFontToken
+    public var foreground: AinkradColorToken
+    public var tint: AinkradColorToken
+    public var markColor: AinkradColorToken
+    public var markGlow: AinkradGlowToken
+    public var markWidth: Double
+    public var markHeight: Double
+}

@@ -293,4 +293,8 @@ extension AinkradComponentTokens {
         get { storage.g4.label }
         set { mutatingStorage().g4.label = newValue }
     }
+    public var commandField: CommandFieldTokens {
+        get { storage.g4.commandField }
+        set { mutatingStorage().g4.commandField = newValue }
+    }
 }
