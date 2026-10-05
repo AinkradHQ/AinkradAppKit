@@ -80,7 +80,12 @@ extension AinkradComponentTokens {
                 subtitleColor: .palette("foreground", 0.55),
                 shape: AinkradShapeToken(style: "chamfer", cut: 6),
                 fill: AinkradStateColor(
-                    rest: .clear, hover: .palette("surfaceElevated", 0.5), selected: .palette("accentPrimary", 0.16))
+                    rest: .clear, hover: .palette("surfaceElevated", 0.5), selected: .palette("accentPrimary", 0.16)),
+                edgeWidth: AinkradStateDouble(rest: 0, hover: 2, selected: 2),
+                edgeGlow: AinkradGlowToken(
+                    color: AinkradStateColor(rest: .clear, selected: .palette("accentSecondary", 0.6)),
+                    radius: AinkradStateDouble(rest: 3)),
+                gap: 2
             ),
             statRow: StatRowTokens(
                 labelFont: AinkradFontToken(role: "caption", tracking: 0.6),
@@ -89,10 +94,12 @@ extension AinkradComponentTokens {
             ),
             iconGlyph: IconGlyphTokens(
                 size: 16, glyphRatio: 0.55,
+                glyphColor: .palette("accentSecondary", 1.0),
                 shape: AinkradShapeToken(style: "chamfer", cutRatio: 0.2, minCut: 2),
                 fill: .palette("accentPrimary", 0.85),
                 stroke: AinkradStrokeToken(
-                    color: AinkradStateColor(rest: .palette("accentSecondary", 0.4)),
+                    color: AinkradStateColor(
+                        rest: .palette("accentSecondary", 0.4), selected: .clear),
                     width: AinkradStateDouble(rest: 1.0))
             ),
             dataTable: DataTableTokens(
@@ -101,11 +108,17 @@ extension AinkradComponentTokens {
                 headerFont: AinkradFontToken(role: "caption", weight: "semibold", tracking: 0.8),
                 headerColor: .palette("foreground", 0.75),
                 sortGlyphFont: AinkradFontToken(size: 8, weight: "bold", scaled: false),
+                headerCellGap: 3,
                 cellFont: AinkradFontToken(role: "body"),
                 cellColor: .palette("foreground", 0.9),
                 rowShape: AinkradShapeToken(style: "chamfer", cut: 4),
                 rowFill: AinkradStateColor(
-                    rest: .clear, hover: .palette("surfaceElevated", 0.4), selected: .palette("accentPrimary", 0.16))
+                    rest: .clear, hover: .palette("surfaceElevated", 0.4), selected: .palette("accentPrimary", 0.16)),
+                rowGap: 2,
+                edgeWidth: 2,
+                edgeGlow: AinkradGlowToken(
+                    color: AinkradStateColor(rest: .palette("accentSecondary", 0.6)),
+                    radius: AinkradStateDouble(rest: 3))
             ),
             disclosureGroup: DisclosureGroupTokens(
                 chevronFont: AinkradFontToken(size: 10, scaled: false),
@@ -114,7 +127,9 @@ extension AinkradComponentTokens {
                 titleColor: .palette("foreground", 0.7),
                 headerShape: AinkradShapeToken(style: "chamfer", cut: 8),
                 headerFill: AinkradStateColor(
-                    rest: .palette("surfaceElevated", 1.0), hover: .palette("surfaceElevated", 0.5))
+                    rest: .clear, hover: .palette("surfaceElevated", 0.5)),
+                hoverAnimation: AinkradAnimationToken(curve: "easeOut", duration: 0.15),
+                expandAnimation: AinkradAnimationToken(curve: "easeOut", duration: 0.25)
             ),
             emptyState: EmptyStateTokens(
                 glyphFont: AinkradFontToken(role: "display", scaled: false),
@@ -125,6 +140,7 @@ extension AinkradComponentTokens {
             ),
             loadingState: LoadingStateTokens(
                 spinnerSize: 28,
+                captionFont: AinkradFontToken(role: "caption"),
                 captionColor: .palette("foreground", 0.6)
             ),
             errorState: ErrorStateTokens(
@@ -145,33 +161,41 @@ extension AinkradComponentTokens {
                 subtitleColor: .palette("foreground", 0.4)
             ),
             statusBar: StatusBarTokens(
-                segments: 12, height: 8,
+                segments: 12, height: 8, gap: 2,
                 shape: AinkradShapeToken(style: "chamfer", cut: 2, corners: "all"),
+                gradientFrom: .tint(0.65),
                 emptyFill: .palette("foreground", 0.08),
-                glow: AinkradGlowToken(color: AinkradStateColor(rest: .tint(0.5)), radius: AinkradStateDouble(rest: 2))
+                glow: AinkradGlowToken(
+                    color: AinkradStateColor(rest: .tint(0.0), selected: .tint(0.5)),
+                    radius: AinkradStateDouble(rest: 0, selected: 2))
             ),
             spinner: SpinnerTokens(
                 size: 20,
                 trackColor: .palette("foreground", 0.12),
+                lineMinWidth: 1.5,
+                lineWidthRatio: 0.08,
                 arcTrim: 0.28,
                 defaultColor: .palette("accentSecondary", 1.0),
                 glow: AinkradGlowToken(
-                    color: AinkradStateColor(rest: .palette("accentSecondary", 0.6)),
+                    color: AinkradStateColor(rest: .tint(0.6)),
                     radius: AinkradStateDouble(rest: 3)),
                 period: 1.0, pulsePeriod: 1.2, pulseFloor: 0.35
             ),
             meter: MeterTokens(
                 size: 88,
                 trackColor: .palette("foreground", 0.1),
+                lineMinWidth: 3,
+                lineWidthRatio: 0.07,
                 arcGlow: AinkradGlowToken(
-                    color: AinkradStateColor(rest: .palette("accentSecondary", 0.55)),
+                    color: AinkradStateColor(rest: .tint(0.55)),
                     radius: AinkradStateDouble(rest: 4)),
                 valueFont: AinkradFontToken(role: "headline", weight: "semibold"),
                 labelFont: AinkradFontToken(role: "caption", tracking: 0.6),
-                labelColor: .palette("foreground", 0.55)
+                labelColor: .palette("foreground", 0.55),
+                gap: 2
             ),
             stackedStatusBar: StackedStatusBarTokens(
-                height: 4, minRun: 2, trackColor: .palette("foreground", 0.12)
+                height: 4, gap: 1, minRun: 2, trackColor: .palette("foreground", 0.12)
             ),
             toast: ToastTokens(
                 iconFont: AinkradFontToken(size: 12, weight: "semibold", scaled: false),

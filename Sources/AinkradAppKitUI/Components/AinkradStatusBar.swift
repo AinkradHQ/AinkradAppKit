@@ -19,10 +19,11 @@ public enum AinkradStatusBarKind: Sendable {
     /// One of `\.ainkradStatusColors`, via the shared `AinkradStatus` enum.
     case status(AinkradStatus)
 
-    func color(theme: HostThemeTokens, statusColors: AinkradStatusColors) -> Color {
+    func color(skin: AinkradSkin) -> Color {
         switch self {
-        case .accent: return theme.accentPrimary
-        case .status(let status): return status.color(in: theme, statusColors: statusColors)
+        case .accent: return skin.color(skin.palette.accentPrimary)
+        case .status(let status):
+            return status.color(in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
         }
     }
 }
@@ -37,8 +38,7 @@ public struct AinkradStatusBar: View {
     private let kind: AinkradStatusBarKind
     private let segments: Int
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     public init(value: Double, total: Double = 1, kind: AinkradStatusBarKind = .accent, segments: Int = 12) {
@@ -49,25 +49,36 @@ public struct AinkradStatusBar: View {
     }
 
     private var filled: Int { filledSegments(value: value, total: total, segments: segments) }
-    private var color: Color { kind.color(theme: theme, statusColors: statusColors) }
+    private var color: Color { kind.color(skin: skin) }
 
     public var body: some View {
-        HStack(spacing: 2) {
+        let bar = skin.components.statusBar
+        let shape = AinkradSkinShape(token: bar.shape)
+        HStack(spacing: bar.gap) {
             ForEach(0..<max(segments, 0), id: \.self) { index in
                 let isFilled = index < filled
-                ChamferShape(cut: 2, corners: .all)
+                shape
                     .fill(
                         isFilled
                             ? LinearGradient(
-                                colors: [color.opacity(0.65), color], startPoint: .leading, endPoint: .trailing)
+                                colors: [
+                                    skin.color(bar.gradientFrom, tint: color), color,
+                                ], startPoint: .leading, endPoint: .trailing)
                             : LinearGradient(
-                                colors: [theme.foreground.opacity(0.08)], startPoint: .leading, endPoint: .trailing)
+                                colors: [skin.color(bar.emptyFill)], startPoint: .leading,
+                                endPoint: .trailing)
                     )
-                    .frame(height: 8)
-                    .shadow(color: color.opacity(isFilled ? 0.5 : 0), radius: isFilled ? 2 : 0)
+                    .frame(height: bar.height)
+                    .shadow(
+                        color: skin.color(bar.glow.color, tint: color, state: filledState(isFilled)),
+                        radius: bar.glow.radius.resolve(filledState(isFilled)))
             }
         }
-        .animation(reduceMotion ? nil : AinkradMotion.present, value: filled)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.present), value: filled)
+    }
+
+    private func filledState(_ isFilled: Bool) -> AinkradControlState {
+        isFilled ? [.selected] : []
     }
 }
 
@@ -139,7 +150,7 @@ public struct AinkradSpinner: View {
     /// byte-unchanged — see `init(size:tint:)`.
     private var tint: Color? = nil
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     public init(size: CGFloat = 20) {
@@ -154,14 +165,19 @@ public struct AinkradSpinner: View {
         self.tint = tint
     }
 
-    private var arcColor: Color { tint ?? theme.accentSecondary }
+    private var arcColor: Color { tint ?? skin.color(spinnerTokens.defaultColor) }
+
+    private var spinnerTokens: SpinnerTokens { skin.components.spinner }
+
+    private var lineWidth: CGFloat { max(spinnerTokens.lineMinWidth, size * spinnerTokens.lineWidthRatio) }
 
     public var body: some View {
         BudgetedTimelineView { date in
             if reduceMotion {
-                ring(angle: .zero, arcOpacity: spinnerPulseOpacity(date: date))
+                ring(angle: .zero, arcOpacity: spinnerPulseOpacity(date: date, period: spinnerTokens.pulsePeriod))
             } else {
-                ring(angle: .degrees(spinnerTimelineAngle(date: date)), arcOpacity: 1.0)
+                ring(
+                    angle: .degrees(spinnerTimelineAngle(date: date, period: spinnerTokens.period)), arcOpacity: 1.0)
             }
         }
         .frame(width: size, height: size)
@@ -170,11 +186,14 @@ public struct AinkradSpinner: View {
     private func ring(angle: Angle, arcOpacity: Double) -> some View {
         ZStack {
             Circle()
-                .stroke(theme.foreground.opacity(0.12), lineWidth: max(1.5, size * 0.08))
+                .stroke(skin.color(spinnerTokens.trackColor), lineWidth: lineWidth)
             Circle()
-                .trim(from: 0, to: 0.28)
-                .stroke(arcColor, style: StrokeStyle(lineWidth: max(1.5, size * 0.08), lineCap: .round))
-                .shadow(color: arcColor.opacity(0.6), radius: 3)
+                .trim(from: 0, to: spinnerTokens.arcTrim)
+                .stroke(arcColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .shadow(
+                    color: skin.color(spinnerTokens.glow.color, tint: arcColor),
+                    radius: spinnerTokens.glow.radius.resolve([])
+                )
                 .opacity(arcOpacity)
                 .rotationEffect(angle)
         }

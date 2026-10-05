@@ -59,13 +59,14 @@ extension AinkradComponentTokens {
                     color: AinkradStateColor(rest: .palette("accentSecondary", 0.3)),
                     width: AinkradStateDouble(rest: 1.0))
             ),
-            modal: ModalTokens(maxWidth: 480, contentWidthPadding: 32, edgeSheetWidth: 360),
+            modal: ModalTokens(maxWidth: 480, contentWidthPadding: 32, edgeSheetWidth: 360, transitionScale: 0.94),
             drawer: DrawerTokens(scrimColor: .palette("black", 0.45), width: 280),
             confirmDialog: ConfirmDialogTokens(
                 maxWidth: 360,
                 titleFont: AinkradFontToken(role: "headline", weight: "semibold", tracking: 0.6),
                 messageFont: AinkradFontToken(role: "body"),
-                messageColor: .palette("foreground", 0.75)
+                messageColor: .palette("foreground", 0.75),
+                transitionScale: 0.94
             ),
             button: ButtonTokens(
                 shape: AinkradShapeToken(style: "chamfer", cut: 8),

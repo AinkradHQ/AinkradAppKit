@@ -35,28 +35,32 @@ public struct AinkradStatusRun: Equatable, Sendable {
 public struct AinkradStackedStatusBar: View {
     private let runs: [AinkradStatusRun]
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
 
     public init(runs: [AinkradStatusRun]) {
         self.runs = runs
     }
 
     public var body: some View {
+        let bar = skin.components.stackedStatusBar
         let ordered = orderedStatusRuns(runs)
         GeometryReader { geometry in
-            let widths = statusRunWidths(for: ordered.map { $0.count }, in: geometry.size.width)
-            HStack(spacing: stackedStatusBarSpacing) {
+            let widths = statusRunWidths(
+                for: ordered.map { $0.count }, in: geometry.size.width, spacing: bar.gap, minimum: bar.minRun)
+            HStack(spacing: bar.gap) {
                 ForEach(Array(zip(ordered, widths).enumerated()), id: \.offset) { _, segment in
                     Rectangle()
-                        .fill(segment.0.status.color(in: theme, statusColors: statusColors))
+                        .fill(
+                            segment.0.status.color(
+                                in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
+                        )
                         .frame(width: segment.1)
                 }
             }
         }
-        .frame(height: 4)
+        .frame(height: bar.height)
         .clipShape(Capsule())
-        .background(Capsule().fill(theme.foreground.opacity(0.12)))
+        .background(Capsule().fill(skin.color(bar.trackColor)))
     }
 }
 
