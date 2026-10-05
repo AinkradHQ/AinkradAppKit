@@ -44,8 +44,7 @@ public struct AinkradButton: View {
     /// `isLoading:`-carrying overload below.
     private var isLoading: Bool = false
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
@@ -76,10 +75,14 @@ public struct AinkradButton: View {
         self.action = action
     }
 
-    private var accentColor: Color { style.isDanger ? statusColors.danger : theme.accentPrimary }
+    private var accentColor: Color {
+        skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
+    }
     private var foreground: Color { style.usesAccentFill ? accentColor.contrastingText : accentColor }
 
     public var body: some View {
+        let btn = skin.components.button
+        let shape = AinkradSkinShape(token: btn.shape)
         Button(action: action) {
             ZStack {
                 // Both mounted; only opacity toggles so the label and spinner
@@ -87,28 +90,32 @@ public struct AinkradButton: View {
                 labelContent
                     .foregroundStyle(foreground)
                     .opacity(isLoading ? 0 : 1)
-                AinkradSpinner(size: 14, tint: foreground)
+                AinkradSpinner(size: btn.spinnerSize, tint: foreground)
                     .opacity(isLoading ? 1 : 0)
             }
-            .padding(.horizontal, AinkradSpacing.lg)
-            .padding(.vertical, AinkradSpacing.sm)
+            .padding(.horizontal, skin.spacing.lg)
+            .padding(.vertical, skin.spacing.sm)
             .background(
-                ChamferShape(cut: 8)
-                    .fill(style.usesAccentFill ? accentColor.opacity(style.fillOpacity) : .clear)
+                shape.fill(style.usesAccentFill ? accentColor.opacity(style.fillOpacity) : .clear)
             )
             .overlay(
-                ChamferShape(cut: 8)
-                    .strokeBorder(accentColor.opacity(hovering ? 0.95 : 0.55), lineWidth: 1.25)
+                shape.strokeBorder(
+                    skin.color(btn.stroke.color, tint: accentColor, state: state),
+                    lineWidth: btn.stroke.width.resolve(state)
+                )
             )
-            .shadow(color: accentColor.opacity(hovering ? 0.55 : 0), radius: hovering ? 6 : 0)
-            .contentShape(ChamferShape(cut: 8))
+            .shadow(
+                color: skin.color(btn.glow.color, tint: accentColor, state: state),
+                radius: btn.glow.radius.resolve(state)
+            )
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
-        .animation(reduceMotion ? nil : AinkradMotion.hover, value: isLoading)
-        .scaleEffect(pressed && !reduceMotion ? 0.97 : (hovering && !reduceMotion ? 1.02 : 1.0))
-        .animation(AinkradMotion.hover, value: hovering)
-        .animation(AinkradMotion.hover, value: pressed)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: isLoading)
+        .scaleEffect(pressed && !reduceMotion ? btn.pressedScale : (hovering && !reduceMotion ? btn.hoverScale : 1.0))
+        .animation(skin.animation(skin.motion.hover), value: hovering)
+        .animation(skin.animation(skin.motion.hover), value: pressed)
         .onHover { hovering = $0 }
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
@@ -118,13 +125,20 @@ public struct AinkradButton: View {
     }
 
     private var labelContent: some View {
-        HStack(spacing: AinkradSpacing.xs) {
+        let btn = skin.components.button
+        return HStack(spacing: skin.spacing.xs) {
             if let icon {
-                Image(systemName: icon).font(.system(size: 12, weight: .semibold))
+                Image(systemName: icon).font(skin.font(btn.iconFont, typography: typo))
             }
             Text(title.uppercased())
-                .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-                .tracking(0.8)
+                .font(skin.font(btn.labelFont, typography: typo))
+                .tracking(btn.labelFont.tracking ?? 0)
         }
+    }
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if hovering { state.insert(.hover) }
+        if pressed { state.insert(.pressed) }
+        return state
     }
 }

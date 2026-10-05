@@ -126,6 +126,8 @@ public struct ChipTokens: Codable, Equatable, Sendable {
     public var fill: AinkradStateColor
     public var stroke: AinkradStrokeToken
     public var hoverScale: Double
+    public var removeFont: AinkradFontToken
+    public var removePadding: Double
 }
 
 public struct SwatchChipTokens: Codable, Equatable, Sendable {
@@ -150,6 +152,8 @@ public struct KbdTokens: Codable, Equatable, Sendable {
     public var shape: AinkradShapeToken
     public var fill: AinkradColorToken
     public var stroke: AinkradStrokeToken
+    public var paddingH: Double
+    public var paddingV: Double
 }
 
 public struct ModeSwitchTokens: Codable, Equatable, Sendable {
@@ -158,6 +162,7 @@ public struct ModeSwitchTokens: Codable, Equatable, Sendable {
     public var fg: AinkradStateColor
     public var shape: AinkradShapeToken
     public var hoverFill: AinkradColorToken
+    public var hoverAnimation: AinkradAnimationToken
 }
 
 public struct BasicShellHeaderTokens: Codable, Equatable, Sendable {

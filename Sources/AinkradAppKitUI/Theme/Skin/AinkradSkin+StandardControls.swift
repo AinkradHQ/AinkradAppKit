@@ -72,8 +72,8 @@ extension AinkradComponentTokens {
                 fill: AinkradStateColor(
                     rest: .tint(0.9), hover: .tint(0.95), pressed: .tint(0.95), disabled: .tint(0.4)),
                 stroke: AinkradStrokeToken(
-                    color: AinkradStateColor(rest: .tint(0.55), hover: .tint(0.9)),
-                    width: AinkradStateDouble(rest: 1.0, hover: 1.25)),
+                    color: AinkradStateColor(rest: .tint(0.55), hover: .tint(0.95)),
+                    width: AinkradStateDouble(rest: 1.25)),
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(rest: .tint(0.0), hover: .tint(0.55)),
                     radius: AinkradStateDouble(rest: 0, hover: 6)),
@@ -110,7 +110,7 @@ extension AinkradComponentTokens {
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.3), hover: .palette("accentSecondary", 0.6),
                         selected: .palette("accentSecondary", 0.95)),
-                    width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
+                    width: AinkradStateDouble(rest: 1.25)),
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.0), selected: .palette("accentSecondary", 0.55)),
@@ -138,20 +138,24 @@ extension AinkradComponentTokens {
                 shape: AinkradShapeToken(style: "chamfer", cut: 5),
                 iconFont: AinkradFontToken(size: 10, weight: "semibold", scaled: false),
                 labelFont: AinkradFontToken(role: "caption"),
-                fg: AinkradStateColor(rest: .palette("foreground", 0.85)),
+                fg: AinkradStateColor(rest: .palette("foreground", 0.85), selected: .palette("foreground", 1.0)),
                 fill: AinkradStateColor(
-                    rest: .palette("surfaceElevated", 0.45), hover: .palette("surfaceElevated", 0.65)),
+                    rest: .palette("surfaceElevated", 0.45), hover: .palette("surfaceElevated", 0.65),
+                    selected: .palette("surfaceElevated", 0.8)),
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.3), hover: .palette("accentSecondary", 0.6)),
                     width: AinkradStateDouble(rest: 1.0)),
-                hoverScale: 1.03
+                hoverScale: 1.03,
+                removeFont: AinkradFontToken(size: 8, weight: "bold", scaled: false),
+                removePadding: 3
             ),
             swatchChip: SwatchChipTokens(
                 shape: AinkradShapeToken(style: "chamfer", cut: 5),
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(
-                        rest: .palette("accentSecondary", 0.3), selected: .palette("accentPrimary", 0.85)),
+                        rest: .palette("accentSecondary", 0.3), hover: .palette("accentSecondary", 0.6),
+                        selected: .palette("accentPrimary", 0.85)),
                     width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(
@@ -175,14 +179,17 @@ extension AinkradComponentTokens {
                 shape: AinkradShapeToken(style: "chamfer", cut: 3),
                 fill: .palette("surfaceElevated", 0.55),
                 stroke: AinkradStrokeToken(
-                    color: AinkradStateColor(rest: .palette("foreground", 0.2)), width: AinkradStateDouble(rest: 1.0))
+                    color: AinkradStateColor(rest: .palette("foreground", 0.2)), width: AinkradStateDouble(rest: 1.0)),
+                paddingH: 6,
+                paddingV: 2
             ),
             modeSwitch: ModeSwitchTokens(
                 glyphFont: AinkradFontToken(size: 9, weight: "semibold", scaled: false),
                 labelFont: AinkradFontToken(role: "caption", weight: "medium"),
                 fg: AinkradStateColor(rest: .palette("foreground", 0.55), hover: .palette("foreground", 0.95)),
                 shape: AinkradShapeToken(style: "continuous", cut: 8),
-                hoverFill: .palette("foreground", 0.08)
+                hoverFill: .palette("foreground", 0.08),
+                hoverAnimation: AinkradAnimationToken(curve: "easeOut", duration: 0.12)
             ),
             basicShellHeader: BasicShellHeaderTokens(
                 glyphFont: AinkradFontToken(size: 12, weight: "medium", scaled: false),
