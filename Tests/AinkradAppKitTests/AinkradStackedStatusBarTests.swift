@@ -1,6 +1,7 @@
 import Foundation
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -16,7 +17,7 @@ struct AinkradStackedStatusBarTests {
         let ordered = orderedStatusRuns([
             AinkradStatusRun(count: 3, status: .danger), AinkradStatusRun(count: 5, status: .neutral),
             AinkradStatusRun(count: 19, status: .success), AinkradStatusRun(count: 28, status: .warning),
-            AinkradStatusRun(count: 2, status: .neutral)
+            AinkradStatusRun(count: 2, status: .neutral),
         ])
         #expect(ordered.map { $0.status } == [.success, .neutral, .neutral, .warning, .danger])
         #expect(ordered.map { $0.count } == [19, 5, 2, 28, 3])
@@ -24,7 +25,9 @@ struct AinkradStackedStatusBarTests {
 
     @Test("empty runs are dropped, so they take no segment and no gap")
     func dropsEmptyRuns() {
-        let ordered = orderedStatusRuns([AinkradStatusRun(count: 0, status: .danger), AinkradStatusRun(count: 4, status: .success)])
+        let ordered = orderedStatusRuns([
+            AinkradStatusRun(count: 0, status: .danger), AinkradStatusRun(count: 4, status: .success),
+        ])
         #expect(ordered.map { $0.status } == [.success])
     }
 
@@ -64,6 +67,8 @@ struct AinkradStackedStatusBarTests {
     func empty() {
         #expect(statusRunWidths(for: [], in: 64).isEmpty)
         _ = AinkradStackedStatusBar(runs: [])
-        _ = AinkradStackedStatusBar(runs: [AinkradStatusRun(count: 19, status: .success), AinkradStatusRun(count: 1, status: .danger)])
+        _ = AinkradStackedStatusBar(runs: [
+            AinkradStatusRun(count: 19, status: .success), AinkradStatusRun(count: 1, status: .danger),
+        ])
     }
 }

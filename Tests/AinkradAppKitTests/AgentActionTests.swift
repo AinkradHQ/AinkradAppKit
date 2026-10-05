@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -12,17 +13,23 @@ struct AgentActionTests {
     final class FakeActionProvider: AgentActionProvider {
         private var handlers: [AgentActionToken: (String) async -> AgentActionResult] = [:]
         private var ids: [AgentActionToken: String] = [:]
-        func register(actionID: String,
-                      handler: @escaping @MainActor (String) async -> AgentActionResult) -> AgentActionToken {
+        func register(
+            actionID: String,
+            handler: @escaping @MainActor (String) async -> AgentActionResult
+        ) -> AgentActionToken {
             let token = AgentActionToken()
             handlers[token] = handler
             ids[token] = actionID
             return token
         }
-        func remove(_ token: AgentActionToken) { handlers[token] = nil; ids[token] = nil }
+        func remove(_ token: AgentActionToken) {
+            handlers[token] = nil
+            ids[token] = nil
+        }
         func invoke(actionID: String, input: String) async -> AgentActionResult? {
             guard let token = ids.first(where: { $0.value == actionID })?.key,
-                  let handler = handlers[token] else { return nil }
+                let handler = handlers[token]
+            else { return nil }
             return await handler(input)
         }
     }

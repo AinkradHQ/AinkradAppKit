@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Chamfer side drawer sliding in from `edge`, scoped to the host surface it's
 /// attached to (same scoped-overlay approach as `.ainkradConfirmDialog` /
@@ -11,19 +11,21 @@ private struct AinkradDrawerModifier<DrawerContent: View>: ViewModifier {
     var width: CGFloat
     @ViewBuilder var drawerContent: () -> DrawerContent
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
+        let drawer = skin.components.drawer
         content.overlay {
             if isPresented {
                 ZStack(alignment: alignment) {
-                    Color.black.opacity(0.45)
+                    skin.color(drawer.scrimColor)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture { isPresented = false }
 
                     drawerContent()
-                        .padding(AinkradSpacing.lg)
+                        .padding(skin.spacing.lg)
                         .frame(width: width)
                         .frame(maxHeight: .infinity, alignment: .top)
                         .ainkradPanel(showsBrackets: true)
@@ -40,7 +42,8 @@ private struct AinkradDrawerModifier<DrawerContent: View>: ViewModifier {
                         .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(reduceMotion ? nil : AinkradMotion.materialize, value: isPresented)
+                .animation(
+                    reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation), value: isPresented)
             }
         }
     }
@@ -55,11 +58,11 @@ private struct AinkradDrawerModifier<DrawerContent: View>: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Presents a chamfer side drawer sliding in from `edge`, scoped to THIS
     /// view's own bounds. Dim behind, slide/materialize gated on
     /// `ainkradReduceMotion`, dismiss on scrim tap or Esc.
-    func ainkradDrawer<DrawerContent: View>(
+    public func ainkradDrawer<DrawerContent: View>(
         isPresented: Binding<Bool>,
         edge: Edge = .leading,
         width: CGFloat = 280,

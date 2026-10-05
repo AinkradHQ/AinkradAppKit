@@ -1,6 +1,7 @@
-import Testing
 import Foundation
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKitUI
 
 @Suite("AinkradSettingsPanel")
@@ -8,9 +9,9 @@ import SwiftUI
 struct SettingsPanelTests {
     private var source: String {
         let path = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()      // AinkradAppKitTests
-            .deletingLastPathComponent()      // Tests
-            .deletingLastPathComponent()      // package root
+            .deletingLastPathComponent()  // AinkradAppKitTests
+            .deletingLastPathComponent()  // Tests
+            .deletingLastPathComponent()  // package root
             .appendingPathComponent("Sources/AinkradAppKitUI/Components/AinkradSettingsPanel.swift")
         return (try? String(contentsOf: path, encoding: .utf8)) ?? ""
     }
@@ -22,8 +23,10 @@ struct SettingsPanelTests {
 
     @Test("panel draws the recessed surface at the agreed opacity")
     func surface() {
-        #expect(source.contains("surfaceElevated.opacity(0.32)"))
-        #expect(source.contains("ChamferShape(cut: AinkradRadius.md)"))
+        let panel = AinkradSkin.standard.components.settingsPanel
+        #expect(panel.fill == .palette("surfaceElevated", 0.32))
+        #expect(panel.shape == AinkradShapeToken(style: "chamfer", cut: AinkradRadius.md))
+        #expect(source.contains("AinkradSkinShape(token: p.shape).fill(skin.color(p.fill))"))
     }
 
     /// The design language forbids separator lines and borders on this

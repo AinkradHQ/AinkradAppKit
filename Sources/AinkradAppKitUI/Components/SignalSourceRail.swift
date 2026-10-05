@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradSignal
+import SwiftUI
 
 /// One entry in the feed's source rail.
 public struct SignalSourceRailItem: Identifiable, Equatable {
@@ -16,8 +16,10 @@ public struct SignalSourceRailItem: Identifiable, Equatable {
         return "\(source)"
     }
 
-    public init(source: SignalSource?, name: String, unread: Int,
-                worstUnread: SignalSeverity?) {
+    public init(
+        source: SignalSource?, name: String, unread: Int,
+        worstUnread: SignalSeverity?
+    ) {
         self.source = source
         self.name = name
         self.unread = unread
@@ -28,9 +30,11 @@ public struct SignalSourceRailItem: Identifiable, Equatable {
     ///
     /// Pure, so the ordering and the severity roll-up are testable without
     /// rendering — they are the part with the decisions in them.
-    public static func build(events: [SignalEvent],
-                             readIDs: Set<UUID>,
-                             name: (SignalSource) -> String) -> [SignalSourceRailItem] {
+    public static func build(
+        events: [SignalEvent],
+        readIDs: Set<UUID>,
+        name: (SignalSource) -> String
+    ) -> [SignalSourceRailItem] {
         var order: [SignalSource] = []
         var unread: [SignalSource: Int] = [:]
         var worst: [SignalSource: SignalSeverity] = [:]
@@ -61,10 +65,12 @@ public struct SignalSourceRailItem: Identifiable, Equatable {
             source: nil, name: "All",
             unread: unread.values.reduce(0, +),
             worstUnread: worst.values.max(by: { rank($0) < rank($1) }))
-        return [all] + sources.map {
-            SignalSourceRailItem(source: $0, name: name($0),
-                                 unread: unread[$0] ?? 0, worstUnread: worst[$0])
-        }
+        return [all]
+            + sources.map {
+                SignalSourceRailItem(
+                    source: $0, name: name($0),
+                    unread: unread[$0] ?? 0, worstUnread: worst[$0])
+            }
     }
 
     /// Explicit, not `CaseIterable`'s index: that is a declaration detail and
@@ -89,31 +95,32 @@ public struct SignalSourceRail: View {
     @Binding public var selection: SignalSource?
     public var onConfigure: (SignalSource) -> Void = { _ in }
 
-    public init(items: [SignalSourceRailItem],
-                selection: Binding<SignalSource?>,
-                onConfigure: @escaping (SignalSource) -> Void = { _ in }) {
+    public init(
+        items: [SignalSourceRailItem],
+        selection: Binding<SignalSource?>,
+        onConfigure: @escaping (SignalSource) -> Void = { _ in }
+    ) {
         self.items = items
         self._selection = selection
         self.onConfigure = onConfigure
     }
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var status
-    @Environment(\.ainkradTypography) private var typo
+    @Environment(\.ainkradSkin) private var skin
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: skin.components.signalSourceRail.gap) {
             ForEach(items) { item in
-                SignalSourceRailRow(item: item,
-                                    isSelected: selection == item.source,
-                                    onSelect: { selection = item.source },
-                                    onConfigure: onConfigure)
+                SignalSourceRailRow(
+                    item: item,
+                    isSelected: selection == item.source,
+                    onSelect: { selection = item.source },
+                    onConfigure: onConfigure)
             }
             Spacer(minLength: 0)
         }
         .padding(.vertical, AinkradSpacing.xs + 2)
         .padding(.horizontal, AinkradSpacing.xs + 2)
-        .frame(width: 168)
+        .frame(width: skin.components.signalSourceRail.width)
     }
 
     /// The count and the severity are a coloured dot and a small number —
@@ -142,49 +149,53 @@ private struct SignalSourceRailRow: View {
     let onConfigure: (SignalSource) -> Void
 
     @State private var isHovered = false
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var status
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     /// Selected wins over hovered: a hover tint on the selected row would make
     /// selection ambiguous exactly while the pointer is on it.
-    private var fillOpacity: Double {
-        if isSelected { return 0.9 }
-        return isHovered ? 0.45 : 0
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if isSelected { state.insert(.selected) }
+        if isHovered { state.insert(.hover) }
+        return state
     }
 
     var body: some View {
+        let rail = skin.components.signalSourceRail
+        let shape = AinkradSkinShape(token: rail.shape)
         Button(action: onSelect) {
             HStack(spacing: AinkradSpacing.xs + 2) {
                 Circle()
-                    .fill(item.worstUnread.map {
-                        SignalPresentation.status(for: $0).color(in: theme, statusColors: status)
-                    } ?? .clear)
-                    .frame(width: 5, height: 5)
+                    .fill(
+                        item.worstUnread.map {
+                            SignalPresentation.status(for: $0).color(
+                                in: HostThemeTokens(skin: skin),
+                                statusColors: AinkradStatusColors(skin: skin))
+                        } ?? .clear
+                    )
+                    .frame(width: rail.dotSize, height: rail.dotSize)
                 Text(item.name)
-                    .font(AinkradFontResolver.font(size: 11.5,
-                                                   weight: isSelected ? .semibold : .regular,
-                                                   typography: typo))
-                    .foregroundStyle(theme.foreground
-                        .opacity(isSelected ? 1 : (isHovered ? 0.9 : 0.72)))
+                    .font(
+                        skin.font(
+                            isSelected ? rail.nameSelectedFont : rail.nameFont, typography: typo)
+                    )
+                    .foregroundStyle(skin.color(skin.text.primary).opacity(rail.nameOpacity.resolve(state)))
                     .lineLimit(1)
-                Spacer(minLength: AinkradSpacing.xs)
+                Spacer(minLength: skin.spacing.xs)
                 if item.unread > 0 {
                     // Mono and digit-locked: the counts form a column, and a
                     // proportional face makes that column wobble.
                     Text(item.unread > 99 ? "99+" : "\(item.unread)")
-                        .font(AinkradFontResolver.font(size: 9.5, weight: .medium,
-                                                       mono: true, typography: typo))
+                        .font(skin.font(rail.countFont, typography: typo))
                         .monospacedDigit()
-                        .foregroundStyle(theme.foreground.opacity(0.5))
+                        .foregroundStyle(skin.color(rail.countColor))
                 }
             }
-            .padding(.horizontal, AinkradSpacing.sm)
+            .padding(.horizontal, skin.spacing.sm)
             .padding(.vertical, AinkradSpacing.xs + 1)
-            .background(
-                ChamferShape(cut: AinkradRadius.sm)
-                    .fill(theme.surfaceElevated.opacity(fillOpacity)))
+            .background(shape.fill(skin.color(rail.fill, state: state)))
             .overlay(alignment: .leading) {
                 // An accent edge, not a separator — the design language forbids
                 // rules, and selection still has to read instantly.
@@ -192,24 +203,28 @@ private struct SignalSourceRailRow: View {
                 // Always present, scaled to nothing when unselected, so the
                 // marker GROWS into place as selection moves down the rail
                 // rather than blinking out of one row and into another.
-                Capsule().fill(theme.accentSecondary)
-                    .frame(width: 2)
-                    .padding(.vertical, 4)
+                Capsule().fill(skin.color(rail.edgeCapsuleColor))
+                    .frame(width: rail.edgeCapsuleWidth)
+                    .padding(.vertical, rail.edgePaddingV)
                     .scaleEffect(y: isSelected ? 1 : 0, anchor: .center)
                     .opacity(isSelected ? 1 : 0)
             }
-            .contentShape(ChamferShape(cut: AinkradRadius.sm))
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .animation(reduceMotion ? nil : AinkradMotion.hover, value: isHovered)
-        .animation(reduceMotion ? nil : AinkradMotion.hover, value: isSelected)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: isHovered)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: isSelected)
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(SignalSourceRail.label(for: item))
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-        .ainkradContextMenu(item.source.map { source in
-            [AinkradMenuItem(title: "Notification settings\u{2026}", systemName: "slider.horizontal.3",
-                             action: { onConfigure(source) })]
-        } ?? [])
+        .ainkradContextMenu(
+            item.source.map { source in
+                [
+                    AinkradMenuItem(
+                        title: "Notification settings\u{2026}", systemName: "slider.horizontal.3",
+                        action: { onConfigure(source) })
+                ]
+            } ?? [])
     }
 }

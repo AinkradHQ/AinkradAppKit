@@ -1,5 +1,6 @@
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -15,8 +16,9 @@ struct AinkradMenuItemTests {
     func shortcutIsVerbatim() {
         // Glyphs, not words: the keycap renders exactly what it is given, so
         // the caller decides "⌘R" rather than the component guessing at it.
-        let item = AinkradMenuItem(title: "Rename", systemName: "pencil",
-                                   shortcut: "\u{2318}R", action: {})
+        let item = AinkradMenuItem(
+            title: "Rename", systemName: "pencil",
+            shortcut: "\u{2318}R", action: {})
         #expect(item.shortcut == "\u{2318}R")
         #expect(item.systemName == "pencil")
         #expect(item.isDestructive == false)
@@ -29,8 +31,9 @@ struct AinkradMenuItemTests {
     func sourceCompatibility() {
         _ = AinkradMenuItem(title: "Open", action: {})
         _ = AinkradMenuItem(title: "Open", systemName: "folder", action: {})
-        _ = AinkradMenuItem(title: "Delete", systemName: "trash",
-                            isDestructive: true, action: {})
+        _ = AinkradMenuItem(
+            title: "Delete", systemName: "trash",
+            isDestructive: true, action: {})
     }
 
     @Test("the action runs on demand and not before")

@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 // MARK: - Pure color conversion helpers (unit-testable)
 
@@ -13,9 +13,11 @@ func rgbComponents(fromHex hex: String) -> (red: Double, green: Double, blue: Do
     guard s.count == 6, s.allSatisfy({ $0.isHexDigit }) else { return nil }
     var value: UInt64 = 0
     Scanner(string: s).scanHexInt64(&value)
-    return (Double((value & 0xFF0000) >> 16) / 255,
-            Double((value & 0x00FF00) >> 8) / 255,
-            Double(value & 0x0000FF) / 255)
+    return (
+        Double((value & 0xFF0000) >> 16) / 255,  // design-lint: allow hex-color bit-mask parsing
+        Double((value & 0x00FF00) >> 8) / 255,  // design-lint: allow hex-color bit-mask parsing
+        Double(value & 0x0000FF) / 255  // design-lint: allow hex-color bit-mask parsing
+    )
 }
 
 /// Uppercase 6-digit `RRGGBB` hex (no `#`) for sRGB components (each clamped to
@@ -56,7 +58,7 @@ func color(fromHex hex: String) -> Color? {
 public struct AinkradColorPicker: View {
     @Binding private var selection: Color
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var isOpen = false
 
@@ -66,7 +68,7 @@ public struct AinkradColorPicker: View {
 
     public var body: some View {
         trigger
-            .ainkradFloatingPanel(isPresented: $isOpen, maxHeight: 360) {
+            .ainkradFloatingPanel(isPresented: $isOpen, maxHeight: skin.components.colorPicker.panelMaxHeight) {
                 ColorPickerMaterialize {
                     ColorEditorPanelView(selection: $selection)
                 }
@@ -74,19 +76,26 @@ public struct AinkradColorPicker: View {
     }
 
     private var trigger: some View {
-        Button {
+        let picker = skin.components.colorPicker
+        let triggerState: AinkradControlState = isOpen ? [.focused] : []
+        let swatchShape = AinkradSkinShape(token: picker.swatchShape)
+        return Button {
             isOpen.toggle()
         } label: {
-            ChamferShape(cut: 6)
+            swatchShape
                 .fill(selection)
-                .frame(width: 28, height: 24)
+                .frame(width: picker.swatchWidth, height: picker.swatchHeight)
                 .overlay(
-                    ChamferShape(cut: 6)
-                        .strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.9 : 0.35),
-                                      lineWidth: isOpen ? 1.5 : 1.25)
+                    swatchShape
+                        .strokeBorder(
+                            skin.color(picker.swatchStroke.color, state: triggerState),
+                            lineWidth: picker.swatchStroke.width.resolve(triggerState))
                 )
-                .shadow(color: theme.accentPrimary.opacity(isOpen ? 0.45 : 0), radius: isOpen ? 6 : 0)
-                .contentShape(ChamferShape(cut: 6))
+                .shadow(
+                    color: skin.color(picker.swatchGlow.color, state: triggerState),
+                    radius: picker.swatchGlow.radius.resolve(triggerState)
+                )
+                .contentShape(swatchShape)
         }
         .buttonStyle(.plain)
         .animation(reduceMotion ? nil : AinkradMotion.hover, value: isOpen)
@@ -97,19 +106,21 @@ public struct AinkradColorPicker: View {
 /// the same "materialize" look as the pickers' `PanelMaterialize`, replicated
 /// here since that type is file-private to `AinkradPickers`.
 private struct ColorPickerMaterialize<Content: View>: View {
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var appeared = false
     private let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
+        let materialize = skin.roles.materialize
         content
             .opacity(appeared ? 1 : 0)
-            .scaleEffect(appeared ? 1 : 0.96, anchor: .top)
+            .scaleEffect(appeared ? 1 : materialize.scale, anchor: .top)
             .onAppear {
                 if reduceMotion {
                     appeared = true
                 } else {
-                    withAnimation(AinkradMotion.materialize) { appeared = true }
+                    withAnimation(skin.animation(materialize.animation)) { appeared = true }
                 }
             }
     }
@@ -123,7 +134,7 @@ private struct ColorPickerMaterialize<Content: View>: View {
 private struct ColorEditorPanelView: View {
     @Binding var selection: Color
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     @State private var hue: Double = 0
@@ -132,6 +143,9 @@ private struct ColorEditorPanelView: View {
     @State private var hexText: String = ""
 
     var body: some View {
+        let popover = skin.roles.popover
+        let picker = skin.components.colorPicker
+        let shape = AinkradSkinShape(token: popover.shape)
         VStack(alignment: .leading, spacing: AinkradSpacing.md) {
             preview
             sliderRow("Hue", binding: hsbBinding(.hue))
@@ -140,29 +154,37 @@ private struct ColorEditorPanelView: View {
             hexRow
         }
         .padding(AinkradSpacing.md)
-        .frame(width: 244)
-        .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.97)))
-        .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentSecondary.opacity(0.55), lineWidth: 1.25))
-        .shadow(color: theme.accentSecondary.opacity(0.35), radius: 10, y: 4)
+        .frame(width: picker.panelWidth)
+        .background(shape.fill(skin.color(popover.fill)))
+        .overlay(
+            shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([]))
+        )
+        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
         .onAppear(perform: seedFromSelection)
     }
 
     private var preview: some View {
-        ChamferShape(cut: 6)
-            .fill(Color(hue: hue, saturation: saturation, brightness: brightness))
-            .frame(height: 28)
-            .overlay(ChamferShape(cut: 6).strokeBorder(theme.accentPrimary.opacity(0.3), lineWidth: 1))
+        let shape = AinkradSkinShape(token: skin.components.colorPicker.previewShape)
+        let picked = Color(  // design-lint: allow raw-color user-picked colour
+            hue: hue, saturation: saturation, brightness: brightness)
+        return shape.fill(picked)
+            .frame(height: skin.components.colorPicker.previewHeight)
+            .overlay(
+                shape.strokeBorder(
+                    skin.color(skin.components.colorPicker.previewStroke.color),
+                    lineWidth: skin.components.colorPicker.previewStroke.width.resolve([])))
     }
 
     private func sliderRow(_ title: String, binding: Binding<Double>) -> some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
+        let picker = skin.components.colorPicker
+        return VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
             HStack(spacing: AinkradSpacing.xs) {
                 Rectangle()
-                    .fill(theme.accentSecondary.opacity(0.55))
-                    .frame(width: 2, height: 10)
+                    .fill(skin.color(picker.channelTickColor))
+                    .frame(width: picker.channelTickWidth, height: picker.channelTickHeight)
                 Text(title)
                     .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.8))
+                    .foregroundStyle(skin.color(picker.labelColor))
             }
             AinkradSlider(value: binding, in: 0...1)
         }
@@ -172,7 +194,7 @@ private struct ColorEditorPanelView: View {
         HStack(spacing: AinkradSpacing.sm) {
             Text("HEX")
                 .font(AinkradFontResolver.font(.caption, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(0.6))
+                .foregroundStyle(skin.color(skin.components.colorPicker.valueColor))
             AinkradTextField(text: $hexText, placeholder: "RRGGBB")
                 .onSubmit(applyHex)
         }
@@ -222,7 +244,8 @@ private struct ColorEditorPanelView: View {
     }
 
     private func writeBackFromHSB() {
-        let color = Color(hue: hue, saturation: saturation, brightness: brightness)
+        let color = Color(  // design-lint: allow raw-color user-picked colour
+            hue: hue, saturation: saturation, brightness: brightness)
         selection = color
         if let rgb = rgbComponents(of: color) {
             hexText = hexString(red: rgb.red, green: rgb.green, blue: rgb.blue)

@@ -22,9 +22,11 @@ public struct AinkradLaunchIntent: Codable, Equatable, Sendable {
     /// the user's setting by accident.
     public let mode: PluginMode?
 
-    public init(kind: String = AinkradLaunchIntent.openDocumentKind,
-                path: String,
-                mode: PluginMode? = nil) {
+    public init(
+        kind: String = AinkradLaunchIntent.openDocumentKind,
+        path: String,
+        mode: PluginMode? = nil
+    ) {
         self.kind = kind
         self.path = path
         self.mode = mode

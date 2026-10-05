@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -11,9 +12,10 @@ struct FloatingPanelFrameTests {
 
     @Test("positions below the trigger, left-aligned, when there's room")
     func belowTrigger() {
-        let anchor = CGRect(x: 100, y: 600, width: 80, height: 24) // near the top of the screen
+        let anchor = CGRect(x: 100, y: 600, width: 80, height: 24)  // near the top of the screen
         let content = CGSize(width: 160, height: 120)
-        let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
+        let frame = floatingPanelFrame(
+            anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
 
         #expect(frame.minX == anchor.minX)
         #expect(frame.width == content.width)
@@ -24,9 +26,10 @@ struct FloatingPanelFrameTests {
 
     @Test("flips above the trigger when there's no room below")
     func flipsAboveWhenNoRoomBelow() {
-        let anchor = CGRect(x: 100, y: 10, width: 80, height: 24) // near the bottom of the screen
+        let anchor = CGRect(x: 100, y: 10, width: 80, height: 24)  // near the bottom of the screen
         let content = CGSize(width: 160, height: 120)
-        let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
+        let frame = floatingPanelFrame(
+            anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
 
         #expect(frame.minY == anchor.maxY + 4)
     }
@@ -38,7 +41,8 @@ struct FloatingPanelFrameTests {
         let anchor = CGRect(x: 20, y: 310, width: 38, height: 38)
         let content = CGSize(width: 160, height: 120)
         let bounds = floatingPanelBounds(windowFrame: window, screenVisibleFrame: screen, contentSize: content)
-        let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: bounds, gap: 4)
+        let frame = floatingPanelFrame(
+            anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: bounds, gap: 4)
 
         #expect(bounds == window.insetBy(dx: 8, dy: 8))
         #expect(frame.minY == anchor.maxY + 4)
@@ -48,8 +52,9 @@ struct FloatingPanelFrameTests {
     @Test("trailing placement opens to the right, top-aligned with the trigger")
     func trailingRight() {
         let anchor = CGRect(x: 10, y: 400, width: 42, height: 42)
-        let frame = floatingPanelFrameTrailing(anchorScreenRect: anchor, contentSize: CGSize(width: 180, height: 140),
-                                               bounds: screen, gap: 6)
+        let frame = floatingPanelFrameTrailing(
+            anchorScreenRect: anchor, contentSize: CGSize(width: 180, height: 140),
+            bounds: screen, gap: 6)
         #expect(frame.minX == anchor.maxX + 6)
         #expect(frame.maxY == anchor.maxY)
     }
@@ -57,7 +62,7 @@ struct FloatingPanelFrameTests {
     @Test("trailing placement keeps a margin inside the window near its bottom edge")
     func trailingInsideWindowMargin() {
         let window = CGRect(x: 0, y: 100, width: 1000, height: 600)
-        let plus = CGRect(x: 10, y: 110, width: 42, height: 42)   // + at the window's foot
+        let plus = CGRect(x: 10, y: 110, width: 42, height: 42)  // + at the window's foot
         let size = CGSize(width: 150, height: 120)
         let bounds = floatingPanelBounds(windowFrame: window, screenVisibleFrame: screen, contentSize: size)
         let frame = floatingPanelFrameTrailing(anchorScreenRect: plus, contentSize: size, bounds: bounds)
@@ -69,7 +74,8 @@ struct FloatingPanelFrameTests {
     func trailingClamps() {
         let nearBottomRight = CGRect(x: 1150, y: 10, width: 42, height: 42)
         let size = CGSize(width: 180, height: 140)
-        let frame = floatingPanelFrameTrailing(anchorScreenRect: nearBottomRight, contentSize: size, bounds: screen, gap: 6)
+        let frame = floatingPanelFrameTrailing(
+            anchorScreenRect: nearBottomRight, contentSize: size, bounds: screen, gap: 6)
         #expect(frame.minY == screen.minY)
         #expect(frame.maxX == nearBottomRight.minX - 6)
         #expect(screen.contains(frame))
@@ -78,8 +84,9 @@ struct FloatingPanelFrameTests {
     @Test("a window too small for the panel falls back to the screen")
     func smallWindowUsesScreen() {
         let tile = CGRect(x: 15, y: 669, width: 124, height: 134)
-        let bounds = floatingPanelBounds(windowFrame: tile, screenVisibleFrame: screen,
-                                         contentSize: CGSize(width: 160, height: 120))
+        let bounds = floatingPanelBounds(
+            windowFrame: tile, screenVisibleFrame: screen,
+            contentSize: CGSize(width: 160, height: 120))
         #expect(bounds == screen)
     }
 
@@ -87,7 +94,8 @@ struct FloatingPanelFrameTests {
     func clampsHorizontally() {
         let anchor = CGRect(x: 1150, y: 400, width: 80, height: 24)
         let content = CGSize(width: 200, height: 120)
-        let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
+        let frame = floatingPanelFrame(
+            anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
 
         #expect(frame.maxX == screen.maxX)
         #expect(frame.width == content.width)
@@ -95,21 +103,25 @@ struct FloatingPanelFrameTests {
 
     @Test("clamps vertically inside the visible frame when neither above nor below fully fits")
     func clampsVerticallyWhenNothingFits() {
-        let short = CGRect(x: 0, y: 0, width: 1200, height: 100) // short visible frame
-        let anchor = CGRect(x: 10, y: 40, width: 80, height: 20) // mid-screen, no room above or below
-        let content = CGSize(width: 160, height: 80) // fits the screen, just not below/above the anchor
-        let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: short, gap: 4)
+        let short = CGRect(x: 0, y: 0, width: 1200, height: 100)  // short visible frame
+        let anchor = CGRect(x: 10, y: 40, width: 80, height: 20)  // mid-screen, no room above or below
+        let content = CGSize(width: 160, height: 80)  // fits the screen, just not below/above the anchor
+        let frame = floatingPanelFrame(
+            anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: short, gap: 4)
 
         #expect(frame.minY >= short.minY)
         #expect(frame.maxY <= short.maxY + 0.0001)
     }
 
-    @Test("pins to the visible top edge (letting content scroll past the bottom) when content is taller than the entire visible frame")
+    @Test(
+        "pins to the visible top edge (letting content scroll past the bottom) when content is taller than the entire visible frame"
+    )
     func pinsToTopWhenContentExceedsScreen() {
         let short = CGRect(x: 0, y: 0, width: 1200, height: 100)
         let anchor = CGRect(x: 10, y: 40, width: 80, height: 20)
-        let content = CGSize(width: 160, height: 300) // taller than the whole screen — can't fully fit either way
-        let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: short, gap: 4)
+        let content = CGSize(width: 160, height: 300)  // taller than the whole screen — can't fully fit either way
+        let frame = floatingPanelFrame(
+            anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: short, gap: 4)
 
         // The top edge sits exactly at the visible frame's top (never above
         // the menu bar); the bottom overflows below the dock and scrolls.
@@ -120,7 +132,8 @@ struct FloatingPanelFrameTests {
     func leftAligned() {
         let anchor = CGRect(x: 250, y: 500, width: 80, height: 24)
         let content = CGSize(width: 160, height: 120)
-        let frame = floatingPanelFrame(anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
+        let frame = floatingPanelFrame(
+            anchorScreenRect: anchor, contentSize: content, screenVisibleFrame: screen, gap: 4)
 
         #expect(frame.minX == 250)
     }
@@ -170,7 +183,8 @@ struct IsClickOutsideTests {
         #expect(isClickOutside(point: point, panelFrame: panel, triggerFrame: trigger) == false)
     }
 
-    @Test("a click on the trigger is not outside — the trigger's own toggle handles it, not the outside-click dismissal")
+    @Test(
+        "a click on the trigger is not outside — the trigger's own toggle handles it, not the outside-click dismissal")
     func insideTrigger() {
         let point = CGPoint(x: 120, y: 570)
         #expect(isClickOutside(point: point, panelFrame: panel, triggerFrame: trigger) == false)

@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// One row of a `.ainkradContextMenu(_:)` — a title, optional leading SF
 /// Symbol, an optional keyboard shortcut, an optional destructive style, and
@@ -19,8 +19,10 @@ public struct AinkradMenuItem: Identifiable {
     public let isDestructive: Bool
     public let action: () -> Void
 
-    public init(title: String, systemName: String? = nil, shortcut: String? = nil,
-                isDestructive: Bool = false, action: @escaping () -> Void) {
+    public init(
+        title: String, systemName: String? = nil, shortcut: String? = nil,
+        isDestructive: Bool = false, action: @escaping () -> Void
+    ) {
         self.title = title
         self.systemName = systemName
         self.shortcut = shortcut
@@ -106,8 +108,10 @@ private struct AinkradContextMenuList: View {
     let items: [AinkradMenuItem]
     let dismiss: () -> Void
 
+    @Environment(\.ainkradSkin) private var skin
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: skin.components.contextMenu.rowGap) {
             ForEach(items) { item in
                 AinkradContextMenuRow(item: item) {
                     item.action()
@@ -128,38 +132,37 @@ private struct AinkradContextMenuRow: View {
     let item: AinkradMenuItem
     let onSelect: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradStatusColors) private var statusColors
     @Environment(\.ainkradTypography) private var typo
     @State private var hovering = false
 
-    private var tint: Color { item.isDestructive ? statusColors.danger : theme.foreground.opacity(0.9) }
+    private var tint: Color {
+        item.isDestructive ? statusColors.danger : skin.color(skin.components.contextMenu.tint)
+    }
 
     var body: some View {
+        let menu = skin.components.contextMenu
+        let shape = AinkradSkinShape(token: menu.rowShape)
         Button(action: onSelect) {
-            HStack(spacing: AinkradSpacing.sm) {
+            HStack(spacing: skin.spacing.sm) {
                 if let systemName = item.systemName {
-                    Image(systemName: systemName).font(.system(size: 12, weight: .semibold))
+                    Image(systemName: systemName).font(skin.font(menu.glyphFont, typography: typo))
                 }
                 Text(item.title)
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                Spacer(minLength: AinkradSpacing.md)
-                // The chord as a real keycap, in its own right-aligned column:
-                // the menu teaches the keyboard rather than replacing it.
+                    .font(skin.font(menu.bodyFont, typography: typo))
+                Spacer(minLength: skin.spacing.md)
                 if let shortcut = item.shortcut {
                     AinkradKbd(shortcut)
                 }
             }
             .foregroundStyle(tint)
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs)
-            .background(ChamferShape(cut: 4).fill(hovering ? theme.accentSecondary.opacity(0.14) : .clear))
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, skin.spacing.xs)
+            .background(shape.fill(hovering ? skin.color(menu.rowHoverFill) : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        // The panel gives its first button keyboard focus, and SwiftUI's
-        // default focus ring is a heavy system rectangle with nothing to do
-        // with this design language. Hover is the only highlight here.
         .focusEffectDisabled()
         .onHover { hovering = $0 }
     }
@@ -171,6 +174,7 @@ private struct AinkradContextMenuModifier: ViewModifier {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkinStorage) private var skinStorage
     @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
     @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
     @State private var controller = AinkradFloatingPanelController()
@@ -188,6 +192,7 @@ private struct AinkradContextMenuModifier: ViewModifier {
         let theme = theme
         let typo = typo
         let statusColors = statusColors
+        let skinStorage = skinStorage
         let surfaceOpacity = surfaceOpacity
         let surfaceBlur = surfaceBlur
         controller.present(
@@ -195,27 +200,30 @@ private struct AinkradContextMenuModifier: ViewModifier {
             anchorScreenRectOverride: CGRect(origin: screenPoint, size: .zero)
         ) {
             AinkradContextMenuList(items: items, dismiss: { controller.dismiss() })
-                .ainkradMenuEnvironment(theme: theme, typography: typo,
-                                        statusColors: statusColors,
-                                        surfaceOpacity: surfaceOpacity,
-                                        surfaceBlur: surfaceBlur)
-        } onDismiss: {}
+                .ainkradMenuEnvironment(
+                    theme: theme, typography: typo,
+                    statusColors: statusColors,
+                    skinStorage: skinStorage,
+                    surfaceOpacity: surfaceOpacity,
+                    surfaceBlur: surfaceBlur)
+        } onDismiss: {
+        }
     }
 }
 
-public extension View {
+extension View {
     /// Presents a CUSTOM right-click context menu — chamfer list, hover
     /// scan, optional icons, destructive styling — via `AinkradFloatingPanel`
     /// positioned at the cursor. Deliberately not a native AppKit/SwiftUI
     /// context-menu API: this renders the same borderless, non-activating
     /// floating panel used by the kit's selects/comboboxes, just anchored at
     /// the right-click point instead of below a fixed trigger view.
-    func ainkradContextMenu(_ items: [AinkradMenuItem]) -> some View {
+    public func ainkradContextMenu(_ items: [AinkradMenuItem]) -> some View {
         modifier(AinkradContextMenuModifier(items: items))
     }
 }
 
-private extension View {
+extension View {
     /// Carries the design environment across a window boundary.
     ///
     /// Every menu here is drawn in a floating panel, which is its OWN
@@ -224,12 +232,16 @@ private extension View {
     /// this the menu falls back to the neutral dark fallback theme and, since
     /// the surface settings landed, ignores Appearance -> Overlays while every
     /// panel around it obeys.
-    func ainkradMenuEnvironment(theme: HostThemeTokens,
-                                typography: AinkradTypography,
-                                statusColors: AinkradStatusColors,
-                                surfaceOpacity: Double?,
-                                surfaceBlur: Bool) -> some View {
-        self.environment(\.ainkradTheme, theme)
+    fileprivate func ainkradMenuEnvironment(
+        theme: HostThemeTokens,
+        typography: AinkradTypography,
+        statusColors: AinkradStatusColors,
+        skinStorage: AinkradSkin,
+        surfaceOpacity: Double?,
+        surfaceBlur: Bool
+    ) -> some View {
+        self.environment(\.ainkradSkinStorage, skinStorage)
+            .environment(\.ainkradTheme, theme)
             .environment(\.ainkradTypography, typography)
             .environment(\.ainkradStatusColors, statusColors)
             .environment(\.ainkradSurfaceOpacity, surfaceOpacity)
@@ -255,12 +267,15 @@ public struct AinkradMenuButton<Label: View>: View {
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkinStorage) private var skinStorage
     @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
     @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
 
-    public init(items: [AinkradMenuItem],
-                maxHeight: CGFloat = 320,
-                @ViewBuilder label: () -> Label) {
+    public init(
+        items: [AinkradMenuItem],
+        maxHeight: CGFloat = 320,
+        @ViewBuilder label: () -> Label
+    ) {
         self.items = items
         self.maxHeight = maxHeight
         self.label = label()
@@ -269,10 +284,12 @@ public struct AinkradMenuButton<Label: View>: View {
     /// Chooses where the menu opens; `.trailing` opens it beside the button,
     /// for a button in a vertical rail. NEW overload (`placement:` has no
     /// default), so `init(items:maxHeight:label:)` keeps its symbol.
-    public init(items: [AinkradMenuItem],
-                maxHeight: CGFloat = 320,
-                placement: AinkradPanelPlacement,
-                @ViewBuilder label: () -> Label) {
+    public init(
+        items: [AinkradMenuItem],
+        maxHeight: CGFloat = 320,
+        placement: AinkradPanelPlacement,
+        @ViewBuilder label: () -> Label
+    ) {
         self.items = items
         self.maxHeight = maxHeight
         self.placement = placement
@@ -280,14 +297,20 @@ public struct AinkradMenuButton<Label: View>: View {
     }
 
     public var body: some View {
-        Button { isPresented.toggle() } label: { label }
-            .buttonStyle(.plain)
-            .ainkradFloatingPanel(isPresented: $isPresented, maxHeight: maxHeight, placement: placement) {
-                AinkradContextMenuList(items: items, dismiss: { isPresented = false })
-                    .ainkradMenuEnvironment(theme: theme, typography: typo,
-                                            statusColors: statusColors,
-                                            surfaceOpacity: surfaceOpacity,
-                                            surfaceBlur: surfaceBlur)
-            }
+        Button {
+            isPresented.toggle()
+        } label: {
+            label
+        }
+        .buttonStyle(.plain)
+        .ainkradFloatingPanel(isPresented: $isPresented, maxHeight: maxHeight, placement: placement) {
+            AinkradContextMenuList(items: items, dismiss: { isPresented = false })
+                .ainkradMenuEnvironment(
+                    theme: theme, typography: typo,
+                    statusColors: statusColors,
+                    skinStorage: skinStorage,
+                    surfaceOpacity: surfaceOpacity,
+                    surfaceBlur: surfaceBlur)
+        }
     }
 }

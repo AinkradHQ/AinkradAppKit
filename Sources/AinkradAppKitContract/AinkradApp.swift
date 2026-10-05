@@ -21,9 +21,9 @@ import SwiftUI
     static func settingsCatalog(host: HostServices) -> SettingsPage?
 }
 
-public extension AinkradApp {
-    static func chromeFill(host: HostServices) -> Color? { nil }
-    static func settingsCatalog(host: HostServices) -> SettingsPage? { nil }
+extension AinkradApp {
+    public static func chromeFill(host: HostServices) -> Color? { nil }
+    public static func settingsCatalog(host: HostServices) -> SettingsPage? { nil }
 }
 
 /// A bundle's `NSPrincipalClass` conforms to this; the host casts the loaded

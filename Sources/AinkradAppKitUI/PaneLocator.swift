@@ -76,8 +76,8 @@ private struct SignalPaneLocatorKey: EnvironmentKey {
     static let defaultValue = SignalPaneLocatorSink { _ in }
 }
 
-public extension EnvironmentValues {
-    var ainkradPaneLocator: SignalPaneLocatorSink {
+extension EnvironmentValues {
+    public var ainkradPaneLocator: SignalPaneLocatorSink {
         get { self[SignalPaneLocatorKey.self] }
         set { self[SignalPaneLocatorKey.self] = newValue }
     }

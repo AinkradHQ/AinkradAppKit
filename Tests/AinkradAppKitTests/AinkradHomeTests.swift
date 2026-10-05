@@ -1,12 +1,14 @@
 import Foundation
 import Testing
+
 @testable import AinkradAppKitHome
 
 @Suite("Home URL vending")
 struct HomeURLTests {
     private func makeHome() -> Home {
-        Home(vaultRoot: URL(fileURLWithPath: "/tmp/vault"),
-             cacheRoot: URL(fileURLWithPath: "/tmp/cache"))
+        Home(
+            vaultRoot: URL(fileURLWithPath: "/tmp/vault"),
+            cacheRoot: URL(fileURLWithPath: "/tmp/cache"))
     }
 
     @Test func vaultAppDirectoryIsUnderApps() {
@@ -33,14 +35,14 @@ struct HomeURLTests {
     @Test func sharedDomainsMatchThePublishedLayout() {
         let home = makeHome()
         let expected: [SharedDomain: String] = [
-            .config:   "/tmp/vault/Config",
-            .agents:   "/tmp/vault/Sage",
-            .memory:   "/tmp/vault/Sage/memory",
-            .skills:   "/tmp/vault/Sage/skills",
+            .config: "/tmp/vault/Config",
+            .agents: "/tmp/vault/Sage",
+            .memory: "/tmp/vault/Sage/memory",
+            .skills: "/tmp/vault/Sage/skills",
             .commands: "/tmp/vault/Sage/commands",
             .sessions: "/tmp/vault/Sage/sessions",
-            .media:    "/tmp/vault/Media",
-            .sounds:   "/tmp/vault/Sounds",
+            .media: "/tmp/vault/Media",
+            .sounds: "/tmp/vault/Sounds",
         ]
         #expect(expected.count == SharedDomain.allCases.count)
         for domain in SharedDomain.allCases {
@@ -60,16 +62,19 @@ struct HomeResolutionTests {
     private func sandbox() -> (pointer: URL, cache: URL, vault: URL) {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("home-\(UUID().uuidString)")
-        return (base.appendingPathComponent("pointer"),
-                base.appendingPathComponent("cache"),
-                base.appendingPathComponent("vault"))
+        return (
+            base.appendingPathComponent("pointer"),
+            base.appendingPathComponent("cache"),
+            base.appendingPathComponent("vault")
+        )
     }
 
     @Test func noPointerResolvesToUnset() {
         let s = sandbox()
         defer { try? FileManager.default.removeItem(at: s.pointer.deletingLastPathComponent()) }
         guard case .unset = AinkradHome.resolve(pointerDirectory: s.pointer, cacheRoot: s.cache) else {
-            Issue.record("expected .unset"); return
+            Issue.record("expected .unset")
+            return
         }
     }
 
@@ -80,11 +85,13 @@ struct HomeResolutionTests {
 
         let home = try AinkradHome.adopt(s.vault, pointerDirectory: s.pointer, cacheRoot: s.cache)
         #expect(home.vaultRoot.standardizedFileURL == s.vault.standardizedFileURL)
-        #expect(FileManager.default.fileExists(
-            atPath: s.vault.appendingPathComponent(".ainkrad-home").path))
+        #expect(
+            FileManager.default.fileExists(
+                atPath: s.vault.appendingPathComponent(".ainkrad-home").path))
 
         guard case .ready(let resolved) = AinkradHome.resolve(pointerDirectory: s.pointer, cacheRoot: s.cache) else {
-            Issue.record("expected .ready"); return
+            Issue.record("expected .ready")
+            return
         }
         #expect(resolved.vaultRoot.standardizedFileURL == s.vault.standardizedFileURL)
     }
@@ -112,7 +119,8 @@ struct HomeResolutionTests {
         try FileManager.default.removeItem(at: s.vault)
 
         guard case .missing(let path) = AinkradHome.resolve(pointerDirectory: s.pointer, cacheRoot: s.cache) else {
-            Issue.record("expected .missing — a silent fallback is the bug this guards"); return
+            Issue.record("expected .missing — a silent fallback is the bug this guards")
+            return
         }
         #expect(path == s.vault.path)
     }
@@ -126,7 +134,8 @@ struct HomeResolutionTests {
         try FileManager.default.removeItem(at: s.vault.appendingPathComponent(".ainkrad-home"))
 
         guard case .foreign = AinkradHome.resolve(pointerDirectory: s.pointer, cacheRoot: s.cache) else {
-            Issue.record("expected .foreign"); return
+            Issue.record("expected .foreign")
+            return
         }
     }
 
@@ -165,8 +174,9 @@ struct HomeResolutionTests {
         let firstID = try HomeMarker.read(in: s.vault)?.homeID
 
         // Now it is populated — as a real vault in use would be.
-        try FileManager.default.createDirectory(at: s.vault.appendingPathComponent("Config"),
-                                                withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(
+            at: s.vault.appendingPathComponent("Config"),
+            withIntermediateDirectories: true)
         try Data("{}".utf8).write(to: s.vault.appendingPathComponent("Config/agents.json"))
 
         _ = try AinkradHome.adopt(s.vault, pointerDirectory: s.pointer, cacheRoot: s.cache)
@@ -188,10 +198,12 @@ struct HomeResolutionTests {
             _ = try AinkradHome.adopt(s.vault, pointerDirectory: s.pointer, cacheRoot: s.cache)
         }
         // And it must leave nothing behind in a folder it refused.
-        #expect(!FileManager.default.fileExists(
-            atPath: s.vault.appendingPathComponent(".ainkrad-home").path))
+        #expect(
+            !FileManager.default.fileExists(
+                atPath: s.vault.appendingPathComponent(".ainkrad-home").path))
         guard case .unset = AinkradHome.resolve(pointerDirectory: s.pointer, cacheRoot: s.cache) else {
-            Issue.record("a refused adoption must leave no pointer"); return
+            Issue.record("a refused adoption must leave no pointer")
+            return
         }
     }
 
@@ -228,7 +240,8 @@ struct HomeResolutionTests {
         _ = try? AinkradHome.adopt(missing, pointerDirectory: s.pointer, cacheRoot: s.cache)
 
         guard case .unset = AinkradHome.resolve(pointerDirectory: s.pointer, cacheRoot: s.cache) else {
-            Issue.record("a failed adoption must leave no pointer"); return
+            Issue.record("a failed adoption must leave no pointer")
+            return
         }
     }
 }

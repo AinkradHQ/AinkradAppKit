@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradAppKit
 
 /// The one payload shape Hoard, Rune and Lore agree on.
@@ -41,7 +42,8 @@ struct AinkradLaunchIntentTests {
     func kindIsExplicit() {
         let other = AinkradLaunchIntent(kind: "openProject", path: "/p", mode: nil)
         let decoded = AinkradLaunchIntent.decode(other.json)
-        #expect(decoded?.isOpenDocument == false,
-                "a reader must branch on kind BEFORE acting on path")
+        #expect(
+            decoded?.isOpenDocument == false,
+            "a reader must branch on kind BEFORE acting on path")
     }
 }

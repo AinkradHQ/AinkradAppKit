@@ -22,7 +22,7 @@ import Foundation
 public enum HomeLayoutMigration {
     /// The renames applied to a vault root, oldest first.
     static let directoryRenames: [(old: String, new: String)] = [
-        ("Assistant", "Sage"),
+        ("Assistant", "Sage")
     ]
 
     /// Result of one run, so a caller can log or test what happened without

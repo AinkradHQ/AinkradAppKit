@@ -1,6 +1,6 @@
-import SwiftUI
 import AinkradAppKitContract
 import AinkradAppKitUI
+import SwiftUI
 
 /// A settings page: one scrolling column of groups with sticky headers, an
 /// optional "on this page" mini-map at width, and the deep-link scroll +
@@ -9,7 +9,7 @@ import AinkradAppKitUI
 /// page never becomes a long scroll — see `usesTabs(page:)`. This is deliberately narrow: it separates groups
 /// within one topic, not different topics, which stay flat top-level pages.
 public struct SettingsPageView: View {
-    @Environment(\.ainkradTheme) private var tokens
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
@@ -35,10 +35,11 @@ public struct SettingsPageView: View {
         if let highlightedPath, let index = Self.tabIndex(containing: highlightedPath, page: page) {
             initialTab = index
         } else if let matchedPaths, !matchedPaths.isEmpty, !page.groups.isEmpty,
-                  Self.tabHitCount(group: page.groups[0], matchedPaths: matchedPaths) == 0,
-                  let firstHit = page.groups.firstIndex(where: {
-                      Self.tabHitCount(group: $0, matchedPaths: matchedPaths) > 0
-                  }) {
+            Self.tabHitCount(group: page.groups[0], matchedPaths: matchedPaths) == 0,
+            let firstHit = page.groups.firstIndex(where: {
+                Self.tabHitCount(group: $0, matchedPaths: matchedPaths) > 0
+            })
+        {
             initialTab = firstHit
         }
         self._selectedTab = State(initialValue: initialTab)
@@ -52,7 +53,9 @@ public struct SettingsPageView: View {
     /// trailing padding `miniMap` applies around itself. Kept as the single
     /// source of truth so `rowAreaWidth` and the `miniMap` view can't drift
     /// apart into two different numbers for the same column.
-    public static let miniMapOccupiedWidth: CGFloat = 150 + 18
+    public static let miniMapOccupiedWidth: CGFloat = CGFloat(
+        AinkradSkin.standard.components.settingsPage.miniMapWidth
+            + AinkradSkin.standard.components.settingsPage.miniMapGutter)
 
     /// The width actually available to rows: the page's total width minus
     /// whatever the mini-map is occupying, if it's showing at all. Pure and
@@ -111,9 +114,11 @@ public struct SettingsPageView: View {
         // when the one rendered slot is identified per group.
         let identities = page.groups.indices.map { groupViewIdentity(page: page, index: $0) }
         let seedingRuns = !tabbed || Set(identities).count == identities.count
-        let expanded = group.disclosure == .always
-            || (seedingRuns && SettingsGroupView.mustExpand(
-                group: group, highlightedPath: highlightedPath, matchedPaths: nil))
+        let expanded =
+            group.disclosure == .always
+            || (seedingRuns
+                && SettingsGroupView.mustExpand(
+                    group: group, highlightedPath: highlightedPath, matchedPaths: nil))
         return DeepLinkTarget(
             tabIndex: tabbed ? index : nil, groupPath: group.path, groupIsExpanded: expanded)
     }
@@ -143,6 +148,7 @@ public struct SettingsPageView: View {
         GeometryReader { geo in
             let layout = SettingsRowLayout(detailWidth: Self.rowAreaWidth(page: page, totalWidth: geo.size.width))
             let tabbed = Self.usesTabs(page: page)
+            let pageTokens = skin.components.settingsPage
             HStack(alignment: .top, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     if tabbed {
@@ -159,7 +165,8 @@ public struct SettingsPageView: View {
                             // resolves a custom view's declared `body` inline, so
                             // the `Section` returned by `SettingsGroupView.body`
                             // counts exactly as if it were written here directly.
-                            LazyVStack(alignment: .leading, spacing: 24, pinnedViews: [.sectionHeaders]) {
+                            LazyVStack(alignment: .leading, spacing: pageTokens.listGap, pinnedViews: [.sectionHeaders])
+                            {
                                 if !page.resettableFields.isEmpty {
                                     pageHeader
                                 }
@@ -168,35 +175,38 @@ public struct SettingsPageView: View {
                                     SettingsGroupView(
                                         group: page.groups[index], layout: layout,
                                         matchedPaths: matchedPaths,
-                                        highlightedPath: highlightedPath)
-                                        // MUST stay: the tabbed branch renders
-                                        // exactly one group at a fixed
-                                        // structural slot, so without a
-                                        // per-group identity SwiftUI treats
-                                        // every tab's group as the SAME view.
-                                        // `SettingsGroupView`'s `@State
-                                        // isExpanded` would then persist across
-                                        // tab switches and its `State(initial
-                                        // Value: … mustExpand(…))` seeding
-                                        // would never re-run — a collapsed
-                                        // group inherited from the previous tab
-                                        // renders as a bare header, and a
-                                        // deep-link into it scrolls to an id
-                                        // that isn't in the hierarchy.
-                                        // `groupViewIdentity` is the value
-                                        // `deepLinkTarget` reasons about, so
-                                        // the test and the view cannot drift.
-                                        .id(Self.groupViewIdentity(page: page, index: index))
-                                        // The tab bar switches inside its own
-                                        // 0.55s materialize animation, so the
-                                        // new identity inherited it and SwiftUI
-                                        // cross-faded the old tab out and the
-                                        // new one in over half a second, both
-                                        // on screen with their text overlapping.
-                                        // The old tab now leaves at once and the
-                                        // new one fades in fast.
-                                        .transition(.asymmetric(
-                                            insertion: .opacity.animation(reduceMotion ? nil : .easeOut(duration: 0.12)),
+                                        highlightedPath: highlightedPath
+                                    )
+                                    // MUST stay: the tabbed branch renders
+                                    // exactly one group at a fixed
+                                    // structural slot, so without a
+                                    // per-group identity SwiftUI treats
+                                    // every tab's group as the SAME view.
+                                    // `SettingsGroupView`'s `@State
+                                    // isExpanded` would then persist across
+                                    // tab switches and its `State(initial
+                                    // Value: … mustExpand(…))` seeding
+                                    // would never re-run — a collapsed
+                                    // group inherited from the previous tab
+                                    // renders as a bare header, and a
+                                    // deep-link into it scrolls to an id
+                                    // that isn't in the hierarchy.
+                                    // `groupViewIdentity` is the value
+                                    // `deepLinkTarget` reasons about, so
+                                    // the test and the view cannot drift.
+                                    .id(Self.groupViewIdentity(page: page, index: index))
+                                    // The tab bar switches inside its own
+                                    // 0.55s materialize animation, so the
+                                    // new identity inherited it and SwiftUI
+                                    // cross-faded the old tab out and the
+                                    // new one in over half a second, both
+                                    // on screen with their text overlapping.
+                                    // The old tab now leaves at once and the
+                                    // new one fades in fast.
+                                    .transition(
+                                        .asymmetric(
+                                            insertion: .opacity.animation(
+                                                reduceMotion ? nil : skin.animation(pageTokens.tabInsertAnimation)),
                                             removal: .identity))
                                 } else {
                                     ForEach(page.groups) { group in
@@ -207,7 +217,7 @@ public struct SettingsPageView: View {
                                     }
                                 }
                             }
-                            .padding(18)
+                            .padding(pageTokens.padding)
                         }
                         .scrollContentBackground(.hidden)
                         .onChange(of: highlightedPath) { _, path in
@@ -215,7 +225,8 @@ public struct SettingsPageView: View {
                             // switch to it before the scroll, or the user is
                             // sent to an invisible row.
                             guard let path, tabbed,
-                                  let index = Self.tabIndex(containing: path, page: page) else { return }
+                                let index = Self.tabIndex(containing: path, page: page)
+                            else { return }
                             selectedTab = index
                         }
                         .onChange(of: matchedPaths) { _, matched in
@@ -224,13 +235,14 @@ public struct SettingsPageView: View {
                             // appears to match nothing.
                             guard tabbed, let matched, !matched.isEmpty else { return }
                             if Self.tabHitCount(group: page.groups[selectedTab], matchedPaths: matched) == 0,
-                               let firstHit = page.groups.firstIndex(where: {
-                                   Self.tabHitCount(group: $0, matchedPaths: matched) > 0
-                               }) {
+                                let firstHit = page.groups.firstIndex(where: {
+                                    Self.tabHitCount(group: $0, matchedPaths: matched) > 0
+                                })
+                            {
                                 if reduceMotion {
                                     selectedTab = firstHit
                                 } else {
-                                    withAnimation(.easeOut(duration: AinkradMotion.durationBase)) {
+                                    withAnimation(skin.animation(skin.motion.present)) {
                                         selectedTab = firstHit
                                     }
                                 }
@@ -241,7 +253,7 @@ public struct SettingsPageView: View {
                             if reduceMotion {
                                 proxy.scrollTo(path, anchor: .center)
                             } else {
-                                withAnimation(.easeOut(duration: 0.2)) {
+                                withAnimation(skin.animation(pageTokens.scrollAnimation)) {
                                     proxy.scrollTo(path, anchor: .center)
                                 }
                             }
@@ -265,24 +277,25 @@ public struct SettingsPageView: View {
             let hits = Self.tabHitCount(group: group, matchedPaths: matchedPaths)
             return hits > 0 ? "\(group.title) (\(hits))" : group.title
         }
-        .padding(.horizontal, AinkradSpacing.lg)
-        .padding(.top, AinkradSpacing.lg)
+        .padding(.horizontal, skin.spacing.lg)
+        .padding(.top, skin.spacing.lg)
     }
 
     /// Page-level reset control. Shown only when `resettableFields` is
     /// non-empty — i.e. at least one field on this page is both resettable
     /// and currently modified from its default.
     private var pageHeader: some View {
-        HStack {
+        let pageTokens = skin.components.settingsPage
+        return HStack {
             Spacer(minLength: 0)
             Button(action: { page.resetAll() }) {
-                HStack(spacing: 6) {
+                HStack(spacing: pageTokens.hitsGap) {
                     Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 10))
+                        .font(skin.font(pageTokens.hitsGlyphFont, typography: typo))
                     Text("Reset this page")
-                        .font(AinkradFontResolver.font(.caption, weight: .medium, typography: typo))
+                        .font(skin.font(pageTokens.hitsCaptionFont, typography: typo))
                 }
-                .foregroundStyle(tokens.accentSecondary.opacity(0.9))
+                .foregroundStyle(skin.color(pageTokens.hitsColor))
             }
             .buttonStyle(.plain)
             .help("Restore all modified fields on this page to their defaults")
@@ -290,20 +303,21 @@ public struct SettingsPageView: View {
     }
 
     private var miniMap: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let pageTokens = skin.components.settingsPage
+        return VStack(alignment: .leading, spacing: pageTokens.itemsGap) {
             Text("ON THIS PAGE")
-                .font(AinkradFontResolver.font(.mono, weight: .medium, typography: typo))
-                .kerning(2.5)
-                .foregroundStyle(tokens.foreground.opacity(0.4))
+                .font(skin.font(pageTokens.miniMapTitleFont, typography: typo))
+                .kerning(pageTokens.miniMapTitleFont.kerning ?? 0)
+                .foregroundStyle(skin.color(pageTokens.miniMapTitleColor))
             ForEach(page.groups) { group in
                 Text(group.title)
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(tokens.foreground.opacity(0.6))
+                    .font(skin.font(pageTokens.itemsFont, typography: typo))
+                    .foregroundStyle(skin.color(pageTokens.itemsColor))
             }
             Spacer(minLength: 0)
         }
-        .frame(width: Self.miniMapOccupiedWidth - 18, alignment: .topLeading)
-        .padding(.top, 18)
-        .padding(.trailing, 18)
+        .frame(width: pageTokens.miniMapWidth, alignment: .topLeading)
+        .padding(.top, pageTokens.miniMapPaddingTopTrailing)
+        .padding(.trailing, pageTokens.miniMapPaddingTopTrailing)
     }
 }

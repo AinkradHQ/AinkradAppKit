@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Faint horizontal scanline sweep — a HUD "scan" texture. Animated via
 /// `TimelineView` only while `active` and motion isn't reduced; otherwise a
@@ -7,6 +7,7 @@ import AinkradAppKitContract
 /// competes with content.
 private struct ScanlineOverlayModifier: ViewModifier {
     var active: Bool
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
@@ -15,39 +16,45 @@ private struct ScanlineOverlayModifier: ViewModifier {
 
     @ViewBuilder
     private var scanlines: some View {
+        let scan = skin.effects.scanline
         if active {
             if reduceMotion {
-                Canvas { context, size in Self.drawStaticLines(context, size) }
-                    .opacity(0.05)
+                Canvas { context, size in Self.drawStaticLines(context, size, spacing: scan.lineSpacing) }
+                    .opacity(scan.staticOpacity)
             } else {
+                let band = skin.color(scan.bandColor)
                 BudgetedTimelineView { date in
                     Canvas { context, size in
-                        Self.drawMovingBand(context, size, time: date.timeIntervalSinceReferenceDate)
+                        Self.drawMovingBand(
+                            context, size, time: date.timeIntervalSinceReferenceDate, scan: scan, band: band)
                     }
                 }
-                .opacity(0.08)
+                .opacity(scan.movingOpacity)
             }
         }
     }
 
-    private static func drawStaticLines(_ context: GraphicsContext, _ size: CGSize) {
+    private static func drawStaticLines(_ context: GraphicsContext, _ size: CGSize, spacing: CGFloat) {
         var y: CGFloat = 0
         while y < size.height {
             context.fill(Path(CGRect(x: 0, y: y, width: size.width, height: 1)), with: .color(.white))
-            y += 4
+            y += spacing
         }
     }
 
-    private static func drawMovingBand(_ context: GraphicsContext, _ size: CGSize, time: Double) {
-        let period = 3.5
+    private static func drawMovingBand(
+        _ context: GraphicsContext, _ size: CGSize, time: Double, scan: AinkradScanlineEffectTokens, band: Color
+    ) {
+        let period = scan.period
         let progress = (time.truncatingRemainder(dividingBy: period)) / period
-        let bandHeight: CGFloat = size.height * 0.12
+        let bandHeight: CGFloat = size.height * scan.bandFraction
         let y = CGFloat(progress) * (size.height + bandHeight) - bandHeight
-        let gradient = Gradient(colors: [.clear, .white.opacity(0.6), .clear])
+        let gradient = Gradient(colors: [.clear, band, .clear])
         context.fill(
             Path(CGRect(x: 0, y: y, width: size.width, height: bandHeight)),
-            with: .linearGradient(gradient, startPoint: CGPoint(x: 0, y: y),
-                                  endPoint: CGPoint(x: 0, y: y + bandHeight))
+            with: .linearGradient(
+                gradient, startPoint: CGPoint(x: 0, y: y),
+                endPoint: CGPoint(x: 0, y: y + bandHeight))
         )
     }
 }
@@ -57,6 +64,7 @@ private struct ScanlineOverlayModifier: ViewModifier {
 /// Motion. Omitted entirely when `active` is false.
 private struct HexGridBackgroundModifier: ViewModifier {
     var active: Bool
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
@@ -65,14 +73,18 @@ private struct HexGridBackgroundModifier: ViewModifier {
 
     @ViewBuilder
     private var hexGrid: some View {
+        let grid = skin.effects.hexGrid
         if active {
-            Canvas { context, size in Self.draw(context, size) }
-                .opacity(reduceMotion ? 0.04 : 0.05)
+            let stroke = skin.color(grid.stroke)
+            Canvas { context, size in Self.draw(context, size, grid: grid, stroke: stroke) }
+                .opacity(reduceMotion ? grid.reducedOpacity : grid.opacity)
         }
     }
 
-    private static func draw(_ context: GraphicsContext, _ size: CGSize) {
-        let hexRadius: CGFloat = 14
+    private static func draw(
+        _ context: GraphicsContext, _ size: CGSize, grid: AinkradHexGridEffectTokens, stroke: Color
+    ) {
+        let hexRadius = CGFloat(grid.radius)
         let hexWidth = sqrt(3) * hexRadius
         let vertSpacing = hexRadius * 1.5
         var row = 0
@@ -81,8 +93,9 @@ private struct HexGridBackgroundModifier: ViewModifier {
             let xOffset = row.isMultiple(of: 2) ? 0 : hexWidth / 2
             var x: CGFloat = xOffset
             while x < size.width + hexWidth {
-                context.stroke(hexPath(center: CGPoint(x: x, y: y), radius: hexRadius),
-                                with: .color(.white), lineWidth: 0.5)
+                context.stroke(
+                    hexPath(center: CGPoint(x: x, y: y), radius: hexRadius),
+                    with: .color(stroke), lineWidth: grid.width)
                 x += hexWidth
             }
             y += vertSpacing
@@ -107,7 +120,7 @@ private struct HexGridBackgroundModifier: ViewModifier {
 /// unaffected by Reduce Motion; only `active` gates it.
 private struct GlowBloomModifier: ViewModifier {
     var active: Bool
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
@@ -117,29 +130,31 @@ private struct GlowBloomModifier: ViewModifier {
     @ViewBuilder
     private var glow: some View {
         if active {
+            let bloom = skin.effects.glowBloom
+            let c = reduceMotion ? skin.color(bloom.reducedOpacityColor) : skin.color(bloom.color)
             RadialGradient(
-                colors: [theme.accentPrimary.opacity(reduceMotion ? 0.16 : 0.20), .clear],
-                center: .center, startRadius: 0, endRadius: 140
+                colors: [c, .clear],
+                center: .center, startRadius: 0, endRadius: bloom.endRadius
             )
         }
     }
 }
 
-public extension View {
+extension View {
     /// Faint moving scanline sweep (Cardinal HUD "scan" texture). Disabled
     /// (falls back to a static faint line pattern) under Reduce Motion, and
     /// fully omitted when `active` is false.
-    func scanlineOverlay(active: Bool = true) -> some View {
+    public func scanlineOverlay(active: Bool = true) -> some View {
         modifier(ScanlineOverlayModifier(active: active))
     }
 
     /// Low-opacity hexagon grid background texture.
-    func hexGridBackground(active: Bool = true) -> some View {
+    public func hexGridBackground(active: Bool = true) -> some View {
         modifier(HexGridBackgroundModifier(active: active))
     }
 
     /// Soft radial accent glow behind the content, using `ainkradTheme.accentPrimary`.
-    func glowBloom(active: Bool = true) -> some View {
+    public func glowBloom(active: Bool = true) -> some View {
         modifier(GlowBloomModifier(active: active))
     }
 }

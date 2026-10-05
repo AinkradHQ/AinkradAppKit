@@ -96,17 +96,23 @@ public struct AinkradANSIParser {
 
     private mutating func apply(parameters: String) {
         // An empty parameter list means `ESC[m`, which is a reset.
-        let codes = parameters.isEmpty
+        let codes =
+            parameters.isEmpty
             ? [0]
             : parameters.split(separator: ";", omittingEmptySubsequences: false).map { Int($0) ?? 0 }
         var index = 0
         while index < codes.count {
             let code = codes[index]
             switch code {
-            case 0: colorSlot = nil; isBold = false; isDim = false
+            case 0:
+                colorSlot = nil
+                isBold = false
+                isDim = false
             case 1: isBold = true
             case 2: isDim = true
-            case 22: isBold = false; isDim = false
+            case 22:
+                isBold = false
+                isDim = false
             case 30...37: colorSlot = code - 30
             case 39: colorSlot = nil
             case 90...97: colorSlot = code - 90 + 8

@@ -1,6 +1,7 @@
-import Testing
 import Foundation
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 
@@ -61,17 +62,21 @@ struct ContractFreezeTests {
     private struct StubHost: HostServices {
         var documents: PluginDocumentStore { StubDocs() }
         var secrets: PluginSecretStore { StubSecrets() }
-        var theme: HostTheme { HostTheme(.init(themeID: "t", background: .black, surface: .black,
-                                               surfaceElevated: .black, accentPrimary: .white,
-                                               accentSecondary: .white, accentTertiary: .white,
-                                               foreground: .white)) }
+        var theme: HostTheme {
+            HostTheme(
+                .init(
+                    themeID: "t", background: .black, surface: .black,
+                    surfaceElevated: .black, accentPrimary: .white,
+                    accentSecondary: .white, accentTertiary: .white,
+                    foreground: .white))
+        }
         var log: PluginLogger { StubLog() }
         var context: PluginContextRegistry { StubContext() }
         var actions: AgentActionProvider { StubActions() }
         var apps: PluginAppLauncher { StubLauncher() }
         var presentation: PluginPresentationControl { StubPresentation() }
         var overlaySize: PluginOverlaySizeControl { FreezeStubOverlaySize() }
-    var mode: PluginModeControl { StubMode() }
+        var mode: PluginModeControl { StubMode() }
         var signals: PluginSignalEmitter { NoopSignalEmitter() }
     }
 
@@ -81,8 +86,9 @@ struct ContractFreezeTests {
     @MainActor
     func teardownIsOptIn() {
         // The generation-7 app does NOT conform — and that must be fine.
-        #expect((FrozenApp.self as Any) as? AinkradAppTeardown.Type == nil,
-                "teardown must not be a requirement of AinkradApp")
+        #expect(
+            (FrozenApp.self as Any) as? AinkradAppTeardown.Type == nil,
+            "teardown must not be a requirement of AinkradApp")
 
         // An app that opts in is found by exactly the cast the host performs.
         #expect((OptsIntoTeardown.self as Any) as? AinkradAppTeardown.Type != nil)
@@ -136,25 +142,30 @@ struct ContractFreezeTests {
         // The bound below still forbids the failure that motivated the policy:
         // generation 8 set the floor EQUAL to `apiVersion` and de-registered
         // every installed plugin the moment it shipped.
-        #expect(AinkradAppKit.minSupportedAPIVersion <= AinkradAppKit.apiVersion - 1,
-                "always advertise at least one release of support")
-        #expect(AinkradAppKit.minSupportedAPIVersion >= AinkradAppKit.apiVersion - 2,
-                "and not so many that every addition must stay optional forever")
+        #expect(
+            AinkradAppKit.minSupportedAPIVersion <= AinkradAppKit.apiVersion - 1,
+            "always advertise at least one release of support")
+        #expect(
+            AinkradAppKit.minSupportedAPIVersion >= AinkradAppKit.apiVersion - 2,
+            "and not so many that every addition must stay optional forever")
 
         // Whatever the window is, the range must be self-consistent: the
         // current generation loads, the future one does not.
-        #expect(AinkradAppKit.isCompatible(
-            bundleAPIVersion: AinkradAppKit.apiVersion,
-            minSupported: AinkradAppKit.minSupportedAPIVersion,
-            current: AinkradAppKit.apiVersion))
-        #expect(!AinkradAppKit.isCompatible(
-            bundleAPIVersion: AinkradAppKit.apiVersion + 1,
-            minSupported: AinkradAppKit.minSupportedAPIVersion,
-            current: AinkradAppKit.apiVersion), "a future generation must not load")
-        #expect(!AinkradAppKit.isCompatible(
-            bundleAPIVersion: AinkradAppKit.minSupportedAPIVersion - 1,
-            minSupported: AinkradAppKit.minSupportedAPIVersion,
-            current: AinkradAppKit.apiVersion), "below the floor must not load")
+        #expect(
+            AinkradAppKit.isCompatible(
+                bundleAPIVersion: AinkradAppKit.apiVersion,
+                minSupported: AinkradAppKit.minSupportedAPIVersion,
+                current: AinkradAppKit.apiVersion))
+        #expect(
+            !AinkradAppKit.isCompatible(
+                bundleAPIVersion: AinkradAppKit.apiVersion + 1,
+                minSupported: AinkradAppKit.minSupportedAPIVersion,
+                current: AinkradAppKit.apiVersion), "a future generation must not load")
+        #expect(
+            !AinkradAppKit.isCompatible(
+                bundleAPIVersion: AinkradAppKit.minSupportedAPIVersion - 1,
+                minSupported: AinkradAppKit.minSupportedAPIVersion,
+                current: AinkradAppKit.apiVersion), "below the floor must not load")
     }
 
     // MARK: - Layering
@@ -163,13 +174,15 @@ struct ContractFreezeTests {
     func themeTokensUnchanged() {
         // Status colors go in their own env-injected struct precisely so this
         // frozen type never grows. Guarded by name so the intent is explicit.
-        let mirror = Mirror(reflecting: HostThemeTokens(
-            themeID: "t", background: .black, surface: .black, surfaceElevated: .black,
-            accentPrimary: .white, accentSecondary: .white, accentTertiary: .white, foreground: .white))
-        #expect(mirror.children.map { $0.label ?? "" }.sorted() == [
-            "accentPrimary", "accentSecondary", "accentTertiary",
-            "background", "foreground", "surface", "surfaceElevated", "themeID",
-        ])
+        let mirror = Mirror(
+            reflecting: HostThemeTokens(
+                themeID: "t", background: .black, surface: .black, surfaceElevated: .black,
+                accentPrimary: .white, accentSecondary: .white, accentTertiary: .white, foreground: .white))
+        #expect(
+            mirror.children.map { $0.label ?? "" }.sorted() == [
+                "accentPrimary", "accentSecondary", "accentTertiary",
+                "background", "foreground", "surface", "surfaceElevated", "themeID",
+            ])
     }
 }
 
@@ -195,8 +208,10 @@ private struct StubLog: PluginLogger {
     func remove(_ token: PluginContextToken) {}
 }
 @MainActor private struct StubActions: AgentActionProvider {
-    func register(actionID: String,
-                  handler: @escaping @MainActor (String) async -> AgentActionResult) -> AgentActionToken {
+    func register(
+        actionID: String,
+        handler: @escaping @MainActor (String) async -> AgentActionResult
+    ) -> AgentActionToken {
         AgentActionToken(id: UUID())
     }
     func remove(_ token: AgentActionToken) {}
@@ -222,4 +237,3 @@ private struct StubLog: PluginLogger {
     func set(_ size: PluginOverlaySize) {}
     func reset() {}
 }
-

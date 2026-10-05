@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Centered chamfer modal, scoped to the host surface it's attached to —
 /// mirrors `.ainkradConfirmDialog`'s scoped-overlay approach (dim + subtle
@@ -36,16 +36,19 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
     var contentWidth: CGFloat?
     @ViewBuilder var modalContent: () -> ModalContent
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
+        let modal = skin.components.modal
+        let scrim = skin.roles.scrim
         content.overlay {
             if isPresented {
                 ZStack {
                     VisualEffectBlur(level: .panel, blendingMode: .withinWindow)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .opacity(0.6)
-                    Color.black.opacity(0.45)
+                        .opacity(scrim.opacity)
+                    skin.color(scrim.color)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture { isPresented = false }
@@ -55,13 +58,14 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
                         .transition(
                             reduceMotion
                                 ? .opacity
-                                : .scale(scale: 0.94, anchor: .center).combined(with: .opacity)
+                                : .scale(scale: modal.transitionScale, anchor: .center).combined(with: .opacity)
                         )
 
                     dismissKey
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(reduceMotion ? nil : AinkradMotion.materialize, value: isPresented)
+                .animation(
+                    reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation), value: isPresented)
             }
         }
     }
@@ -73,10 +77,10 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
         if let contentWidth {
             modalContent()
                 .frame(maxWidth: contentWidth)
-                .padding(AinkradSpacing.lg)
+                .padding(skin.spacing.lg)
         } else {
             modalContent()
-                .padding(AinkradSpacing.lg)
+                .padding(skin.spacing.lg)
                 .frame(maxWidth: AinkradModalMetrics.maxWidth)
         }
     }
@@ -101,20 +105,22 @@ private struct AinkradSheetModifier<SheetContent: View>: ViewModifier {
     var edge: Edge
     @ViewBuilder var sheetContent: () -> SheetContent
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
+        let modal = skin.components.modal
         content.overlay {
             if isPresented {
                 ZStack(alignment: alignment) {
-                    Color.black.opacity(0.45)
+                    skin.color(skin.roles.scrim.color)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                         .onTapGesture { isPresented = false }
 
                     sheetContent()
-                        .padding(AinkradSpacing.lg)
-                        .frame(maxWidth: isHorizontalEdge ? .infinity : 360)
+                        .padding(skin.spacing.lg)
+                        .frame(maxWidth: isHorizontalEdge ? .infinity : modal.edgeSheetWidth)
                         .ainkradPanel(showsBrackets: true)
                         .transition(
                             reduceMotion
@@ -129,7 +135,8 @@ private struct AinkradSheetModifier<SheetContent: View>: ViewModifier {
                         .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .animation(reduceMotion ? nil : AinkradMotion.materialize, value: isPresented)
+                .animation(
+                    reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation), value: isPresented)
             }
         }
     }
@@ -148,7 +155,7 @@ private struct AinkradSheetModifier<SheetContent: View>: ViewModifier {
     }
 }
 
-public extension View {
+extension View {
     /// Presents a centered chamfer modal scoped to THIS view's own bounds,
     /// mirroring `.ainkradConfirmDialog`'s dim+blur scrim. Content is
     /// arbitrary — supply your own layout/buttons. Tapping the scrim or Esc
@@ -161,12 +168,14 @@ public extension View {
     /// `AinkradModalMetrics.contentWidth` (448), not 480. Size content against
     /// that constant, or use the `contentWidth:` overload below, where the
     /// width you pass is the width your content gets.
-    func ainkradModal<ModalContent: View>(
+    public func ainkradModal<ModalContent: View>(
         isPresented: Binding<Bool>,
         @ViewBuilder content: @escaping () -> ModalContent
     ) -> some View {
-        modifier(AinkradModalModifier(isPresented: isPresented, contentWidth: nil,
-                                      modalContent: content))
+        modifier(
+            AinkradModalModifier(
+                isPresented: isPresented, contentWidth: nil,
+                modalContent: content))
     }
 
     /// Presents a centered chamfer modal whose CONTENT is capped at
@@ -182,19 +191,21 @@ public extension View {
     /// the old arithmetic, and reordering it would move all of them 32pt wider
     /// at once. `contentWidth` is non-defaulted, so this is also a distinct
     /// mangled symbol and no shipped binary's call is affected.
-    func ainkradModal<ModalContent: View>(
+    public func ainkradModal<ModalContent: View>(
         isPresented: Binding<Bool>,
         contentWidth: CGFloat,
         @ViewBuilder content: @escaping () -> ModalContent
     ) -> some View {
-        modifier(AinkradModalModifier(isPresented: isPresented, contentWidth: contentWidth,
-                                      modalContent: content))
+        modifier(
+            AinkradModalModifier(
+                isPresented: isPresented, contentWidth: contentWidth,
+                modalContent: content))
     }
 
     /// Presents a chamfer sheet sliding in from `edge`, scoped to THIS view's
     /// own bounds. Dim behind, slide/materialize gated on
     /// `ainkradReduceMotion`, dismiss on scrim tap or Esc.
-    func ainkradSheet<SheetContent: View>(
+    public func ainkradSheet<SheetContent: View>(
         isPresented: Binding<Bool>,
         edge: Edge = .bottom,
         @ViewBuilder content: @escaping () -> SheetContent

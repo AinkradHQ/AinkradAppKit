@@ -1,12 +1,20 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
-/// Draws the four L-shaped corner brackets used by `View.cornerBrackets(_:_:)`.
-/// A `Shape`, not a `View`, so it can be stroked/shadowed like any path.
-private struct CornerBracketsShape: Shape {
-    var length: CGFloat
+/// The targeting-bracket shape — four L-shaped corner brackets, the Cardinal
+/// HUD "targeting frame" motif drawn by the host Launcher and others. A `Shape`,
+/// not a `View`, so call sites can stroke, shadow and inset it like any path.
+/// Carries no tokens: call sites stroke it with color and shape tokens (see
+/// `View.cornerBrackets(_:_:)`).
+public struct AinkradCornerBrackets: Shape {
+    /// Length of each bracket arm.
+    public var length: CGFloat
 
-    func path(in rect: CGRect) -> Path {
+    public init(length: CGFloat = 8) {
+        self.length = length
+    }
+
+    public func path(in rect: CGRect) -> Path {
         let l = max(0, min(length, min(rect.width, rect.height) / 2))
         var path = Path()
 
@@ -37,24 +45,25 @@ private struct CornerBracketsShape: Shape {
 private struct CornerBracketsModifier: ViewModifier {
     var length: CGFloat
     var inset: CGFloat
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
 
     func body(content: Content) -> some View {
+        let b = skin.effects.brackets
         content.overlay(
-            CornerBracketsShape(length: length)
-                .stroke(theme.accentSecondary, lineWidth: 1.25)
-                .shadow(color: theme.accentSecondary.opacity(0.55), radius: 2.5)
+            AinkradCornerBrackets(length: length)
+                .stroke(skin.color(b.stroke), lineWidth: b.width)
+                .shadow(color: skin.color(b.glow), radius: b.glowRadius)
                 .padding(inset)
                 .allowsHitTesting(false)
         )
     }
 }
 
-public extension View {
+extension View {
     /// Overlays luminous L-shaped accent brackets at the view's four corners —
     /// the Cardinal HUD "targeting frame" motif. Reads `accentSecondary` from
     /// the host theme. `inset` pulls the brackets in from the view's edge.
-    func cornerBrackets(length: CGFloat = 12, inset: CGFloat = 0) -> some View {
+    public func cornerBrackets(length: CGFloat = 12, inset: CGFloat = 0) -> some View {
         modifier(CornerBracketsModifier(length: length, inset: inset))
     }
 }
@@ -65,7 +74,7 @@ public extension View {
 public struct AccentRule: View {
     public var label: String?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typography
 
     public init(label: String? = nil) {
@@ -73,17 +82,19 @@ public struct AccentRule: View {
     }
 
     public var body: some View {
+        let rule = skin.effects.accentRule
+        let tick = skin.roles.accentTick
         HStack(spacing: AinkradSpacing.xs) {
             Rectangle()
-                .fill(theme.accentSecondary)
-                .frame(width: 18, height: 2)
-                .shadow(color: theme.accentSecondary.opacity(0.6), radius: 2)
+                .fill(skin.color(tick.fill))
+                .frame(width: rule.width, height: rule.height)
+                .shadow(color: skin.color(tick.glow.color.rest), radius: tick.glow.radius.rest)
 
             if let label {
                 Text(label.uppercased())
                     .font(AinkradFontResolver.font(.caption, typography: typography))
-                    .tracking(1.5)
-                    .foregroundStyle(theme.foreground.opacity(0.7))
+                    .tracking(rule.labelFont.tracking ?? 0)
+                    .foregroundStyle(skin.color(rule.labelColor))
             }
         }
         .fixedSize()

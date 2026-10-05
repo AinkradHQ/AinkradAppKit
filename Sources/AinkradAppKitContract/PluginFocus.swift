@@ -25,10 +25,10 @@ import SwiftUI
 /// because focus is *per-view*, not per-app: one app can have several panes,
 /// and each needs its own answer. `HostServices` is scoped to the app, so it is
 /// structurally the wrong place.
-public extension EnvironmentValues {
+extension EnvironmentValues {
     /// True when this pane is the focused one in its workspace. Defaults to
     /// `true` so a plugin rendered outside a host pane (previews, tests, a
     /// generation-7 host that never sets it) behaves as if it has focus rather
     /// than appearing inert.
-    @Entry var ainkradPaneIsFocused: Bool = true
+    @Entry public var ainkradPaneIsFocused: Bool = true
 }

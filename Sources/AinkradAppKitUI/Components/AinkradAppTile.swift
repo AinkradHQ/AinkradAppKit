@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Chamfer app icon tile with hover/selected glow — the kit's portable
 /// version of the host's NeonAppTile, for use by plugins that need an
@@ -10,7 +10,7 @@ public struct AinkradAppTile: View {
     private let size: CGFloat
     private let isSelected: Bool
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
@@ -22,31 +22,40 @@ public struct AinkradAppTile: View {
         self.isSelected = isSelected
     }
 
-    private var borderColor: Color { isSelected ? theme.accentPrimary : theme.accentSecondary }
-    private var borderOpacity: Double { isSelected ? 0.9 : (hovering ? 0.65 : 0.3) }
-    private var glowOpacity: Double { isSelected ? 0.5 : (hovering ? 0.4 : 0) }
+    private var glyphSize: CGFloat { size * skin.components.appTile.glyphRatio }
 
     public var body: some View {
-        VStack(spacing: AinkradSpacing.xs) {
+        let tile = skin.components.appTile
+        let shape = AinkradSkinShape(token: tile.shape)
+        VStack(spacing: skin.spacing.xs) {
             Image(systemName: symbol)
-                .font(.system(size: size * 0.42, weight: .medium))
-                .foregroundStyle(theme.foreground)
-                .frame(width: size, height: size)
-                .background(ChamferShape(cut: size * 0.22).fill(theme.surfaceElevated.opacity(0.85)))
-                .overlay(
-                    ChamferShape(cut: size * 0.22)
-                        .strokeBorder(borderColor.opacity(borderOpacity), lineWidth: isSelected ? 1.5 : 1)
+                .font(
+                    .system(size: glyphSize, weight: .medium)  // design-lint: allow font-size caller-sized glyph
                 )
-                .shadow(color: theme.accentPrimary.opacity(glowOpacity), radius: hovering || isSelected ? 8 : 0)
-                .scaleEffect(hovering && !reduceMotion ? 1.05 : 1.0)
+                .foregroundStyle(skin.color(skin.text.primary))
+                .frame(width: size, height: size)
+                .background(shape.fill(skin.color(tile.fill)))
+                .overlay(
+                    shape.strokeBorder(
+                        skin.color(tile.stroke.color, state: state), lineWidth: tile.stroke.width.resolve(state))
+                )
+                .shadow(color: skin.color(tile.glow.color, state: state), radius: tile.glow.radius.resolve(state))
+                .scaleEffect(hovering && !reduceMotion ? tile.hoverScale : 1.0)
             if let title {
                 Text(title)
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.75))
+                    .font(skin.font(tile.titleFont, typography: typo))
+                    .foregroundStyle(skin.color(tile.titleColor))
                     .lineLimit(1)
             }
         }
-        .animation(reduceMotion ? nil : AinkradMotion.hover, value: hovering)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: hovering)
         .onHover { hovering = $0 }
+    }
+
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if isSelected { state.insert(.selected) }
+        if hovering { state.insert(.hover) }
+        return state
     }
 }

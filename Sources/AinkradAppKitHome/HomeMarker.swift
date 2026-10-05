@@ -10,9 +10,11 @@ public struct HomeMarker: Codable, Sendable {
     public let schemaVersion: Int
     public let createdAt: Date
 
-    public init(homeID: String = UUID().uuidString,
-                schemaVersion: Int = HomeMarker.currentSchemaVersion,
-                createdAt: Date = Date()) {
+    public init(
+        homeID: String = UUID().uuidString,
+        schemaVersion: Int = HomeMarker.currentSchemaVersion,
+        createdAt: Date = Date()
+    ) {
         self.homeID = homeID
         self.schemaVersion = schemaVersion
         self.createdAt = createdAt

@@ -113,12 +113,15 @@ public struct SignalSubscription: Sendable, Equatable, Hashable {
     /// as a `.host` warning at install, so a silent typo does not become a
     /// subscription that simply never fires.
     public static func parse(_ patterns: [String], excluding ownAppID: String? = nil)
-    -> [SignalSubscription] {
+        -> [SignalSubscription]
+    {
         parseReportingInvalid(patterns, excluding: ownAppID).subscriptions
     }
 
-    public static func parseReportingInvalid(_ patterns: [String],
-                                            excluding ownAppID: String?) -> ParseResult {
+    public static func parseReportingInvalid(
+        _ patterns: [String],
+        excluding ownAppID: String?
+    ) -> ParseResult {
         var subscriptions: [SignalSubscription] = []
         var invalid: [String] = []
         for pattern in patterns {
@@ -132,7 +135,8 @@ public struct SignalSubscription: Sendable, Equatable, Hashable {
     }
 
     private static func parseOne(_ pattern: String, excluding ownAppID: String?)
-    -> SignalSubscription? {
+        -> SignalSubscription?
+    {
         // Split on the FIRST slash only: an app id cannot contain one (see
         // PluginValidation.isValidAppID) but a kind pattern is checked below,
         // and splitting on every slash would silently accept "a/b/c".
@@ -145,7 +149,7 @@ public struct SignalSubscription: Sendable, Equatable, Hashable {
         switch sourceText {
         case "host": source = .host
         case "sage": source = .sage
-        case "*": return nil     // a blank cheque; see the type's documentation
+        case "*": return nil  // a blank cheque; see the type's documentation
         default:
             guard sourceText.hasPrefix("app:") else { return nil }
             let appID = String(sourceText.dropFirst("app:".count))

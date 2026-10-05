@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Confirm/cancel dialog card — a chamfer panel with a title, message, and
 /// Cancel/confirm `AinkradButton` actions (destructive requests render the
@@ -14,19 +14,20 @@ struct AinkradConfirmDialogCard: View {
     let onCancel: () -> Void
     let onConfirm: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.md) {
+        let dialog = skin.components.confirmDialog
+        VStack(alignment: .leading, spacing: skin.spacing.md) {
             Text(title.uppercased())
-                .font(AinkradFontResolver.font(.headline, weight: .semibold, typography: typo))
-                .tracking(0.6)
-                .foregroundStyle(theme.foreground)
+                .font(skin.font(dialog.titleFont, typography: typo))
+                .tracking(dialog.titleFont.tracking ?? 0)
+                .foregroundStyle(skin.color(skin.text.primary))
             Text(message)
-                .font(AinkradFontResolver.font(.body, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(0.75))
-            HStack(spacing: AinkradSpacing.sm) {
+                .font(skin.font(dialog.messageFont, typography: typo))
+                .foregroundStyle(skin.color(dialog.messageColor))
+            HStack(spacing: skin.spacing.sm) {
                 Spacer(minLength: 0)
                 AinkradButton(title: "Cancel", style: .ghost, action: onCancel)
                 AinkradButton(title: confirmTitle, style: isDestructive ? .danger : .primary) {
@@ -35,8 +36,8 @@ struct AinkradConfirmDialogCard: View {
                 }
             }
         }
-        .padding(AinkradSpacing.lg)
-        .frame(maxWidth: 360)
+        .padding(skin.spacing.lg)
+        .frame(maxWidth: dialog.maxWidth)
         .ainkradPanel(showsBrackets: true)
     }
 }
@@ -49,9 +50,12 @@ private struct AinkradConfirmDialogModifier: ViewModifier {
     let isDestructive: Bool
     let onConfirm: () -> Void
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
+        let dialog = skin.components.confirmDialog
+        let scrim = skin.roles.scrim
         content
             .overlay {
                 if isPresented {
@@ -64,8 +68,8 @@ private struct AinkradConfirmDialogModifier: ViewModifier {
                         // so it reads as depth, not a heavy frosted cover.
                         VisualEffectBlur(level: .panel, blendingMode: .withinWindow)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .opacity(0.6)
-                        Color.black.opacity(0.45)
+                            .opacity(scrim.opacity)
+                        skin.color(scrim.color)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .contentShape(Rectangle())
                             .onTapGesture { isPresented = false }
@@ -81,17 +85,18 @@ private struct AinkradConfirmDialogModifier: ViewModifier {
                         .transition(
                             reduceMotion
                                 ? .opacity
-                                : .scale(scale: 0.94, anchor: .center).combined(with: .opacity)
+                                : .scale(scale: dialog.transitionScale, anchor: .center).combined(with: .opacity)
                         )
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .animation(reduceMotion ? nil : AinkradMotion.materialize, value: isPresented)
+                    .animation(
+                        reduceMotion ? nil : skin.animation(skin.motion.materializeAnimation), value: isPresented)
                 }
             }
     }
 }
 
-public extension View {
+extension View {
     /// Presents a confirm/cancel dialog scoped to THIS view's own bounds — a
     /// dim scrim (`Color.black.opacity(0.45)`) plus a subtle panel-level
     /// blur filling the modified view's container, with the chamfer dialog
@@ -104,7 +109,7 @@ public extension View {
     ///
     /// Tapping the scrim or Cancel dismisses; Confirm runs `onConfirm` then
     /// dismisses. `isDestructive` renders the confirm action in `.danger`.
-    func ainkradConfirmDialog(
+    public func ainkradConfirmDialog(
         isPresented: Binding<Bool>,
         title: String,
         message: String,
@@ -112,13 +117,14 @@ public extension View {
         isDestructive: Bool = false,
         onConfirm: @escaping () -> Void
     ) -> some View {
-        modifier(AinkradConfirmDialogModifier(
-            isPresented: isPresented,
-            title: title,
-            message: message,
-            confirmTitle: confirmTitle,
-            isDestructive: isDestructive,
-            onConfirm: onConfirm
-        ))
+        modifier(
+            AinkradConfirmDialogModifier(
+                isPresented: isPresented,
+                title: title,
+                message: message,
+                confirmTitle: confirmTitle,
+                isDestructive: isDestructive,
+                onConfirm: onConfirm
+            ))
     }
 }

@@ -14,7 +14,7 @@ public enum SharedDomain: String, CaseIterable, Sendable {
 
     var relativePath: String {
         switch self {
-        case .config:   return "Config"
+        case .config: return "Config"
         // `Sage/`, not `Sage/agents/`: the published layout puts `agents.json`
         // and `connections.json` as FILES directly under it, alongside the
         // `memory/`, `skills/`, `commands/` and `sessions/` subdirectories.
@@ -24,13 +24,13 @@ public enum SharedDomain: String, CaseIterable, Sendable {
         // Named `Assistant/` until v0.16.2, when the app became Sage.
         // `HomeLayoutMigration` moves an existing tree; all five domains nest
         // under the one directory, so one move carries every one of them.
-        case .agents:   return "Sage"
-        case .memory:   return "Sage/memory"
-        case .skills:   return "Sage/skills"
+        case .agents: return "Sage"
+        case .memory: return "Sage/memory"
+        case .skills: return "Sage/skills"
         case .commands: return "Sage/commands"
         case .sessions: return "Sage/sessions"
-        case .media:    return "Media"
-        case .sounds:   return "Sounds"
+        case .media: return "Media"
+        case .sounds: return "Sounds"
         }
     }
 }

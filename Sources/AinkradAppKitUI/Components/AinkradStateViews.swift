@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// Centered empty-state placeholder: icon, title, message, and an optional
 /// call-to-action button. Consolidates the various "nothing here yet" views.
@@ -9,37 +9,43 @@ public struct AinkradEmptyState: View {
     private let message: String
     private let actionTitle: String?
     private let action: (() -> Void)?
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
-    public init(icon: String, title: String, message: String,
-                actionTitle: String? = nil, action: (() -> Void)? = nil) {
-        self.icon = icon; self.title = title; self.message = message
-        self.actionTitle = actionTitle; self.action = action
+    public init(
+        icon: String, title: String, message: String,
+        actionTitle: String? = nil, action: (() -> Void)? = nil
+    ) {
+        self.icon = icon
+        self.title = title
+        self.message = message
+        self.actionTitle = actionTitle
+        self.action = action
     }
     /// Whether a call-to-action button is present.
     public var hasAction: Bool { action != nil && actionTitle != nil }
 
     public var body: some View {
-        VStack(spacing: AinkradSpacing.md) {
+        let empty = skin.components.emptyState
+        VStack(spacing: skin.spacing.md) {
             Image(systemName: icon)
-                .font(.system(size: AinkradTypeRole.display.size))
-                .foregroundStyle(theme.foreground.opacity(0.35))
-            VStack(spacing: AinkradSpacing.xs) {
+                .font(skin.font(empty.glyphFont, typography: typo))
+                .foregroundStyle(skin.color(empty.glyphColor))
+            VStack(spacing: skin.spacing.xs) {
                 Text(title)
-                    .font(AinkradFontResolver.font(.headline, weight: .medium, typography: typo))
-                    .foregroundStyle(theme.foreground)
+                    .font(skin.font(empty.titleFont, typography: typo))
+                    .foregroundStyle(skin.color(skin.text.primary))
                 Text(message)
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.6))
+                    .font(skin.font(empty.messageFont, typography: typo))
+                    .foregroundStyle(skin.color(empty.messageColor))
                     .multilineTextAlignment(.center)
             }
             if hasAction, let actionTitle, let action {
                 AinkradButton(title: actionTitle, style: .primary, action: action)
-                    .padding(.top, AinkradSpacing.xs)
+                    .padding(.top, skin.spacing.xs)
             }
         }
-        .padding(AinkradSpacing.xl)
+        .padding(skin.spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -48,21 +54,22 @@ public struct AinkradEmptyState: View {
 /// accent tint.
 public struct AinkradLoadingState: View {
     private let label: String?
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(label: String? = nil) { self.label = label }
 
     public var body: some View {
-        VStack(spacing: AinkradSpacing.sm) {
-            AinkradSpinner(size: 28)
+        let loading = skin.components.loadingState
+        VStack(spacing: skin.spacing.sm) {
+            AinkradSpinner(size: loading.spinnerSize)
             if let label {
                 Text(label)
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.6))
+                    .font(skin.font(loading.captionFont, typography: typo))
+                    .foregroundStyle(skin.color(loading.captionColor))
             }
         }
-        .padding(AinkradSpacing.xl)
+        .padding(skin.spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -72,33 +79,38 @@ public struct AinkradErrorState: View {
     private let message: String
     private let retryTitle: String?
     private let retry: (() -> Void)?
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
-    @Environment(\.ainkradStatusColors) private var statusColors
 
     public init(message: String, retryTitle: String? = nil, retry: (() -> Void)? = nil) {
-        self.message = message; self.retryTitle = retryTitle; self.retry = retry
+        self.message = message
+        self.retryTitle = retryTitle
+        self.retry = retry
     }
     /// Whether a retry action is present.
     public var hasRetry: Bool { retry != nil && retryTitle != nil }
 
     public var body: some View {
-        VStack(spacing: AinkradSpacing.md) {
+        let error = skin.components.errorState
+        let shape = AinkradSkinShape(token: error.shape)
+        VStack(spacing: skin.spacing.md) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: AinkradTypeRole.title.size))
-                .foregroundStyle(statusColors.danger)
-                .padding(AinkradSpacing.md)
-                .background(ChamferShape(cut: 8).fill(statusColors.danger.opacity(0.12)))
-                .overlay(ChamferShape(cut: 8).strokeBorder(statusColors.danger.opacity(0.45), lineWidth: 1.25))
+                .font(skin.font(error.glyphFont, typography: typo))
+                .foregroundStyle(skin.color(error.glyphColor))
+                .padding(skin.spacing.md)
+                .background(shape.fill(skin.color(error.fill)))
+                .overlay(
+                    shape.strokeBorder(
+                        skin.color(error.stroke.color), lineWidth: error.stroke.width.resolve([])))
             Text(message)
-                .font(AinkradFontResolver.font(.body, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(0.75))
+                .font(skin.font(error.messageFont, typography: typo))
+                .foregroundStyle(skin.color(error.messageColor))
                 .multilineTextAlignment(.center)
             if hasRetry, let retryTitle, let retry {
                 AinkradButton(title: retryTitle, style: .secondary, icon: "arrow.clockwise", action: retry)
             }
         }
-        .padding(AinkradSpacing.xl)
+        .padding(skin.spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -108,32 +120,36 @@ public struct AinkradErrorState: View {
 public struct AinkradSectionHeader: View {
     private let title: String
     private let subtitle: String?
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(title: String, subtitle: String? = nil) {
-        self.title = title; self.subtitle = subtitle
+        self.title = title
+        self.subtitle = subtitle
     }
     public var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
-            HStack(spacing: AinkradSpacing.xs) {
+        let header = skin.components.sectionHeader
+        VStack(alignment: .leading, spacing: skin.spacing.xs / 2) {
+            HStack(spacing: skin.spacing.xs) {
                 Rectangle()
-                    .fill(theme.accentSecondary)
-                    .frame(width: 12, height: 2)
-                    .shadow(color: theme.accentSecondary.opacity(0.6), radius: 2)
+                    .fill(skin.color(skin.roles.accentTick.fill))
+                    .frame(width: header.tickWidth, height: header.tickHeight)
+                    .shadow(
+                        color: skin.color(skin.roles.accentTick.glow.color),
+                        radius: skin.roles.accentTick.glow.radius.resolve([]))
                 Text(title.uppercased())
-                    .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.65))
-                    .tracking(1.2)
+                    .font(skin.font(header.titleFont, typography: typo))
+                    .foregroundStyle(skin.color(header.titleColor))
+                    .tracking(header.titleFont.tracking ?? 0)
             }
             if let subtitle {
                 Text(subtitle)
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.4))
-                    .padding(.leading, 12 + AinkradSpacing.xs)
+                    .font(skin.font(header.subtitleFont, typography: typo))
+                    .foregroundStyle(skin.color(header.subtitleColor))
+                    .padding(.leading, header.tickWidth + skin.spacing.xs)
             }
         }
-        .padding(.horizontal, AinkradSpacing.sm)
-        .padding(.top, AinkradSpacing.sm)
+        .padding(.horizontal, skin.spacing.sm)
+        .padding(.top, skin.spacing.sm)
     }
 }

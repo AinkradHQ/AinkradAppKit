@@ -1,16 +1,20 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("Signal normalization")
 struct SignalNormalizationTests {
-    private func event(kind: String = "run.finished",
-                       title: String = "t",
-                       body: String? = nil,
-                       actions: [SignalAction] = [],
-                       source: SignalSource = .host) -> SignalEvent {
-        SignalEvent(source: source, kind: kind, severity: .info,
-                    title: title, body: body, actions: actions)
+    private func event(
+        kind: String = "run.finished",
+        title: String = "t",
+        body: String? = nil,
+        actions: [SignalAction] = [],
+        source: SignalSource = .host
+    ) -> SignalEvent {
+        SignalEvent(
+            source: source, kind: kind, severity: .info,
+            title: title, body: body, actions: actions)
     }
 
     @Test("accepts lowercase dotted kinds, rejects everything else")
@@ -18,12 +22,12 @@ struct SignalNormalizationTests {
         #expect(SignalKind.isValid("run.finished"))
         #expect(SignalKind.isValid("index.completed.v2"))
         #expect(SignalKind.isValid("a"))
-        #expect(!SignalKind.isValid("Run.Finished"))   // uppercase
-        #expect(!SignalKind.isValid("run finished"))   // space
+        #expect(!SignalKind.isValid("Run.Finished"))  // uppercase
+        #expect(!SignalKind.isValid("run finished"))  // space
         #expect(SignalKind.isValid("session.needs-input"))
         #expect(SignalKind.isValid("session.needs_input"))
         #expect(!SignalKind.isValid("session.needsInput"), "camelCase is still out")
-        #expect(!SignalKind.isValid("run/finished"))   // slash
+        #expect(!SignalKind.isValid("run/finished"))  // slash
         #expect(!SignalKind.isValid(""))
         #expect(!SignalKind.isValid(String(repeating: "a", count: 65)))
     }
@@ -36,7 +40,7 @@ struct SignalNormalizationTests {
         #expect(normalized.title.count == SignalLimits.maxTitle)
         #expect(normalized.body?.count == SignalLimits.maxBody)
         #expect(normalized.actions.count == SignalLimits.maxActions)
-        #expect(normalized.actions.first?.id == "0")   // keeps the FIRST three
+        #expect(normalized.actions.first?.id == "0")  // keeps the FIRST three
     }
 
     @Test("overwrites the source with the stamped identity")

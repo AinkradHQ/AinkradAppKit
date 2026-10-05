@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// Computes the live `AinkradMotionBudget` and injects it into the environment.
 /// Apply ONCE at the app's root — every nested surface inherits it.
@@ -21,39 +21,53 @@ private struct MotionBudgetSourceModifier: ViewModifier {
     @State private var isLowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
 
     private var budget: AinkradMotionBudget {
-        AinkradMotionBudget(isAppActive: isAppActive, isWindowVisible: isWindowVisible,
-                            isLowPower: isLowPower, reduceMotion: reduceMotion)
+        AinkradMotionBudget(
+            isAppActive: isAppActive, isWindowVisible: isWindowVisible,
+            isLowPower: isLowPower, reduceMotion: reduceMotion)
     }
 
     func body(content: Content) -> some View {
         content
             .environment(\.ainkradMotionBudget, budget)
-            .onReceive(NotificationCenter.default.publisher(
-                for: NSApplication.didBecomeActiveNotification)) { _ in isAppActive = true }
-            .onReceive(NotificationCenter.default.publisher(
-                for: NSApplication.didResignActiveNotification)) { _ in isAppActive = false }
-            .onReceive(NotificationCenter.default.publisher(
-                for: NSWindow.didChangeOcclusionStateNotification)) { _ in
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: NSApplication.didBecomeActiveNotification)
+            ) { _ in isAppActive = true }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: NSApplication.didResignActiveNotification)
+            ) { _ in isAppActive = false }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: NSWindow.didChangeOcclusionStateNotification)
+            ) { _ in
                 refreshVisibility()
             }
-            .onReceive(NotificationCenter.default.publisher(
-                for: NSWindow.didMiniaturizeNotification)) { _ in refreshVisibility() }
-            .onReceive(NotificationCenter.default.publisher(
-                for: NSWindow.didDeminiaturizeNotification)) { _ in refreshVisibility() }
-            .onReceive(NotificationCenter.default.publisher(
-                for: Notification.Name.NSProcessInfoPowerStateDidChange)) { _ in
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: NSWindow.didMiniaturizeNotification)
+            ) { _ in refreshVisibility() }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: NSWindow.didDeminiaturizeNotification)
+            ) { _ in refreshVisibility() }
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: Notification.Name.NSProcessInfoPowerStateDidChange)
+            ) { _ in
                 isLowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
             }
     }
 
     private func refreshVisibility() {
-        isWindowVisible = NSApp?.windows.contains {
-            $0.isVisible && $0.occlusionState.contains(.visible)
-        } ?? true
+        isWindowVisible =
+            NSApp?.windows.contains {
+                $0.isVisible && $0.occlusionState.contains(.visible)
+            } ?? true
     }
 }
 
-public extension View {
+extension View {
     /// Installs the live motion-budget source. Apply once, at the app root.
     ///
     /// ORDERING MATTERS. This reads `\.ainkradReduceMotion` from the environment,
@@ -66,7 +80,7 @@ public extension View {
     /// Applied in the other order it will silently see `reduceMotion == false`
     /// for the process lifetime — the budget still works, it just never honours
     /// Reduce Motion, and nothing reports the mistake.
-    func ainkradMotionBudgetSource() -> some View {
+    public func ainkradMotionBudgetSource() -> some View {
         modifier(MotionBudgetSourceModifier())
     }
 }

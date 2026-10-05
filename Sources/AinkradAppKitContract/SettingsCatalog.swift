@@ -6,9 +6,9 @@ public enum SettingsPageGroup: String, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .workspace:     return "WORKSPACE"
-        case .intelligence:  return "INTELLIGENCE"
-        case .builtInApps:   return "BUILT-IN APPS"
+        case .workspace: return "WORKSPACE"
+        case .intelligence: return "INTELLIGENCE"
+        case .builtInApps: return "BUILT-IN APPS"
         case .installedApps: return "INSTALLED"
         }
     }
@@ -200,9 +200,10 @@ public struct SettingsCatalog {
     /// The page containing `path`, whether `path` names a page, group, or field.
     public func page(containing path: SettingsPath) -> SettingsPage? {
         pages.first { page in
-            page.path == path || page.groups.contains {
-                $0.path == path || $0.fields.contains { $0.path == path }
-            }
+            page.path == path
+                || page.groups.contains {
+                    $0.path == path || $0.fields.contains { $0.path == path }
+                }
         }
     }
 

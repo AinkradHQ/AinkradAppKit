@@ -13,7 +13,7 @@ public struct AinkradDisclosureGroup<Content: View>: View {
     public let hitCount: Int
     private let content: Content
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var isHovered = false
@@ -35,42 +35,52 @@ public struct AinkradDisclosureGroup<Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
+        let group = skin.components.disclosureGroup
+        let shape = AinkradSkinShape(token: group.headerShape)
+        VStack(alignment: .leading, spacing: skin.spacing.sm) {
             Button {
                 isExpanded.wrappedValue.toggle()
             } label: {
-                HStack(spacing: AinkradSpacing.xs) {
+                HStack(spacing: skin.spacing.xs) {
                     Image(systemName: Self.chevron(isExpanded: isExpanded.wrappedValue))
                         // SF Symbol glyph sizing.
-                        .font(.system(size: 10))
-                        .foregroundStyle(theme.foreground.opacity(0.5))
+                        .font(skin.font(group.chevronFont, typography: typo))
+                        .foregroundStyle(skin.color(group.chevronColor))
                     Text(title.uppercased())
-                        .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.7))
-                        .tracking(1.2)
+                        .font(skin.font(group.titleFont, typography: typo))
+                        .foregroundStyle(skin.color(group.titleColor))
+                        .tracking(group.titleFont.tracking ?? 0)
                     if hitCount > 0 {
-                        AinkradBadge(text: "\(hitCount)", tint: theme.accentSecondary)
+                        AinkradBadge(text: "\(hitCount)", tint: skin.color(skin.palette.accentSecondary))
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(.vertical, AinkradSpacing.xs)
-                .padding(.horizontal, AinkradSpacing.sm)
+                .padding(.vertical, skin.spacing.xs)
+                .padding(.horizontal, skin.spacing.sm)
                 .background(
-                    ChamferShape(cut: AinkradRadius.sm)
-                        .fill(theme.surfaceElevated.opacity(isHovered ? 0.5 : 0)))
+                    shape
+                        .fill(skin.color(group.headerFill, state: state))
+                )
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .onHover { isHovered = $0 }
-            .animation(reduceMotion ? nil : .easeOut(duration: AinkradMotion.durationFast), value: isHovered)
+            .animation(reduceMotion ? nil : skin.animation(group.hoverAnimation), value: isHovered)
 
             if isExpanded.wrappedValue {
                 content
-                    .padding(.leading, AinkradSpacing.sm)
+                    .padding(.leading, skin.spacing.sm)
                     .transition(reduceMotion ? .identity : .opacity)
             }
         }
-        .animation(reduceMotion ? nil : .easeOut(duration: AinkradMotion.durationBase),
-                   value: isExpanded.wrappedValue)
+        .animation(
+            reduceMotion ? nil : skin.animation(group.expandAnimation),
+            value: isExpanded.wrappedValue)
+    }
+
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if isHovered { state.insert(.hover) }
+        return state
     }
 }

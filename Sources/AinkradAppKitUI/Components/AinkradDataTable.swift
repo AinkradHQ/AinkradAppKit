@@ -1,6 +1,6 @@
-import SwiftUI
-import AppKit
 import AinkradAppKitContract
+import AppKit
+import SwiftUI
 
 /// A single column of an `AinkradDataTable`: text cells, or — through
 /// `accessory(id:title:alignment:content:)` — views such as a per-row button,
@@ -25,8 +25,10 @@ public struct AinkradTableColumn<Row: Identifiable> {
         self.accessory = nil
     }
 
-    private init(id: String, title: String, alignment: HorizontalAlignment,
-                 accessory: @escaping @MainActor (Row) -> AnyView) {
+    private init(
+        id: String, title: String, alignment: HorizontalAlignment,
+        accessory: @escaping @MainActor (Row) -> AnyView
+    ) {
         self.id = id
         self.title = title
         self.alignment = alignment
@@ -46,8 +48,9 @@ public struct AinkradTableColumn<Row: Identifiable> {
         alignment: HorizontalAlignment = .trailing,
         @ViewBuilder content: @escaping @MainActor (Row) -> Content
     ) -> AinkradTableColumn<Row> {
-        AinkradTableColumn(id: id, title: title, alignment: alignment,
-                           accessory: { @MainActor row in AnyView(content(row)) })
+        AinkradTableColumn(
+            id: id, title: title, alignment: alignment,
+            accessory: { @MainActor row in AnyView(content(row)) })
     }
 }
 
@@ -110,7 +113,8 @@ func nextSelection<ID: Hashable>(
         return (current.symmetricDifference([clicked]), clicked)
     case .extend:
         guard let anchor, let from = orderedIDs.firstIndex(of: anchor),
-              let to = orderedIDs.firstIndex(of: clicked) else { return ([clicked], clicked) }
+            let to = orderedIDs.firstIndex(of: clicked)
+        else { return ([clicked], clicked) }
         return (Set(orderedIDs[min(from, to)...max(from, to)]), anchor)
     }
 }
@@ -125,7 +129,7 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     private let sort: Binding<AinkradTableSort?>?
     private let selection: Binding<Set<Row.ID>>?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hoveredRowID: Row.ID?
@@ -147,8 +151,10 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     /// A second initializer, not a defaulted parameter on the first: adding a
     /// parameter changes the initializer's mangled name, and a plugin built
     /// against the old one would then fail to load.
-    public init(rows: [Row], columns: [AinkradTableColumn<Row>], sort: Binding<AinkradTableSort?>? = nil,
-                selection: Binding<Set<Row.ID>>) {
+    public init(
+        rows: [Row], columns: [AinkradTableColumn<Row>], sort: Binding<AinkradTableSort?>? = nil,
+        selection: Binding<Set<Row.ID>>
+    ) {
         self.rows = rows
         self.columns = columns
         self.sort = sort
@@ -161,47 +167,49 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.xs) {
+        VStack(alignment: .leading, spacing: skin.spacing.xs) {
             header
             // Lazy, so a table inside a `ScrollView` builds only the rows on
             // screen. The eager `VStack` built every row: Thrall had to fold
             // 135 volumes into disclosure groups just to keep its storage
             // area openable.
-            LazyVStack(spacing: 2) {
+            LazyVStack(spacing: skin.components.dataTable.rowGap) {
                 ForEach(displayedRows) { row in rowView(row) }
             }
         }
     }
 
     private var header: some View {
-        HStack(spacing: AinkradSpacing.md) {
+        let table = skin.components.dataTable
+        return HStack(spacing: skin.spacing.md) {
             ForEach(columns, id: \.id) { column in
                 headerCell(column)
             }
         }
-        .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
-        .background(ChamferShape(cut: 6, corners: .topLeft.union(.topRight)).fill(theme.surfaceElevated.opacity(0.7)))
+        .padding(.horizontal, skin.spacing.md)
+        .padding(.vertical, skin.spacing.sm)
+        .background(AinkradSkinShape(token: table.headerShape).fill(skin.color(table.headerFill)))
     }
 
     private func headerCell(_ column: AinkradTableColumn<Row>) -> some View {
-        Button {
+        let table = skin.components.dataTable
+        return Button {
             // An accessory column has no sort value, so its header click does
             // nothing — it is not `.disabled`, which would grey out that one
             // header among its neighbours and read as a disabled column.
             guard let sort, column.accessory == nil else { return }
             sort.wrappedValue = nextSort(current: sort.wrappedValue, column: column.id)
         } label: {
-            HStack(spacing: 3) {
+            HStack(spacing: table.headerCellGap) {
                 Text(column.title.uppercased())
-                    .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-                    .tracking(0.8)
+                    .font(skin.font(table.headerFont, typography: typo))
+                    .tracking(table.headerFont.tracking ?? 0)
                 if sort?.wrappedValue?.columnID == column.id {
                     Image(systemName: sort?.wrappedValue?.ascending == true ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(skin.font(table.sortGlyphFont, typography: typo))
                 }
             }
-            .foregroundStyle(theme.foreground.opacity(0.75))
+            .foregroundStyle(skin.color(table.headerColor))
             .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
         }
         .buttonStyle(.plain)
@@ -209,59 +217,66 @@ public struct AinkradDataTable<Row: Identifiable>: View {
     }
 
     private func rowView(_ row: Row) -> some View {
-        HStack(spacing: AinkradSpacing.md) {
+        let table = skin.components.dataTable
+        let shape = AinkradSkinShape(token: table.rowShape)
+        return HStack(spacing: skin.spacing.md) {
             ForEach(columns, id: \.id) { column in
                 if let accessory = column.accessory {
                     accessory(row)
                         .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
                 } else {
-                Text(column.cell(row))
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.9))
-                    // One line, truncated in the middle. A wrapping cell makes
-                    // its row as tall as its longest value — image names broke
-                    // mid-word onto three lines — and middle truncation keeps
-                    // both ends of an identifier, such as the tag in `name:latest`.
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
+                    Text(column.cell(row))
+                        .font(skin.font(table.cellFont, typography: typo))
+                        .foregroundStyle(skin.color(table.cellColor))
+                        // One line, truncated in the middle. A wrapping cell makes
+                        // its row as tall as its longest value — image names broke
+                        // mid-word onto three lines — and middle truncation keeps
+                        // both ends of an identifier, such as the tag in `name:latest`.
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity, alignment: alignmentFor(column.alignment))
                 }
             }
         }
-        .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
-        .background(ChamferShape(cut: 4).fill(rowFill(row.id)))
+        .padding(.horizontal, skin.spacing.md)
+        .padding(.vertical, skin.spacing.sm)
+        .background(shape.fill(skin.color(table.rowFill, state: rowState(row.id))))
         // Selection reads like `AinkradListRow`'s — an accent fill and a lit
         // leading bar — so a selected table row and a selected list row match.
         .overlay(alignment: .leading) {
             Rectangle()
-                .fill(theme.accentSecondary)
-                .frame(width: isSelected(row.id) ? 2 : 0)
-                .shadow(color: theme.accentSecondary.opacity(0.6), radius: 3)
+                .fill(skin.color(skin.roles.accentTick.fill))
+                .frame(width: isSelected(row.id) ? table.edgeWidth : 0)
+                .shadow(
+                    color: skin.color(table.edgeGlow.color), radius: table.edgeGlow.radius.resolve([]))
         }
         .contentShape(Rectangle())
         .onTapGesture { click(row.id) }
         .onHover { isHovering in hoveredRowID = isHovering ? row.id : (hoveredRowID == row.id ? nil : hoveredRowID) }
         .accessibilityAddTraits(isSelected(row.id) ? .isSelected : [])
-        .animation(reduceMotion ? nil : AinkradMotion.hover, value: hoveredRowID)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: hoveredRowID)
     }
 
     private func isSelected(_ id: Row.ID) -> Bool { selection?.wrappedValue.contains(id) ?? false }
 
-    private func rowFill(_ id: Row.ID) -> Color {
-        if isSelected(id) { return theme.accentPrimary.opacity(0.16) }
-        if hoveredRowID == id { return theme.surfaceElevated.opacity(0.4) }
-        return .clear
+    private func rowState(_ id: Row.ID) -> AinkradControlState {
+        var state: AinkradControlState = []
+        if isSelected(id) { state.insert(.selected) }
+        if hoveredRowID == id { state.insert(.hover) }
+        return state
     }
 
     /// A no-op without a selection binding, so a plain table ignores clicks.
     private func click(_ id: Row.ID) {
         guard let selection else { return }
         let flags = NSEvent.modifierFlags
-        let gesture: AinkradSelectionGesture = flags.contains(.command) ? .toggle
+        let gesture: AinkradSelectionGesture =
+            flags.contains(.command)
+            ? .toggle
             : flags.contains(.shift) ? .extend : .plain
-        let next = nextSelection(current: selection.wrappedValue, anchor: selectionAnchor, clicked: id,
-                                 in: displayedRows.map(\.id), gesture: gesture)
+        let next = nextSelection(
+            current: selection.wrappedValue, anchor: selectionAnchor, clicked: id,
+            in: displayedRows.map(\.id), gesture: gesture)
         selection.wrappedValue = next.selection
         selectionAnchor = next.anchor
     }

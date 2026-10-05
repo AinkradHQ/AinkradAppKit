@@ -1,6 +1,7 @@
 import Foundation
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -20,10 +21,12 @@ struct AinkradANSIParserTests {
 
     /// Slot indices, never colours — the mapping happens through the theme at
     /// render time so a log follows the user's colours.
-    @Test("standard and bright foreground codes map to slots", arguments: [
-        ("\u{1B}[31mred", 1), ("\u{1B}[32mgreen", 2), ("\u{1B}[33myellow", 3),
-        ("\u{1B}[91mbright", 9), ("\u{1B}[97mwhite", 15),
-    ])
+    @Test(
+        "standard and bright foreground codes map to slots",
+        arguments: [
+            ("\u{1B}[31mred", 1), ("\u{1B}[32mgreen", 2), ("\u{1B}[33myellow", 3),
+            ("\u{1B}[91mbright", 9), ("\u{1B}[97mwhite", 15),
+        ])
     func colorSlots(text: String, slot: Int) {
         #expect(runs(text).last?.colorSlot == slot)
     }
@@ -70,8 +73,9 @@ struct AinkradANSIParserTests {
         #expect(parsed.last?.colorSlot == nil)
     }
 
-    @Test("cursor and erase sequences are dropped, not rendered",
-          arguments: ["\u{1B}[2J", "\u{1B}[H", "\u{1B}[1A", "\u{1B}[K"])
+    @Test(
+        "cursor and erase sequences are dropped, not rendered",
+        arguments: ["\u{1B}[2J", "\u{1B}[H", "\u{1B}[1A", "\u{1B}[K"])
     func nonSGRDropped(sequence: String) {
         #expect(runs("before\(sequence)after").map(\.text).joined() == "beforeafter")
     }

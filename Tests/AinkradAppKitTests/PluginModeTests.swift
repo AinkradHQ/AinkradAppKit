@@ -1,5 +1,6 @@
-import Testing
 import SwiftUI
+import Testing
+
 @testable import AinkradAppKit
 
 /// Generation 11's Basic Mode contract.
@@ -17,8 +18,9 @@ struct PluginModeTests {
     func modesAreOptIn() {
         // An app with no basic mode does not conform — and that must be fine,
         // because that is how Scry (a HUD canvas) opts out with no special case.
-        #expect((ModelessApp.self as Any) as? AinkradAppModes.Type == nil,
-                "a basic mode must not be a requirement of AinkradApp")
+        #expect(
+            (ModelessApp.self as Any) as? AinkradAppModes.Type == nil,
+            "a basic mode must not be a requirement of AinkradApp")
         #expect((ModalApp.self as Any) as? AinkradAppModes.Type != nil)
     }
 
@@ -120,9 +122,11 @@ private enum ModalApp: AinkradApp, AinkradAppModes {
     var documents: PluginDocumentStore { ModeStubDocs() }
     var secrets: PluginSecretStore { ModeStubSecrets() }
     var theme: HostTheme {
-        HostTheme(.init(themeID: "t", background: .black, surface: .black,
-                        surfaceElevated: .black, accentPrimary: .white,
-                        accentSecondary: .white, accentTertiary: .white, foreground: .white))
+        HostTheme(
+            .init(
+                themeID: "t", background: .black, surface: .black,
+                surfaceElevated: .black, accentPrimary: .white,
+                accentSecondary: .white, accentTertiary: .white, foreground: .white))
     }
     var log: PluginLogger { ModeStubLog() }
     var context: PluginContextRegistry { ModeStubContext() }
@@ -153,8 +157,10 @@ private struct ModeStubLog: PluginLogger {
     func remove(_ token: PluginContextToken) {}
 }
 @MainActor private struct ModeStubActions: AgentActionProvider {
-    func register(actionID: String,
-                  handler: @escaping @MainActor (String) async -> AgentActionResult) -> AgentActionToken {
+    func register(
+        actionID: String,
+        handler: @escaping @MainActor (String) async -> AgentActionResult
+    ) -> AgentActionToken {
         AgentActionToken()
     }
     func remove(_ token: AgentActionToken) {}
@@ -179,4 +185,3 @@ private struct ModeStubLog: PluginLogger {
     func set(_ size: PluginOverlaySize) {}
     func reset() {}
 }
-

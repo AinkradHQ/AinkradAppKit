@@ -1,5 +1,5 @@
-import SwiftUI
 import AinkradAppKitContract
+import SwiftUI
 
 /// One run in an `AinkradStackedStatusBar`: how many things are in a status.
 public struct AinkradStatusRun: Equatable, Sendable {
@@ -35,28 +35,32 @@ public struct AinkradStatusRun: Equatable, Sendable {
 public struct AinkradStackedStatusBar: View {
     private let runs: [AinkradStatusRun]
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
 
     public init(runs: [AinkradStatusRun]) {
         self.runs = runs
     }
 
     public var body: some View {
+        let bar = skin.components.stackedStatusBar
         let ordered = orderedStatusRuns(runs)
         GeometryReader { geometry in
-            let widths = statusRunWidths(for: ordered.map { $0.count }, in: geometry.size.width)
-            HStack(spacing: stackedStatusBarSpacing) {
+            let widths = statusRunWidths(
+                for: ordered.map { $0.count }, in: geometry.size.width, spacing: bar.gap, minimum: bar.minRun)
+            HStack(spacing: bar.gap) {
                 ForEach(Array(zip(ordered, widths).enumerated()), id: \.offset) { _, segment in
                     Rectangle()
-                        .fill(segment.0.status.color(in: theme, statusColors: statusColors))
+                        .fill(
+                            segment.0.status.color(
+                                in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
+                        )
                         .frame(width: segment.1)
                 }
             }
         }
-        .frame(height: 4)
+        .frame(height: bar.height)
         .clipShape(Capsule())
-        .background(Capsule().fill(theme.foreground.opacity(0.12)))
+        .background(Capsule().fill(skin.color(bar.trackColor)))
     }
 }
 
@@ -72,7 +76,8 @@ func orderedStatusRuns(_ runs: [AinkradStatusRun]) -> [AinkradStatusRun] {
     runs.enumerated()
         .filter { $0.element.count > 0 }
         .sorted { lhs, rhs in
-            let left = statusSeverity(lhs.element.status), right = statusSeverity(rhs.element.status)
+            let left = statusSeverity(lhs.element.status)
+            let right = statusSeverity(rhs.element.status)
             return left != right ? left < right : lhs.offset < rhs.offset
         }
         .map { $0.element }
@@ -95,8 +100,10 @@ func statusSeverity(_ status: AinkradStatus) -> Int {
 /// added the minimum without taking it back, so the runs overflowed and the
 /// capsule clip cut off the right-hand, worst-status end: 1,000 running and
 /// 1 dead in 64 pt left the dead run about 0.06 pt of the 2 pt it was given.
-func statusRunWidths(for counts: [Int], in width: CGFloat, spacing: CGFloat = stackedStatusBarSpacing,
-                     minimum: CGFloat = 2) -> [CGFloat] {
+func statusRunWidths(
+    for counts: [Int], in width: CGFloat, spacing: CGFloat = stackedStatusBarSpacing,
+    minimum: CGFloat = 2
+) -> [CGFloat] {
     guard counts.reduce(0, +) > 0 else { return [] }
     let available = max(0, width - spacing * CGFloat(counts.count - 1))
     // Too narrow for every run to get its minimum: equal shares, so none vanishes.

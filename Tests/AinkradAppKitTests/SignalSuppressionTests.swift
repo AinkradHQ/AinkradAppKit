@@ -1,5 +1,6 @@
-import Testing
 import Foundation
+import Testing
+
 @testable import AinkradSignal
 
 @Suite("Signal suppression window")
@@ -12,9 +13,11 @@ struct SignalSuppressionTests {
 
     /// A date at a given hour and minute on a fixed day, in UTC.
     private func at(_ hour: Int, _ minute: Int = 0) -> Date {
-        calendar.date(from: DateComponents(timeZone: TimeZone(identifier: "UTC"),
-                                           year: 2026, month: 9, day: 3,
-                                           hour: hour, minute: minute))!
+        calendar.date(
+            from: DateComponents(
+                timeZone: TimeZone(identifier: "UTC"),
+                year: 2026, month: 9, day: 3,
+                hour: hour, minute: minute))!
     }
 
     @Test("with no schedule and no snooze, nothing is ever suppressed")
@@ -27,8 +30,8 @@ struct SignalSuppressionTests {
     @Test("a same-day window suppresses inside it and not outside")
     func sameDayWindow() {
         var window = SuppressionWindow()
-        window.quietStartMinute = 9 * 60      // 09:00
-        window.quietEndMinute = 17 * 60       // 17:00
+        window.quietStartMinute = 9 * 60  // 09:00
+        window.quietEndMinute = 17 * 60  // 17:00
         #expect(window.isSuppressing(at: at(12), calendar: calendar))
         #expect(window.isSuppressing(at: at(9), calendar: calendar), "start is inclusive")
         #expect(!window.isSuppressing(at: at(17), calendar: calendar), "end is exclusive")
@@ -39,8 +42,8 @@ struct SignalSuppressionTests {
     @Test("a window that wraps midnight suppresses across the boundary")
     func wrappingWindow() {
         var window = SuppressionWindow()
-        window.quietStartMinute = 22 * 60     // 22:00
-        window.quietEndMinute = 7 * 60        // 07:00
+        window.quietStartMinute = 22 * 60  // 22:00
+        window.quietEndMinute = 7 * 60  // 07:00
         #expect(window.isSuppressing(at: at(23, 30), calendar: calendar), "before midnight")
         #expect(window.isSuppressing(at: at(3), calendar: calendar), "after midnight")
         #expect(window.isSuppressing(at: at(22), calendar: calendar), "start is inclusive")

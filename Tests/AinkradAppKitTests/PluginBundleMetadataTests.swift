@@ -1,4 +1,5 @@
 import Testing
+
 @testable import AinkradAppKit
 @testable import AinkradAppKitContract
 @testable import AinkradAppKitUI
@@ -17,9 +18,12 @@ struct PluginBundleMetadataTests {
     @Test("parses a complete Info.plist")
     func parsesValid() {
         let result = PluginBundleMetadata.parse(infoDictionary: validDict)
-        #expect(result == .success(PluginBundleMetadata(
-            appID: "hello", displayName: "Hello", iconSymbol: "hand.wave",
-            apiVersion: 1, principalClassName: "HelloPlugin.HelloEntryPoint")))
+        #expect(
+            result
+                == .success(
+                    PluginBundleMetadata(
+                        appID: "hello", displayName: "Hello", iconSymbol: "hand.wave",
+                        apiVersion: 1, principalClassName: "HelloPlugin.HelloEntryPoint")))
     }
 
     @Test("rejects a missing required key")
