@@ -40,9 +40,8 @@ public struct SignalToastStack: View {
         self.onAction = onAction
     }
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
-    @Environment(\.ainkradStatusColors) private var status
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @Environment(\.ainkradSignalIdentity) private var identities
     @State private var hovered: UUID?
@@ -54,7 +53,8 @@ public struct SignalToastStack: View {
     @State private var overflowing: Set<UUID> = []
 
     public var body: some View {
-        VStack(alignment: .trailing, spacing: 8) {
+        let tokens = skin.components.signalToast
+        VStack(alignment: .trailing, spacing: tokens.stackGap) {
             ForEach(model.visible) { event in
                 toast(event)
                     .transition(
@@ -65,7 +65,7 @@ public struct SignalToastStack: View {
                                 // Shrinking away toward the corner the bell lives
                                 // in: the dismissal is where the user learns that
                                 // notifications go somewhere rather than vanish.
-                                removal: .opacity.combined(with: .scale(scale: 0.7))
+                                removal: .opacity.combined(with: .scale(scale: tokens.removalScale))
                                     .combined(with: .offset(x: 40, y: -60))))
             }
             // Below the stack, not above it: the chip counts what is WAITING,
@@ -74,18 +74,18 @@ public struct SignalToastStack: View {
             if model.overflowCount > 0 {
                 AinkradBadge(
                     text: "+\(model.overflowCount) more",
-                    tint: theme.accentSecondary
+                    tint: skin.color(skin.palette.accentSecondary)
                 )
                 .transition(.opacity)
             }
         }
-        .padding(16)
+        .padding(tokens.stackPadding)
         .animation(
-            reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.82),
+            reduceMotion ? nil : skin.animation(tokens.listSpring),
             value: model.visible.map(\.id)
         )
         .animation(
-            reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.82),
+            reduceMotion ? nil : skin.animation(tokens.listSpring),
             value: model.overflowCount)
     }
 
@@ -101,13 +101,15 @@ public struct SignalToastStack: View {
             GeometryReader { geo in
                 Rectangle()
                     .fill(
-                        SignalPresentation.color(for: event.severity, in: status)
-                            .opacity(0.7)
+                        skin.color(
+                            skin.components.signalToast.dwellBarColor,
+                            tint: SignalPresentation.color(
+                                for: event.severity, in: AinkradStatusColors(skin: skin)))
                     )
-                    .frame(width: geo.size.width * fraction, height: 1.5)
+                    .frame(width: geo.size.width * fraction, height: skin.components.signalToast.dwellBarHeight)
                     .frame(maxHeight: .infinity, alignment: .bottom)
             }
-            .frame(height: 1.5)
+            .frame(height: skin.components.signalToast.dwellBarHeight)
             .allowsHitTesting(false)
         }
     }
@@ -116,17 +118,24 @@ public struct SignalToastStack: View {
     /// beside its text. The label becomes the tooltip and the accessible name.
     /// An action without a symbol gets a generic one.
     private func toastAction(_ event: SignalEvent, _ action: SignalAction) -> some View {
-        let tint = action.isDestructive ? status.danger : theme.accentPrimary
+        let statusColors = AinkradStatusColors(skin: skin)
+        let tint = action.isDestructive ? statusColors.danger : HostThemeTokens(skin: skin).accentPrimary
+        let tokens = skin.components.signalToast
+        let actionShape = AinkradSkinShape(token: tokens.actionShape)
         return Button {
             onAction(event, action)
         } label: {
             Image(systemName: action.symbol ?? "arrow.up.forward.circle")
-                .font(.system(size: 11, weight: .semibold))
+                .font(skin.font(tokens.actionFont, typography: typo))
                 .foregroundStyle(tint)
-                .frame(width: 22, height: 20)
-                .background(ChamferShape(cut: 4).fill(tint.opacity(0.14)))
-                .overlay(ChamferShape(cut: 4).strokeBorder(tint.opacity(0.45), lineWidth: 1))
-                .contentShape(ChamferShape(cut: 4))
+                .frame(width: tokens.actionWidth, height: tokens.actionHeight)
+                .background(actionShape.fill(skin.color(tokens.actionFill, tint: tint)))
+                .overlay(
+                    actionShape.strokeBorder(
+                        skin.color(tokens.actionStroke.color, tint: tint),
+                        lineWidth: tokens.actionStroke.width.resolve([]))
+                )
+                .contentShape(actionShape)
         }
         .buttonStyle(.plain)
         .help(action.label)
@@ -136,7 +145,8 @@ public struct SignalToastStack: View {
     /// The severity colour, from the same mapping feed rows use, so an info
     /// event reads the same in a toast and in the dropdown.
     private func accent(_ event: SignalEvent) -> Color {
-        SignalPresentation.status(for: event.severity).color(in: theme, statusColors: status)
+        SignalPresentation.status(for: event.severity).color(
+            in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
     }
 
     /// The sending app's launcher icon, large, as the toast's anchor. Without
@@ -144,22 +154,24 @@ public struct SignalToastStack: View {
     /// severity glyph.
     @ViewBuilder
     private func leadingIcon(_ event: SignalEvent) -> some View {
+        let tokens = skin.components.signalToast
         if let identity = identities.identity(for: event.source) {
-            AinkradAppTile(symbol: identity.symbol, size: 34)
+            AinkradAppTile(symbol: identity.symbol, size: tokens.appTileSize)
                 .allowsHitTesting(false)
                 .accessibilityLabel(identity.name)
         } else {
             Image(systemName: SignalPresentation.iconSymbol(for: event.severity))
-                .font(.system(size: 18, weight: .medium))
+                .font(skin.font(tokens.fallbackGlyphFont, typography: typo))
                 .foregroundStyle(accent(event))
-                .frame(width: 34, height: 34)
+                .frame(width: tokens.fallbackGlyphSize, height: tokens.fallbackGlyphSize)
         }
     }
 
     private func bodyText(_ event: SignalEvent) -> Text {
-        Text(event.body.flatMap { $0.isEmpty ? nil : $0 } ?? " ")
-            .font(AinkradFontResolver.font(size: 11.5, typography: typo))
-            .foregroundStyle(theme.foreground.opacity(0.66))
+        let tokens = skin.components.signalToast
+        return Text(event.body.flatMap { $0.isEmpty ? nil : $0 } ?? " ")
+            .font(skin.font(tokens.bodyFont, typography: typo))
+            .foregroundStyle(skin.color(tokens.bodyColor))
     }
 
     private func toggleExpanded(_ event: SignalEvent) {
@@ -181,6 +193,8 @@ public struct SignalToastStack: View {
     /// offers, so one event never offers different things in two places.
     @ViewBuilder
     private func actionRow(_ event: SignalEvent) -> some View {
+        let tokens = skin.components.signalToast
+        let actionShape = AinkradSkinShape(token: tokens.actionShape)
         let more = Array(event.actions.dropFirst(2))
         HStack(spacing: AinkradSpacing.xs + 1) {
             ForEach(Array(event.actions.prefix(2)), id: \.id) { action in toastAction(event, action) }
@@ -193,53 +207,56 @@ public struct SignalToastStack: View {
                     }
                 ) {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(theme.foreground.opacity(0.6))
-                        .frame(width: 22, height: 20)
-                        .background(ChamferShape(cut: 4).fill(theme.foreground.opacity(0.08)))
+                        .font(skin.font(tokens.moreFont, typography: typo))
+                        .foregroundStyle(skin.color(tokens.moreColor))
+                        .frame(width: tokens.moreWidth, height: tokens.moreHeight)
+                        .background(actionShape.fill(skin.color(tokens.moreFill)))
                 }
             }
         }
     }
 
     private func toast(_ event: SignalEvent) -> some View {
+        let tokens = skin.components.signalToast
+        let shape = AinkradSkinShape(token: tokens.shape)
         let accent = accent(event)
         let repeats = model.repeatCount(for: event.id)
         let isHovered = hovered == event.id
+        let strokeState: AinkradControlState = isHovered ? [.hover] : []
         return HStack(alignment: .top, spacing: AinkradSpacing.sm + 2) {
             leadingIcon(event)
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: tokens.contentGap) {
                 // Who: the thing it is about (the chat's service, when the
                 // link names one) and the title. When, and the way out, trail.
                 HStack(spacing: AinkradSpacing.xs + 1) {
                     if let symbol = event.deepLink?.symbol {
                         Image(systemName: symbol)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(theme.accentSecondary)
+                            .font(skin.font(tokens.titleGlyphFont, typography: typo))
+                            .foregroundStyle(skin.color(skin.palette.accentSecondary))
                     }
                     Text(event.title)
-                        .font(AinkradFontResolver.font(size: 12.5, weight: .semibold, typography: typo))
-                        .foregroundStyle(theme.foreground)
+                        .font(skin.font(tokens.titleFont, typography: typo))
+                        .foregroundStyle(skin.color(skin.text.primary))
                         .lineLimit(1)
                     if repeats > 1 {
                         Text("×\(repeats)")
-                            .font(AinkradFontResolver.font(size: 10, weight: .semibold, typography: typo))
+                            .font(skin.font(tokens.repeatFont, typography: typo))
                             .monospacedDigit()
-                            .foregroundStyle(theme.accentSecondary)
+                            .foregroundStyle(skin.color(skin.palette.accentSecondary))
                     }
-                    Spacer(minLength: AinkradSpacing.xs)
+                    Spacer(minLength: skin.spacing.xs)
                     Text(SignalPresentation.relativeTime(event.timestamp, now: now))
-                        .font(AinkradFontResolver.font(size: 10, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.4))
+                        .font(skin.font(tokens.timeFont, typography: typo))
+                        .foregroundStyle(skin.color(tokens.timeColor))
                     if overflowing.contains(event.id) || expanded.contains(event.id) {
                         Button {
                             toggleExpanded(event)
                         } label: {
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(theme.foreground.opacity(isHovered ? 0.7 : 0.4))
+                                .font(skin.font(tokens.chevronCloseFont, typography: typo))
+                                .foregroundStyle(skin.color(tokens.chevronCloseColor, state: strokeState))
                                 .rotationEffect(.degrees(expanded.contains(event.id) ? 180 : 0))
-                                .frame(width: 14, height: 14)
+                                .frame(width: tokens.chevronCloseSize, height: tokens.chevronCloseSize)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -250,16 +267,16 @@ public struct SignalToastStack: View {
                         model.dismiss(id: event.id)
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(theme.foreground.opacity(isHovered ? 0.7 : 0.4))
-                            .frame(width: 14, height: 14)
+                            .font(skin.font(tokens.chevronCloseFont, typography: typo))
+                            .foregroundStyle(skin.color(tokens.chevronCloseColor, state: strokeState))
+                            .frame(width: tokens.chevronCloseSize, height: tokens.chevronCloseSize)
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .help("Dismiss")
                 }
                 // What, with the actions under the ✕ while the pointer is on
-                // the toast. They float over the text's end rather than take
+                // the tokens. They float over the text's end rather than take
                 // a row, so nothing reflows when they appear.
                 // The actions sit beside the text, under ✕, shown while
                 // hovered; their space is reserved so nothing moves.
@@ -302,26 +319,32 @@ public struct SignalToastStack: View {
         .padding(.vertical, AinkradSpacing.sm + 1)
         // A fixed width, not content-sized: a stack of toasts with ragged
         // right edges reads as a layout accident rather than one surface.
-        .frame(width: 320, alignment: .leading)
+        .frame(width: tokens.width, alignment: .leading)
         // Chamfered and accent-stroked like every other Ainkrad surface; a
         // continuous rounded rectangle read as a foreign toast library.
-        .background(ChamferShape(cut: AinkradRadius.md).fill(theme.surfaceElevated))
+        .background(shape.fill(skin.color(tokens.fill)))
         .overlay(
-            ChamferShape(cut: AinkradRadius.md)
-                .strokeBorder(
-                    accent.opacity(event.severity == .failure ? 0.55 : (isHovered ? 0.45 : 0.28)), lineWidth: 1)
+            shape.strokeBorder(
+                event.severity == .failure
+                    ? skin.color(tokens.failureStrokeColor, tint: accent)
+                    : skin.color(tokens.stroke.color, tint: accent, state: strokeState),
+                lineWidth: tokens.stroke.width.resolve(strokeState))
         )
         // Severity as an edge, not a second icon: the app icon says who, the
         // edge says how bad. Info has none, so a quiet message stays quiet.
         .overlay(alignment: .leading) {
             if event.severity != .info {
-                Capsule().fill(accent).frame(width: 2.5).padding(.vertical, 8)
-                    .shadow(color: accent.opacity(0.6), radius: 3)
+                Capsule().fill(accent).frame(width: tokens.severityEdgeWidth).padding(
+                    .vertical, tokens.severityEdgePadding
+                )
+                .shadow(
+                    color: skin.color(tokens.severityEdgeGlow.color, tint: accent),
+                    radius: tokens.severityEdgeGlow.radius.resolve([]))
             }
         }
-        .animation(reduceMotion ? nil : AinkradMotion.hover, value: isHovered)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: isHovered)
         .animation(
-            reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 0.86),
+            reduceMotion ? nil : skin.animation(tokens.expandSpring),
             value: expanded.contains(event.id)
         )
         .onPreferenceChange(ToastBodyOverflowKey.self) { ids in
@@ -338,7 +361,7 @@ public struct SignalToastStack: View {
             if isOver { model.pause(id: event.id) } else if !expanded.contains(event.id) { model.resume(id: event.id) }
         }
         .overlay(alignment: .bottom) { dwellBar(event) }
-        .contentShape(ChamferShape(cut: AinkradRadius.md))
+        .contentShape(shape)
         .onTapGesture { onActivate(event) }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(

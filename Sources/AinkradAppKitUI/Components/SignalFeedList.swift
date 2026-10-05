@@ -85,7 +85,7 @@ public struct SignalFeedList: View {
         self.expandedIDs = expandedIDs
     }
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     /// The row the arrow keys are on. Owned by the LIST, not the row: only
     /// something that knows the order can move a selection through it.
@@ -202,18 +202,19 @@ public struct SignalFeedList: View {
     /// A header, not a separator: the design language forbids rules, so the day
     /// break is carried by weight and a soft scrim behind the pinned label.
     private func dayHeader(_ day: Date) -> some View {
+        let list = skin.components.signalFeedList
         // Mono, uppercase, tracked: a date is a readout, and this is the same
         // treatment the top bar gives the clock.
-        Text(Self.dayLabel(day, now: now, calendar: calendar))
-            .font(AinkradFontResolver.font(size: 9.5, weight: .semibold, mono: true, typography: typo))
-            .foregroundStyle(theme.foreground.opacity(0.42))
+        return Text(Self.dayLabel(day, now: now, calendar: calendar))
+            .font(skin.font(list.dayHeaderFont, typography: typo))
+            .foregroundStyle(skin.color(list.dayHeaderColor))
             .textCase(.uppercase)
-            .tracking(0.7)
-            .padding(.horizontal, AinkradSpacing.md)
+            .tracking(list.dayHeaderFont.tracking ?? 0)
+            .padding(.horizontal, skin.spacing.md)
             .padding(.top, AinkradSpacing.sm + 2)
-            .padding(.bottom, AinkradSpacing.xs)
+            .padding(.bottom, skin.spacing.xs)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.surface.opacity(0.92))
+            .background(skin.color(list.fill))
     }
 
     public static func dayLabel(_ day: Date, now: Date, calendar: Calendar) -> String {
@@ -230,13 +231,14 @@ public struct SignalFeedList: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: AinkradSpacing.xs + 2) {
+        let list = skin.components.signalFeedList
+        return VStack(spacing: AinkradSpacing.xs + 2) {
             Image(systemName: "bell.slash")
-                .font(.system(size: 18, weight: .light))
-                .foregroundStyle(theme.foreground.opacity(0.3))
+                .font(skin.font(list.emptyGlyphFont, typography: typo))
+                .foregroundStyle(skin.color(list.emptyGlyphColor))
             Text("Nothing yet")
-                .font(AinkradFontResolver.font(size: 12, weight: .medium, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(0.55))
+                .font(skin.font(list.emptyTextFont, typography: typo))
+                .foregroundStyle(skin.color(list.emptyTextColor))
             AinkradCaption("Runs, builds and app events will show up here.")
                 .multilineTextAlignment(.center)
         }

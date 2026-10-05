@@ -40,8 +40,9 @@ extension AinkradComponentTokens {
             ),
             signalFeedRow: SignalFeedRowTokens(
                 appGlyphFont: AinkradFontToken(size: 13, weight: "medium", scaled: false),
-                appGlyphSize: 16, hoverScale: 1.12,
+                appGlyphSize: 16, hoverScale: 1.12, hoverOffsetY: -1,
                 titleFont: AinkradFontToken(size: 12.5),
+                titleUnreadFont: AinkradFontToken(size: 12.5, weight: "semibold"),
                 repeatGlyphFont: AinkradFontToken(size: 8.5, scaled: false),
                 timeFont: AinkradFontToken(size: 10, weight: "medium", mono: "family"),
                 timeColor: .palette("foreground", 0.45),
@@ -51,10 +52,11 @@ extension AinkradComponentTokens {
                 metaColor: .palette("foreground", 0.45),
                 chevronFont: AinkradFontToken(size: 8, weight: "bold", scaled: false),
                 chevronColor: AinkradStateColor(rest: .palette("foreground", 0.3), hover: .palette("foreground", 0.6)),
-                chevronSize: 12, unreadDotSize: 5,
+                chevronSize: 12, chevronTopPadding: 3,
+                unreadDotSize: 5, unreadDotTopPadding: 6,
                 shape: AinkradShapeToken(style: "chamfer", cut: 8),
                 fill: AinkradStateColor(
-                    rest: .palette("surfaceElevated", 1.0), hover: .palette("surfaceElevated", 0.9)),
+                    rest: .clear, hover: .palette("surfaceElevated", 0.9)),
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(rest: .clear, hover: .palette("accentSecondary", 0.35)),
                     width: AinkradStateDouble(rest: 1.0)),
@@ -70,8 +72,9 @@ extension AinkradComponentTokens {
                     color: AinkradStateColor(rest: .tint(0.5)), width: AinkradStateDouble(rest: 1.0))
             ),
             signalSourceRail: SignalSourceRailTokens(
-                width: 168, dotSize: 5,
+                width: 168, dotSize: 5, gap: 1,
                 nameFont: AinkradFontToken(size: 11.5),
+                nameSelectedFont: AinkradFontToken(size: 11.5, weight: "semibold"),
                 nameOpacity: AinkradStateDouble(rest: 0.72, hover: 0.9, selected: 1.0),
                 countFont: AinkradFontToken(size: 9.5, weight: "medium", mono: "family"),
                 countColor: .palette("foreground", 0.5),
@@ -79,10 +82,10 @@ extension AinkradComponentTokens {
                 fill: AinkradStateColor(
                     rest: .clear, hover: .palette("surfaceElevated", 0.45), selected: .palette("surfaceElevated", 0.9)),
                 edgeCapsuleColor: .palette("accentSecondary", 1.0),
-                edgeCapsuleWidth: 2
+                edgeCapsuleWidth: 2, edgePaddingV: 4
             ),
             signalToast: SignalToastTokens(
-                width: 320,
+                width: 320, stackGap: 8, stackPadding: 16,
                 listSpring: AinkradAnimationToken(curve: "spring", response: 0.34, damping: 0.82),
                 removalOpacity: 0.0, removalScale: 0.7,
                 expandSpring: AinkradAnimationToken(curve: "spring", response: 0.30, damping: 0.86),
@@ -90,9 +93,13 @@ extension AinkradComponentTokens {
                 fill: .palette("surfaceElevated", 1.0),
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(
-                        rest: .palette("accentSecondary", 0.28), hover: .palette("accentSecondary", 0.45)),
+                        rest: .tint(0.28), hover: .tint(0.45)),
                     width: AinkradStateDouble(rest: 1.0)),
-                severityEdgeWidth: 2.5, dwellBarHeight: 1.5, appTileSize: 34,
+                failureStrokeColor: .tint(0.55),
+                severityEdgeWidth: 2.5, severityEdgePadding: 8,
+                severityEdgeGlow: AinkradGlowToken(
+                    color: AinkradStateColor(rest: .tint(0.6)), radius: AinkradStateDouble(rest: 3)),
+                dwellBarColor: .tint(0.7), dwellBarHeight: 1.5, appTileSize: 34,
                 fallbackGlyphFont: AinkradFontToken(size: 18, weight: "medium", scaled: false),
                 fallbackGlyphSize: 34,
                 titleFont: AinkradFontToken(size: 12.5, weight: "semibold"),
@@ -102,17 +109,18 @@ extension AinkradComponentTokens {
                 timeColor: .palette("foreground", 0.4),
                 bodyFont: AinkradFontToken(size: 11.5),
                 bodyColor: .palette("foreground", 0.66),
+                contentGap: 3,
                 chevronCloseFont: AinkradFontToken(size: 9, weight: "bold", scaled: false),
                 chevronCloseColor: AinkradStateColor(
                     rest: .palette("foreground", 0.4), hover: .palette("foreground", 0.7)),
                 chevronCloseSize: 14,
-                actionFont: AinkradFontToken(size: 11, weight: "semibold"),
+                actionFont: AinkradFontToken(size: 11, weight: "semibold", scaled: false),
                 actionWidth: 22, actionHeight: 20,
                 actionShape: AinkradShapeToken(style: "chamfer", cut: 4),
                 actionFill: .tint(0.14),
                 actionStroke: AinkradStrokeToken(
                     color: AinkradStateColor(rest: .tint(0.45)), width: AinkradStateDouble(rest: 1.0)),
-                moreFont: AinkradFontToken(size: 10, weight: "bold"),
+                moreFont: AinkradFontToken(size: 10, weight: "bold", scaled: false),
                 moreWidth: 22, moreHeight: 20,
                 moreFill: .palette("foreground", 0.08),
                 moreColor: .palette("foreground", 0.6)

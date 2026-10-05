@@ -15,7 +15,9 @@ public struct SignalFeedRowTokens: Codable, Equatable, Sendable {
     public var appGlyphFont: AinkradFontToken
     public var appGlyphSize: Double
     public var hoverScale: Double
+    public var hoverOffsetY: Double
     public var titleFont: AinkradFontToken
+    public var titleUnreadFont: AinkradFontToken
     public var repeatGlyphFont: AinkradFontToken
     public var timeFont: AinkradFontToken
     public var timeColor: AinkradColorToken
@@ -26,7 +28,9 @@ public struct SignalFeedRowTokens: Codable, Equatable, Sendable {
     public var chevronFont: AinkradFontToken
     public var chevronColor: AinkradStateColor
     public var chevronSize: Double
+    public var chevronTopPadding: Double
     public var unreadDotSize: Double
+    public var unreadDotTopPadding: Double
     public var shape: AinkradShapeToken
     public var fill: AinkradStateColor
     public var stroke: AinkradStrokeToken
@@ -45,7 +49,9 @@ public struct SignalFeedRowActionTokens: Codable, Equatable, Sendable {
 public struct SignalSourceRailTokens: Codable, Equatable, Sendable {
     public var width: Double
     public var dotSize: Double
+    public var gap: Double
     public var nameFont: AinkradFontToken
+    public var nameSelectedFont: AinkradFontToken
     public var nameOpacity: AinkradStateDouble
     public var countFont: AinkradFontToken
     public var countColor: AinkradColorToken
@@ -53,10 +59,13 @@ public struct SignalSourceRailTokens: Codable, Equatable, Sendable {
     public var fill: AinkradStateColor
     public var edgeCapsuleColor: AinkradColorToken
     public var edgeCapsuleWidth: Double
+    public var edgePaddingV: Double
 }
 
 public struct SignalToastTokens: Codable, Equatable, Sendable {
     public var width: Double
+    public var stackGap: Double
+    public var stackPadding: Double
     public var listSpring: AinkradAnimationToken
     public var removalOpacity: Double
     public var removalScale: Double
@@ -64,7 +73,11 @@ public struct SignalToastTokens: Codable, Equatable, Sendable {
     public var shape: AinkradShapeToken
     public var fill: AinkradColorToken
     public var stroke: AinkradStrokeToken
+    public var failureStrokeColor: AinkradColorToken
     public var severityEdgeWidth: Double
+    public var severityEdgePadding: Double
+    public var severityEdgeGlow: AinkradGlowToken
+    public var dwellBarColor: AinkradColorToken
     public var dwellBarHeight: Double
     public var appTileSize: Double
     public var fallbackGlyphFont: AinkradFontToken
@@ -76,6 +89,7 @@ public struct SignalToastTokens: Codable, Equatable, Sendable {
     public var timeColor: AinkradColorToken
     public var bodyFont: AinkradFontToken
     public var bodyColor: AinkradColorToken
+    public var contentGap: Double
     public var chevronCloseFont: AinkradFontToken
     public var chevronCloseColor: AinkradStateColor
     public var chevronCloseSize: Double
