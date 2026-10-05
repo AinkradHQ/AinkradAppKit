@@ -192,7 +192,22 @@ enum SkinParityFixturesMissing {
                         Color.clear.frame(width: 120, height: 80).cornerBrackets(length: length))))
         }
 
+        for (name, text) in [("empty", ""), ("text", "hello")] {
+            list.append(
+                SkinParityFixture(
+                    name: "commandField-\(name)", view: AnyView(CommandFieldFixture(text: text).frame(width: 420))))
+        }
+
         return list
+    }
+}
+
+private struct CommandFieldFixture: View {
+    @State var text: String
+    @FocusState private var focused: Bool
+    var body: some View {
+        AinkradCommandField(
+            "Summon an app…", text: $text, focus: $focused, onArrow: { _ in true }, onSubmit: {}, onEscape: {})
     }
 }
 

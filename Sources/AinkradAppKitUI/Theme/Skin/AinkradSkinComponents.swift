@@ -35,6 +35,7 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             case logView, signalFeedList, signalFeedRow, signalFeedRowAction, signalSourceRail, signalToast
             case settingsGroup, settingsPage, settingsRow
             case label
+            case commandField
         }
 
         init(from decoder: Decoder) throws {
@@ -117,7 +118,8 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
                 settingsGroup: try container.decode(SettingsGroupTokens.self, forKey: .settingsGroup),
                 settingsPage: try container.decode(SettingsPageTokens.self, forKey: .settingsPage),
                 settingsRow: try container.decode(SettingsRowTokens.self, forKey: .settingsRow),
-                label: try container.decode(LabelTokens.self, forKey: .label)
+                label: try container.decode(LabelTokens.self, forKey: .label),
+                commandField: try container.decode(CommandFieldTokens.self, forKey: .commandField)
             )
             self.g1 = g1
             self.g2 = g2
@@ -201,6 +203,7 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             try container.encode(g4.settingsPage, forKey: .settingsPage)
             try container.encode(g4.settingsRow, forKey: .settingsRow)
             try container.encode(g4.label, forKey: .label)
+            try container.encode(g4.commandField, forKey: .commandField)
         }
     }
 
@@ -280,7 +283,8 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             signalFeedRowAction: signalFeedRowAction, signalSourceRail: signalSourceRail, signalToast: signalToast,
             settingsGroup: settingsGroup, settingsPage: settingsPage, settingsRow: settingsRow,
             // Not a parameter: adding one to this public init would break the ABI.
-            label: AinkradComponentTokens.standard.label
+            label: AinkradComponentTokens.standard.label,
+            commandField: AinkradComponentTokens.standard.commandField
         )
         self.storage = Storage(g1: g1, g2: g2, g3: g3, g4: g4)
     }
