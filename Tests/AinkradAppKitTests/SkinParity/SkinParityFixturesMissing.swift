@@ -139,6 +139,17 @@ enum SkinParityFixturesMissing {
                 SkinParityFixture(name: "railItem-\(name)", view: AnyView(item.frame(width: 60))))
         }
 
+        list.append(
+            SkinParityFixture(
+                name: "brandChevron-16x14",
+                view: AnyView(AinkradBrandChevron().fill(BrandChevronAccent()).frame(width: 16, height: 14))))
+
         return list
+    }
+}
+
+private struct BrandChevronAccent: ShapeStyle {
+    func resolve(in environment: EnvironmentValues) -> Color.Resolved {
+        environment.ainkradSkin.color(environment.ainkradSkin.palette.accentPrimary).resolve(in: environment)
     }
 }
