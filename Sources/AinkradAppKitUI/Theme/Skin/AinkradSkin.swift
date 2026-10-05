@@ -4,28 +4,10 @@ import Foundation
 public struct AinkradSkin: Codable, Equatable, Sendable {
     public static let currentSchemaVersion = 1
 
-    public var schemaVersion: Int
-    public var id: String
-    public var name: String
-    public var palette: AinkradSkinPalette
-    public var shape: AinkradShapeToken
-    public var spacing: AinkradSpacingTokens
-    public var radius: AinkradRadiusTokens
-    public var elevation: AinkradElevationTokens
-    public var type: AinkradTypeTokens
-    public var opacity: AinkradOpacityTokens
-    public var size: AinkradSizeTokens
-    public var cut: AinkradCutTokens
-    public var text: AinkradTextTokens
-    public var syntax: AinkradSyntaxTokens
-    public var terminal: AinkradTerminalTokens
-    public var motion: AinkradMotionTokens
-    public var material: AinkradMaterialTokens
-    public var roles: AinkradRoleTokens
-    public var effects: AinkradEffectTokens
-    public var chrome: AinkradChromeTokens
-
-    var components: AinkradComponentTokens
+    /// Every token lives in one heap box (copy-on-write). The fields total
+    /// ~9 KB; stored inline, every `@Environment(\.ainkradSkin)` reader view
+    /// carried that much, which blew Debug stacks and inflated SwiftUI diffs.
+    var box: Box
 
     public init(
         schemaVersion: Int = currentSchemaVersion,
@@ -50,27 +32,30 @@ public struct AinkradSkin: Codable, Equatable, Sendable {
         chrome: AinkradChromeTokens,
         components: AinkradComponentTokens
     ) {
-        self.schemaVersion = schemaVersion
-        self.id = id
-        self.name = name
-        self.palette = palette
-        self.shape = shape
-        self.spacing = spacing
-        self.radius = radius
-        self.elevation = elevation
-        self.type = type
-        self.opacity = opacity
-        self.size = size
-        self.cut = cut
-        self.text = text
-        self.syntax = syntax
-        self.terminal = terminal
-        self.motion = motion
-        self.material = material
-        self.roles = roles
-        self.effects = effects
-        self.chrome = chrome
-        self.components = components
+        self.box = Box(
+            Fields(
+                schemaVersion: schemaVersion,
+                id: id,
+                name: name,
+                palette: palette,
+                shape: shape,
+                spacing: spacing,
+                radius: radius,
+                elevation: elevation,
+                type: type,
+                opacity: opacity,
+                size: size,
+                cut: cut,
+                text: text,
+                syntax: syntax,
+                terminal: terminal,
+                motion: motion,
+                material: material,
+                roles: roles,
+                effects: effects,
+                chrome: chrome,
+                components: components
+            ))
     }
 
     public static let standardSpacing = AinkradSpacingTokens()

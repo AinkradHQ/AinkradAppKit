@@ -197,7 +197,7 @@ func ainkradValidateSemanticRules(_ skin: AinkradSkin) throws {
     }
 
     // Recursively validate skin color tokens & ranges
-    try ainkradValidateValue(skin, paletteKeys: paletteKeys, path: "$")
+    try ainkradValidateValue(skin.box.fields, paletteKeys: paletteKeys, path: "$")
 }
 
 func ainkradValidateColorToken(_ token: AinkradColorToken, paletteKeys: Set<String>, path: String) throws {
