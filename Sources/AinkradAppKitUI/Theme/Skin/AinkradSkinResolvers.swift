@@ -40,7 +40,8 @@ extension AinkradSkin {
         var font: Font
         if token.mono == "system" {
             font = Font.system(size: finalSize, weight: weight, design: .monospaced)
-        } else if token.mono == "family" {
+        } else if token.mono == "family" || (token.mono == nil && token.role == "mono") {
+            // The `mono` role is the code face, as `AinkradFontResolver.font(.mono)` has it.
             font = Font.custom(type.monoFamily, size: finalSize).weight(weight)
         } else if let family = typography.fontFamilyName {
             font = Font.custom(family, size: finalSize).weight(weight)

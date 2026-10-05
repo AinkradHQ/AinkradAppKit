@@ -16,6 +16,7 @@ public enum AinkradStatus: CaseIterable, Sendable {
         case .danger: return statusColors.danger
         }
     }
+
 }
 
 /// Pill/chamfer tag — optional leading icon, optional custom-drawn remove (✕)
@@ -25,7 +26,7 @@ public struct AinkradChip: View {
     private let systemName: String?
     private let onRemove: (() -> Void)?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
@@ -40,28 +41,39 @@ public struct AinkradChip: View {
     public var isRemovable: Bool { onRemove != nil }
 
     public var body: some View {
-        HStack(spacing: AinkradSpacing.xs) {
+        let chip = skin.components.chip
+        let shape = AinkradSkinShape(token: chip.shape)
+        HStack(spacing: skin.spacing.xs) {
             if let systemName {
-                Image(systemName: systemName).font(.system(size: 10, weight: .semibold))
+                Image(systemName: systemName).font(skin.font(chip.iconFont, typography: typo))
             }
             Text(label)
-                .font(AinkradFontResolver.font(.caption, typography: typo))
+                .font(skin.font(chip.labelFont, typography: typo))
             if isRemovable {
                 Image(systemName: "xmark")
-                    .font(.system(size: 8, weight: .bold))
-                    .padding(3)
+                    .font(skin.font(chip.removeFont, typography: typo))
+                    .padding(chip.removePadding)
                     .contentShape(Rectangle())
                     .onTapGesture { onRemove?() }
             }
         }
-        .foregroundStyle(theme.foreground.opacity(0.85))
-        .padding(.horizontal, AinkradSpacing.sm)
-        .padding(.vertical, AinkradSpacing.xs)
-        .background(ChamferShape(cut: 5).fill(theme.surfaceElevated.opacity(hovering ? 0.65 : 0.45)))
-        .overlay(ChamferShape(cut: 5).strokeBorder(theme.accentSecondary.opacity(hovering ? 0.6 : 0.3), lineWidth: 1))
-        .scaleEffect(hovering && !reduceMotion ? 1.03 : 1.0)
-        .animation(AinkradMotion.hover, value: hovering)
+        .foregroundStyle(skin.color(chip.fg, state: state))
+        .padding(.horizontal, skin.spacing.sm)
+        .padding(.vertical, skin.spacing.xs)
+        .background(shape.fill(skin.color(chip.fill, state: state)))
+        .overlay(
+            shape.strokeBorder(
+                skin.color(chip.stroke.color, state: state), lineWidth: chip.stroke.width.resolve(state))
+        )
+        .scaleEffect(hovering && !reduceMotion ? chip.hoverScale : 1.0)
+        .animation(skin.animation(skin.motion.hover), value: hovering)
         .onHover { hovering = $0 }
+    }
+
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if hovering { state.insert(.hover) }
+        return state
     }
 }
 
@@ -72,15 +84,17 @@ struct ColorSwatchDot: View {
     let color: Color
     var size: CGFloat = 10
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
 
     var body: some View {
-        ChamferShape(cut: 2, corners: .all)
+        let swatch = skin.components.swatchChip
+        let shape = AinkradSkinShape(token: swatch.swatchShape)
+        shape
             .fill(color)
             .frame(width: size, height: size)
             .overlay(
-                ChamferShape(cut: 2, corners: .all)
-                    .strokeBorder(theme.foreground.opacity(0.25), lineWidth: 0.5)
+                shape.strokeBorder(
+                    skin.color(swatch.swatchStroke.color), lineWidth: swatch.swatchStroke.width.resolve([]))
             )
     }
 }
@@ -95,7 +109,7 @@ public struct AinkradSwatchChip: View {
     private let isOn: Bool
     private let onTap: (() -> Void)?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
@@ -110,27 +124,31 @@ public struct AinkradSwatchChip: View {
     /// Whether this chip behaves as a tappable toggle (vs. a static tag).
     public var isToggle: Bool { onTap != nil }
 
-    private var borderColor: Color { isOn ? theme.accentPrimary : theme.accentSecondary }
-
     public var body: some View {
-        let content = HStack(spacing: AinkradSpacing.xs) {
-            ColorSwatchDot(color: swatch)
+        let chip = skin.components.chip
+        let swatchTokens = skin.components.swatchChip
+        let shape = AinkradSkinShape(token: swatchTokens.shape)
+        let content = HStack(spacing: skin.spacing.xs) {
+            ColorSwatchDot(color: swatch, size: swatchTokens.swatchSize)
             Text(label)
-                .font(AinkradFontResolver.font(.caption, typography: typo))
+                .font(skin.font(chip.labelFont, typography: typo))
         }
-        .foregroundStyle(theme.foreground.opacity(isOn ? 1 : 0.85))
-        .padding(.horizontal, AinkradSpacing.sm)
-        .padding(.vertical, AinkradSpacing.xs)
-        .background(ChamferShape(cut: 5).fill(theme.surfaceElevated.opacity(isOn ? 0.8 : (hovering ? 0.65 : 0.45))))
+        .foregroundStyle(skin.color(chip.fg, state: state))
+        .padding(.horizontal, skin.spacing.sm)
+        .padding(.vertical, skin.spacing.xs)
+        .background(shape.fill(skin.color(chip.fill, state: state)))
         .overlay(
-            ChamferShape(cut: 5).strokeBorder(
-                borderColor.opacity(isOn ? 0.85 : (hovering ? 0.6 : 0.3)), lineWidth: isOn ? 1.25 : 1)
+            shape.strokeBorder(
+                skin.color(swatchTokens.stroke.color, state: state), lineWidth: swatchTokens.stroke.width.resolve(state)
+            )
         )
-        .shadow(color: theme.accentPrimary.opacity(isOn ? 0.3 : 0), radius: isOn ? 4 : 0)
-        .scaleEffect(hovering && !reduceMotion ? 1.03 : 1.0)
-        .animation(AinkradMotion.hover, value: hovering)
-        .animation(AinkradMotion.hover, value: isOn)
-        .contentShape(ChamferShape(cut: 5))
+        .shadow(
+            color: skin.color(swatchTokens.glow.color, state: state), radius: swatchTokens.glow.radius.resolve(state)
+        )
+        .scaleEffect(hovering && !reduceMotion ? chip.hoverScale : 1.0)
+        .animation(skin.animation(skin.motion.hover), value: hovering)
+        .animation(skin.animation(skin.motion.hover), value: isOn)
+        .contentShape(shape)
         .onHover { hovering = $0 }
 
         if let onTap {
@@ -139,6 +157,13 @@ public struct AinkradSwatchChip: View {
         } else {
             content
         }
+    }
+
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if isOn { state.insert(.selected) }
+        if hovering { state.insert(.hover) }
+        return state
     }
 }
 
@@ -153,8 +178,7 @@ public struct AinkradBadge: View {
     /// END with a default so the original `init(text:status:)` is unchanged.
     private let tint: Color?
 
-    @Environment(\.ainkradTheme) private var theme
-    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(text: String, status: AinkradStatus = .neutral) {
@@ -172,17 +196,26 @@ public struct AinkradBadge: View {
         self.tint = tint
     }
 
-    private var color: Color { tint ?? status.color(in: theme, statusColors: statusColors) }
+    private var color: Color {
+        tint ?? status.color(in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
+    }
 
     public var body: some View {
+        let badge = skin.components.badge
+        let shape = AinkradSkinShape(token: badge.shape)
         Text(text.uppercased())
-            .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-            .tracking(0.6)
+            .font(skin.font(badge.font, typography: typo))
+            .tracking(badge.font.tracking ?? 0)
             .foregroundStyle(color)
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs / 2)
-            .background(ChamferShape(cut: 4).fill(color.opacity(0.16)))
-            .overlay(ChamferShape(cut: 4).strokeBorder(color.opacity(0.55), lineWidth: 1))
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, skin.spacing.xs / 2)
+            .background(shape.fill(skin.color(badge.fill, tint: color)))
+            .overlay(
+                shape.strokeBorder(
+                    skin.color(badge.stroke.color, tint: color),
+                    lineWidth: badge.stroke.width.resolve([])
+                )
+            )
     }
 }
 
@@ -190,7 +223,7 @@ public struct AinkradBadge: View {
 public struct AinkradKbd: View {
     private let key: String
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(_ key: String) {
@@ -198,12 +231,18 @@ public struct AinkradKbd: View {
     }
 
     public var body: some View {
+        let kbd = skin.components.kbd
+        let shape = AinkradSkinShape(token: kbd.shape)
         Text("[\(key)]")
-            .font(AinkradFontResolver.font(.mono, weight: .medium, typography: typo))
-            .foregroundStyle(theme.foreground.opacity(0.75))
-            .padding(.horizontal, AinkradSpacing.xs + 2)
-            .padding(.vertical, 2)
-            .background(ChamferShape(cut: 3).fill(theme.surfaceElevated.opacity(0.55)))
-            .overlay(ChamferShape(cut: 3).strokeBorder(theme.foreground.opacity(0.2), lineWidth: 1))
+            .font(skin.font(kbd.font, typography: typo))
+            .foregroundStyle(skin.color(kbd.color))
+            .padding(.horizontal, kbd.paddingH)
+            .padding(.vertical, kbd.paddingV)
+            .background(shape.fill(skin.color(kbd.fill)))
+            .overlay(
+                shape.strokeBorder(
+                    skin.color(kbd.stroke.color), lineWidth: kbd.stroke.width.resolve([])
+                )
+            )
     }
 }

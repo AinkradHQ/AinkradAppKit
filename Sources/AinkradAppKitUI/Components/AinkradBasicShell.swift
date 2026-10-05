@@ -21,7 +21,7 @@ public struct AinkradModeSwitch: View {
 
     @Environment(\.ainkradPaneMode) private var mode
     @Environment(\.ainkradSetPaneMode) private var setMode
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var isHovering = false
@@ -41,25 +41,26 @@ public struct AinkradModeSwitch: View {
     private var title: String { isBasic ? expandedTitle : collapsedTitle }
 
     public var body: some View {
+        let ms = skin.components.modeSwitch
+        let shape = AinkradSkinShape(token: ms.shape)
         Button {
             setMode(isBasic ? .advanced : .basic)
         } label: {
-            HStack(spacing: AinkradSpacing.xs) {
+            HStack(spacing: skin.spacing.xs) {
                 Image(
                     systemName: isBasic
                         ? "arrow.down.left.and.arrow.up.right"
                         : "arrow.up.right.and.arrow.down.left"
                 )
-                .font(.system(size: 9, weight: .semibold))
+                .font(skin.font(ms.glyphFont, typography: typo))
                 Text(title)
-                    .font(AinkradFontResolver.font(.caption, weight: .medium, typography: typo))
+                    .font(skin.font(ms.labelFont, typography: typo))
             }
-            .foregroundStyle(theme.foreground.opacity(isHovering ? 0.95 : 0.55))
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs)
+            .foregroundStyle(skin.color(ms.fg, state: state))
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, skin.spacing.xs)
             .background(
-                RoundedRectangle(cornerRadius: AinkradRadius.sm, style: .continuous)
-                    .fill(theme.foreground.opacity(isHovering ? 0.08 : 0))
+                shape.fill(isHovering ? skin.color(ms.hoverFill) : .clear)
             )
         }
         .buttonStyle(.plain)
@@ -68,9 +69,17 @@ public struct AinkradModeSwitch: View {
                 isHovering = hovering
                 return
             }
-            withAnimation(.easeOut(duration: 0.12)) { isHovering = hovering }
+            withAnimation(
+                skin.animation(ms.hoverAnimation)
+            ) { isHovering = hovering }
         }
         .accessibilityLabel(title)
+    }
+
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if isHovering { state.insert(.hover) }
+        return state
     }
 }
 
@@ -96,7 +105,7 @@ public struct AinkradBasicShell<Content: View, Actions: View>: View {
     private let actions: Actions
     private let content: Content
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     /// - Parameters:
@@ -126,38 +135,39 @@ public struct AinkradBasicShell<Content: View, Actions: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.md) {
+        VStack(alignment: .leading, spacing: skin.spacing.md) {
             header
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(AinkradSpacing.lg)
+        .padding(skin.spacing.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: AinkradSpacing.sm) {
+        let bsh = skin.components.basicShellHeader
+        return HStack(alignment: .firstTextBaseline, spacing: skin.spacing.sm) {
             if let icon {
                 Image(systemName: icon)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(theme.accentPrimary)
+                    .font(skin.font(bsh.glyphFont, typography: typo))
+                    .foregroundStyle(skin.color(skin.palette.accentPrimary))
             }
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: skin.size.s1) {
                 Text(title)
-                    .font(AinkradFontResolver.font(.headline, weight: .medium, typography: typo))
-                    .foregroundStyle(theme.foreground)
+                    .font(skin.font(bsh.titleFont, typography: typo))
+                    .foregroundStyle(skin.color(skin.text.primary))
                     .lineLimit(1)
                     .truncationMode(.middle)
                 if let subtitle {
                     Text(subtitle)
-                        .font(AinkradFontResolver.font(.caption, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.55))
+                        .font(skin.font(bsh.subtitleFont, typography: typo))
+                        .foregroundStyle(skin.color(bsh.subtitleColor))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
             }
-            Spacer(minLength: AinkradSpacing.sm)
-            HStack(spacing: AinkradSpacing.xs) {
+            Spacer(minLength: skin.spacing.sm)
+            HStack(spacing: skin.spacing.xs) {
                 actions
                 if showsModeSwitch { AinkradModeSwitch() }
             }
