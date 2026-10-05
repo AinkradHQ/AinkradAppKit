@@ -33,6 +33,7 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             case loadingState, errorState, sectionHeader, statusBar, spinner, meter, stackedStatusBar, toast, banner
             case logView, signalFeedList, signalFeedRow, signalFeedRowAction, signalSourceRail, signalToast
             case settingsGroup, settingsPage, settingsRow
+            case label
         }
 
         init(from decoder: Decoder) throws {
@@ -113,7 +114,8 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
                 signalToast: try container.decode(SignalToastTokens.self, forKey: .signalToast),
                 settingsGroup: try container.decode(SettingsGroupTokens.self, forKey: .settingsGroup),
                 settingsPage: try container.decode(SettingsPageTokens.self, forKey: .settingsPage),
-                settingsRow: try container.decode(SettingsRowTokens.self, forKey: .settingsRow)
+                settingsRow: try container.decode(SettingsRowTokens.self, forKey: .settingsRow),
+                label: try container.decode(LabelTokens.self, forKey: .label)
             )
             self.g1 = g1
             self.g2 = g2
@@ -195,6 +197,7 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
             try container.encode(g4.settingsGroup, forKey: .settingsGroup)
             try container.encode(g4.settingsPage, forKey: .settingsPage)
             try container.encode(g4.settingsRow, forKey: .settingsRow)
+            try container.encode(g4.label, forKey: .label)
         }
     }
 
@@ -271,7 +274,9 @@ public struct AinkradComponentTokens: Codable, Equatable, Sendable {
         let g4 = AinkradComponentGroup4(
             logView: logView, signalFeedList: signalFeedList, signalFeedRow: signalFeedRow,
             signalFeedRowAction: signalFeedRowAction, signalSourceRail: signalSourceRail, signalToast: signalToast,
-            settingsGroup: settingsGroup, settingsPage: settingsPage, settingsRow: settingsRow
+            settingsGroup: settingsGroup, settingsPage: settingsPage, settingsRow: settingsRow,
+            // Not a parameter: adding one to this public init would break the ABI.
+            label: AinkradComponentTokens.standard.label
         )
         self.storage = Storage(g1: g1, g2: g2, g3: g3, g4: g4)
     }

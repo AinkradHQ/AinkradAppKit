@@ -285,4 +285,8 @@ extension AinkradComponentTokens {
         get { storage.g4.settingsRow }
         set { mutatingStorage().g4.settingsRow = newValue }
     }
+    public var label: LabelTokens {
+        get { storage.g4.label }
+        set { mutatingStorage().g4.label = newValue }
+    }
 }

@@ -19,7 +19,7 @@ public struct AinkradLabel: View {
         HStack(spacing: AinkradSpacing.xs) {
             if let systemName {
                 Image(systemName: systemName)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(skin.font(skin.components.label.glyphFont, typography: typo))
                     .foregroundStyle(skin.color(skin.palette.accentSecondary))
             }
             Text(text)

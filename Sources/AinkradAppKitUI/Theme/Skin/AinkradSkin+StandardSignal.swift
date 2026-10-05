@@ -159,7 +159,8 @@ extension AinkradComponentTokens {
                 resetGlyphColor: .palette("accentSecondary", 0.9),
                 valueFont: AinkradFontToken(role: "mono"),
                 valueColor: .palette("foreground", 0.8)
-            )
+            ),
+            label: LabelTokens(glyphFont: AinkradFontToken(size: 12, weight: "medium", scaled: false))
         )
     }
 

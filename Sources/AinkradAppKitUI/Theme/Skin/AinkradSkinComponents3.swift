@@ -143,3 +143,7 @@ public struct SettingsRowTokens: Codable, Equatable, Sendable {
     public var valueFont: AinkradFontToken
     public var valueColor: AinkradColorToken
 }
+
+public struct LabelTokens: Codable, Equatable, Sendable {
+    public var glyphFont: AinkradFontToken
+}

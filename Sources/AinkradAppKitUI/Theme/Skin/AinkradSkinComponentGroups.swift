@@ -80,4 +80,5 @@ package struct AinkradComponentGroup4: Equatable, Sendable {
     var settingsGroup: SettingsGroupTokens
     var settingsPage: SettingsPageTokens
     var settingsRow: SettingsRowTokens
+    var label: LabelTokens
 }
