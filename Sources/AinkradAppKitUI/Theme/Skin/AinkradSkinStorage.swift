@@ -119,7 +119,7 @@ extension AinkradSkin {
         get { box.fields.chrome }
         set { uniqueBox().fields.chrome = newValue }
     }
-    var components: AinkradComponentTokens {
+    package var components: AinkradComponentTokens {
         get { box.fields.components }
         set { uniqueBox().fields.components = newValue }
     }

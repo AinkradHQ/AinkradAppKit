@@ -130,6 +130,8 @@ extension AinkradComponentTokens {
                 highlightStroke: AinkradStrokeToken(
                     color: AinkradStateColor(rest: .palette("accentSecondary", 0.9)),
                     width: AinkradStateDouble(rest: 1.5)),
+                highlightShape: AinkradShapeToken(style: "chamfer", cut: 12),
+                captionFont: AinkradFontToken(role: "caption"),
                 captionColor: .palette("foreground", 0.45)
             ),
             settingsPage: SettingsPageTokens(
@@ -142,7 +144,8 @@ extension AinkradComponentTokens {
                 miniMapTitleFont: AinkradFontToken(role: "mono", weight: "medium", kerning: 2.5),
                 miniMapTitleColor: .palette("foreground", 0.4),
                 itemsFont: AinkradFontToken(role: "caption"),
-                itemsColor: .palette("foreground", 0.6)
+                itemsColor: .palette("foreground", 0.6),
+                hitsGap: 6, itemsGap: 8
             ),
             settingsRow: SettingsRowTokens(
                 shape: AinkradShapeToken(style: "chamfer", cut: 12),

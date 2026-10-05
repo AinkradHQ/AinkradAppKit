@@ -109,6 +109,8 @@ public struct SignalToastTokens: Codable, Equatable, Sendable {
 public struct SettingsGroupTokens: Codable, Equatable, Sendable {
     public var searchDimmedOpacity: Double
     public var highlightStroke: AinkradStrokeToken
+    public var highlightShape: AinkradShapeToken
+    public var captionFont: AinkradFontToken
     public var captionColor: AinkradColorToken
 }
 
@@ -127,6 +129,8 @@ public struct SettingsPageTokens: Codable, Equatable, Sendable {
     public var miniMapTitleColor: AinkradColorToken
     public var itemsFont: AinkradFontToken
     public var itemsColor: AinkradColorToken
+    public var hitsGap: Double
+    public var itemsGap: Double
 }
 
 public struct SettingsRowTokens: Codable, Equatable, Sendable {

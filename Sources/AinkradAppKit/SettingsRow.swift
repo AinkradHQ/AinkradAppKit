@@ -31,7 +31,7 @@ public enum SettingsFieldPresentation: Sendable, Equatable {
 /// the control in a fixed-width trailing column so every control in a pane
 /// lines up on one vertical rail.
 public struct SettingsRow: View {
-    @Environment(\.ainkradTheme) private var tokens
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
@@ -105,7 +105,7 @@ public struct SettingsRow: View {
     private var paneBody: some View {
         control
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(AinkradSpacing.md)
+            .padding(skin.spacing.md)
     }
 
     /// The row path is `AinkradFormRow` — the kit's form row — plus the
@@ -113,7 +113,9 @@ public struct SettingsRow: View {
     /// handed to FormRow's own slots rather than re-implemented here, and the
     /// fixed control width is what puts every control on one vertical rail.
     private var rowBody: some View {
-        AinkradFormRow(
+        let row = skin.components.settingsRow
+        let shape = AinkradSkinShape(token: row.shape)
+        return AinkradFormRow(
             title: field.label,
             help: field.help,
             badges: Self.badges(for: field).map { $0.uppercased() },
@@ -128,15 +130,17 @@ public struct SettingsRow: View {
         ) {
             control
         }
-        .padding(AinkradSpacing.md)
-        .background(ChamferShape(cut: AinkradRadius.md).fill(tokens.surfaceElevated.opacity(0.5)))
+        .padding(skin.spacing.md)
+        .background(shape.fill(skin.color(row.fill)))
         .overlay(
-            ChamferShape(cut: AinkradRadius.md)
-                .strokeBorder(tokens.accentPrimary.opacity(isHovered ? 0.3 : 0.15), lineWidth: 1)
+            shape
+                .strokeBorder(skin.color(row.stroke.color, state: state), lineWidth: row.stroke.width.resolve(state))
         )
         .onHover { isHovered = $0 }
-        .animation(reduceMotion ? nil : .easeOut(duration: AinkradMotion.durationFast), value: isHovered)
+        .animation(reduceMotion ? nil : skin.animation(row.hoverAnimation), value: isHovered)
     }
+
+    private var state: AinkradControlState { isHovered ? [.hover] : [] }
 
     /// Restores this field's default. Lives here rather than in FormRow
     /// because "modified vs default" is a settings concept the kit has no
@@ -150,8 +154,8 @@ public struct SettingsRow: View {
                 // Sizes an SF Symbol glyph, not text — the kit font API does
                 // not apply to icon glyphs.
                 Image(systemName: "arrow.uturn.backward")
-                    .font(.system(size: 10))
-                    .foregroundStyle(tokens.accentSecondary.opacity(0.9))
+                    .font(skin.font(skin.components.settingsRow.resetGlyphFont, typography: typo))
+                    .foregroundStyle(skin.color(skin.components.settingsRow.resetGlyphColor))
             }
             .buttonStyle(.plain)
             .opacity(isHovered ? 1 : 0)
@@ -193,8 +197,8 @@ public struct SettingsRow: View {
             AinkradSecureField(text: binding, placeholder: "")
         case .shortcut(let binding):
             Text(binding.wrappedValue)
-                .font(AinkradFontResolver.font(.mono, typography: typo))
-                .foregroundStyle(tokens.foreground.opacity(0.8))
+                .font(skin.font(skin.components.settingsRow.valueFont, typography: typo))
+                .foregroundStyle(skin.color(skin.components.settingsRow.valueColor))
         case .action(let title, let handler):
             AinkradButton(title: title, action: handler)
         case .custom(let view):
