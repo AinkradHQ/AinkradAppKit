@@ -15,7 +15,6 @@ public struct AinkradListRow<Leading: View, Trailing: View>: View {
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
-    @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
 
     public init(
@@ -36,7 +35,6 @@ public struct AinkradListRow<Leading: View, Trailing: View>: View {
 
     public var body: some View {
         let row = skin.components.listRow
-        let shape = AinkradSkinShape(token: row.shape)
         HStack(spacing: skin.spacing.md) {
             leading
             // A row is a fixed-height object: one line of title, one of
@@ -67,25 +65,10 @@ public struct AinkradListRow<Leading: View, Trailing: View>: View {
         }
         .padding(.horizontal, skin.spacing.md)
         .padding(.vertical, skin.spacing.sm)
-        .background(shape.fill(skin.color(row.fill, state: state)))
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(skin.color(skin.roles.accentTick.fill))
-                .frame(width: row.edgeWidth.resolve(state))
-                .shadow(color: skin.color(row.edgeGlow.color, state: state), radius: row.edgeGlow.radius.resolve(state))
-        }
-        .clipShape(shape)
+        .ainkradRowBackground(isSelected: isSelected, isHovered: hovering)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: hovering)
         .apply { if let onTap { $0.onTapGesture(perform: onTap) } else { $0 } }
-    }
-
-    private var state: AinkradControlState {
-        var state: AinkradControlState = []
-        if isSelected { state.insert(.selected) }
-        if hovering { state.insert(.hover) }
-        return state
     }
 }
 
