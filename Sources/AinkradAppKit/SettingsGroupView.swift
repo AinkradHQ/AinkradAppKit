@@ -16,7 +16,7 @@ import SwiftUI
 /// longer a distinct title bar to pin while rows scroll beneath it; each
 /// group now scrolls as a single unit.
 public struct SettingsGroupView: View {
-    @Environment(\.ainkradTheme) private var tokens
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
@@ -66,7 +66,7 @@ public struct SettingsGroupView: View {
     /// destroy the spatial memory that makes settings learnable.
     public static func opacity(for path: SettingsPath, matchedPaths: Set<SettingsPath>?) -> Double {
         guard let matchedPaths else { return 1.0 }
-        return matchedPaths.contains(path) ? 1.0 : 0.35
+        return matchedPaths.contains(path) ? 1.0 : AinkradSkin.standard.components.settingsGroup.searchDimmedOpacity
     }
 
     /// True when every field in the group is a pane (`.custom`) rather than a
@@ -145,23 +145,24 @@ public struct SettingsGroupView: View {
     /// presentations share one definition.
     @ViewBuilder
     private var rows: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.md) {
+        let groupTokens = skin.components.settingsGroup
+        VStack(alignment: .leading, spacing: skin.spacing.md) {
             ForEach(group.fields) { field in
                 SettingsRow(field: field, layout: layout)
                     .opacity(Self.opacity(for: field.path, matchedPaths: matchedPaths))
                     .overlay(
-                        ChamferShape(cut: AinkradRadius.md)
+                        AinkradSkinShape(token: groupTokens.highlightShape)
                             .strokeBorder(
                                 highlightedPath == field.path
-                                    ? tokens.accentSecondary.opacity(0.9) : .clear,
-                                lineWidth: 1.5)
+                                    ? skin.color(groupTokens.highlightStroke.color) : .clear,
+                                lineWidth: groupTokens.highlightStroke.width.resolve([]))
                     )
                     .id(field.path)
             }
             if let note = group.footerNote {
                 Text(note)
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(tokens.foreground.opacity(0.45))
+                    .font(skin.font(groupTokens.captionFont, typography: typo))
+                    .foregroundStyle(skin.color(groupTokens.captionColor))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
