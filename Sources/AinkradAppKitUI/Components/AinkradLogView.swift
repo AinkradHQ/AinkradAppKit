@@ -59,16 +59,19 @@ public struct AinkradLogView: NSViewRepresentable {
         textView.textContainer?.containerSize = NSSize(
             width: CGFloat.greatestFiniteMagnitude,
             height: CGFloat.greatestFiniteMagnitude)
-        textView.textContainerInset = NSSize(width: 8, height: 8)
+        let logTokens = context.environment[keyPath: \.ainkradSkin].components.logView
+        textView.textContainerInset = NSSize(width: logTokens.insetX, height: logTokens.insetY)
         return scrollView
     }
 
     public func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
         let selected = textView.selectedRanges
+        let skin = context.environment[keyPath: \.ainkradSkin]
         textView.textStorage?.setAttributedString(
             Self.attributedLog(
-                lines: lines, palette: palette, foreground: foreground, showsSourcePrefix: showsSourcePrefix))
+                lines: lines, palette: palette, foreground: foreground, showsSourcePrefix: showsSourcePrefix,
+                skin: skin))
         // Preserving the selection matters: without it a follow tick wipes
         // whatever the user was in the middle of copying.
         if !isFollowing {
@@ -97,8 +100,19 @@ public struct AinkradLogView: NSViewRepresentable {
         lines: [AinkradLogLine], palette: AinkradANSIPalette, foreground: Color,
         showsSourcePrefix: Bool
     ) -> NSAttributedString {
-        let font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-        let boldFont = NSFont.monospacedSystemFont(ofSize: 11, weight: .semibold)
+        attributedLog(
+            lines: lines, palette: palette, foreground: foreground, showsSourcePrefix: showsSourcePrefix,
+            skin: AinkradSkin.standard)
+    }
+
+    static func attributedLog(
+        lines: [AinkradLogLine], palette: AinkradANSIPalette, foreground: Color,
+        showsSourcePrefix: Bool, skin: AinkradSkin
+    ) -> NSAttributedString {
+        let view = skin.components.logView
+        let pointSize = view.font.size.map { CGFloat($0) } ?? CGFloat(skin.type.sizes.t11)
+        let font = NSFont.monospacedSystemFont(ofSize: pointSize, weight: .regular)
+        let boldFont = NSFont.monospacedSystemFont(ofSize: pointSize, weight: .semibold)
         let defaultColor = NSColor(foreground)
         let output = NSMutableAttributedString()
 
@@ -107,7 +121,10 @@ public struct AinkradLogView: NSViewRepresentable {
                 output.append(
                     NSAttributedString(
                         string: sourcePrefix(source) + " ",
-                        attributes: [.font: font, .foregroundColor: defaultColor.withAlphaComponent(0.45)]))
+                        attributes: [
+                            .font: font,
+                            .foregroundColor: defaultColor.withAlphaComponent(view.sourcePrefixOpacity),
+                        ]))
             }
             for run in line.runs {
                 var color = NSColor(palette.color(slot: run.colorSlot, default: foreground))
@@ -115,9 +132,9 @@ public struct AinkradLogView: NSViewRepresentable {
                 // because a process that does not colour its output still
                 // distinguishes its streams and the reader should see that.
                 if run.colorSlot == nil, line.stream == .stderr {
-                    color = NSColor(palette.color(slot: 1, default: foreground))
+                    color = NSColor(palette.color(slot: view.stderrSlot, default: foreground))
                 }
-                if run.isDim { color = color.withAlphaComponent(0.6) }
+                if run.isDim { color = color.withAlphaComponent(view.dimOpacity) }
                 output.append(
                     NSAttributedString(
                         string: run.text,
