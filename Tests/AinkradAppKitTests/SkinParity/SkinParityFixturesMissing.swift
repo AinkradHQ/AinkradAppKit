@@ -157,6 +157,32 @@ enum SkinParityFixturesMissing {
                             .ainkradRowBackground(isSelected: selected, isHovered: hovered))))
         }
 
+        let overlayContent = Text("Overlay").padding(40)
+        let overlays: [(String, AnyView)] = [
+            (
+                "withinWindow",
+                AnyView(
+                    overlayContent.ainkradOverlayChrome(
+                        backgroundOpacity: 0.94, blurEnabled: true, blending: .withinWindow))
+            ),
+            (
+                "behindWindow",
+                AnyView(
+                    overlayContent.ainkradOverlayChrome(
+                        backgroundOpacity: 0.94, blurEnabled: true, blending: .behindWindow))
+            ),
+            (
+                "noBlur",
+                AnyView(
+                    overlayContent.ainkradOverlayChrome(
+                        backgroundOpacity: 0.6, blurEnabled: false, blending: .withinWindow))
+            ),
+            ("tokens", AnyView(overlayContent.ainkradOverlayChrome(blending: .withinWindow))),
+        ]
+        for (name, view) in overlays {
+            list.append(SkinParityFixture(name: "overlayChrome-\(name)", view: view))
+        }
+
         return list
     }
 }
