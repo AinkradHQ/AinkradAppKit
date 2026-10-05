@@ -26,7 +26,8 @@ extension AinkradRoleTokens {
             stroke: AinkradStrokeToken(
                 color: AinkradStateColor(rest: .palette("accentSecondary", 0.55)), width: AinkradStateDouble(rest: 1.25)
             ),
-            shadow: AinkradShadowToken(color: .palette("accentSecondary", 0.35), radius: 10, x: 0, y: 4)
+            shadow: AinkradShadowToken(color: .palette("accentSecondary", 0.35), radius: 10, x: 0, y: 4),
+            minWidth: 160
         ),
         bubble: AinkradBubbleRoleTokens(
             shape: AinkradShapeToken(style: "chamfer", cut: 6),
@@ -59,7 +60,7 @@ extension AinkradRoleTokens {
             stroke: AinkradStrokeToken(
                 color: AinkradStateColor(
                     rest: .palette("accentPrimary", 0.3), selected: .palette("accentPrimary", 0.75)),
-                width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
+                width: AinkradStateDouble(rest: 1.25, selected: 1.25)),
             glow: AinkradGlowToken(
                 color: AinkradStateColor(
                     rest: .palette("accentPrimary", 0.0), selected: .palette("accentPrimary", 0.4)),
@@ -80,7 +81,8 @@ extension AinkradRoleTokens {
             fill: .palette("surface", 0.7),
             stroke: AinkradStrokeToken(
                 color: AinkradStateColor(rest: .palette("accentPrimary", 0.3)), width: AinkradStateDouble(rest: 1.0)),
-            paddingV: 6
+            paddingV: 6,
+            panelMinWidth: 200
         ),
         selectedFill: .palette("accentPrimary", 0.16),
         accentTick: AinkradAccentTickRoleTokens(

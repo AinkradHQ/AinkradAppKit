@@ -67,19 +67,21 @@ public func selectableValues<T>(_ sections: [AinkradGroupedSection<T>]) -> [T] {
 /// shared since the original is file-private to `AinkradPickers.swift`).
 /// Skips the animation entirely under Reduce Motion.
 private struct GroupedPanelMaterialize<Content: View>: View {
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var appeared = false
     private let content: Content
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
+        let mat = skin.roles.materialize
         content
             .opacity(appeared ? 1 : 0)
-            .scaleEffect(appeared ? 1 : 0.96, anchor: .top)
+            .scaleEffect(appeared ? 1 : mat.scale, anchor: .top)
             .onAppear {
                 if reduceMotion {
                     appeared = true
                 } else {
-                    withAnimation(AinkradMotion.materialize) { appeared = true }
+                    withAnimation(skin.animation(mat.animation)) { appeared = true }
                 }
             }
     }
@@ -96,7 +98,7 @@ public struct AinkradGroupedSelect<T: Hashable>: View {
     private let triggerLabel: String
     private let searchPlaceholder: String
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @State private var isOpen = false
 
@@ -125,26 +127,31 @@ public struct AinkradGroupedSelect<T: Hashable>: View {
     private func close() { isOpen = false }
 
     private var trigger: some View {
-        Button {
+        let trig = skin.components.groupedSelectTrigger
+        let shape = AinkradSkinShape(token: trig.shape)
+        var state: AinkradControlState = []
+        if isOpen { state.insert(.selected) }
+        return Button {
             isOpen ? close() : open()
         } label: {
-            HStack(spacing: AinkradSpacing.xs) {
+            HStack(spacing: skin.spacing.xs) {
                 Text(triggerLabel)
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                    .foregroundStyle(theme.foreground)
-                Spacer(minLength: AinkradSpacing.sm)
+                    .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
+                    .foregroundStyle(skin.color(skin.palette.foreground))
+                Spacer(minLength: skin.spacing.sm)
                 Image(systemName: isOpen ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(theme.accentSecondary.opacity(0.85))
+                    .font(skin.font(trig.chevron, typography: typo))
+                    .foregroundStyle(skin.color(trig.chevronColor))
             }
-            .padding(.horizontal, AinkradSpacing.md)
-            .padding(.vertical, AinkradSpacing.sm)
-            .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.5)))
+            .padding(.horizontal, skin.spacing.md)
+            .padding(.vertical, skin.spacing.sm)
+            .background(shape.fill(skin.color(trig.fill)))
             .overlay(
-                ChamferShape(cut: 8).strokeBorder(theme.accentPrimary.opacity(isOpen ? 0.75 : 0.3), lineWidth: 1.25)
+                shape.strokeBorder(
+                    skin.color(trig.stroke.color, state: state), lineWidth: trig.stroke.width.resolve(state))
             )
-            .shadow(color: theme.accentPrimary.opacity(isOpen ? 0.4 : 0), radius: isOpen ? 5 : 0)
-            .contentShape(ChamferShape(cut: 8))
+            .shadow(color: skin.color(trig.glow.color, state: state), radius: trig.glow.radius.resolve(state))
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
         .animation(AinkradMotion.hover, value: isOpen)
@@ -164,7 +171,7 @@ struct GroupedSelectPanelView<T: Hashable>: View {
     let placeholder: String
     let onClose: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @State private var query = ""
     @State private var highlightedIndex = 0
@@ -174,10 +181,6 @@ struct GroupedSelectPanelView<T: Hashable>: View {
     private var filteredSections: [AinkradGroupedSection<T>] { filterGroupedSections(sections, query: query) }
     private var highlightableValues: [T] { selectableValues(filteredSections) }
 
-    /// One flattened, lazily-rendered stream of headers + rows. Flattening (rather
-    /// than nesting a VStack of rows per section) keeps rendering cheap even when a
-    /// single provider returns hundreds of models — only near-visible items are
-    /// realized by the `LazyVStack`, so opening the panel stays snappy.
     private enum PanelItem: Hashable {
         case header(String)
         case row(AinkradGroupedRow<T>)
@@ -189,14 +192,16 @@ struct GroupedSelectPanelView<T: Hashable>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.xs) {
+        let popover = skin.roles.popover
+        let shape = AinkradSkinShape(token: popover.shape)
+        VStack(alignment: .leading, spacing: skin.spacing.xs) {
             searchField
             if filteredSections.isEmpty {
                 Text("No matches")
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.5))
-                    .padding(.horizontal, AinkradSpacing.sm)
-                    .padding(.vertical, AinkradSpacing.xs)
+                    .font(skin.font(AinkradFontToken(role: "caption"), typography: typo))
+                    .foregroundStyle(skin.color(skin.text.muted))
+                    .padding(.horizontal, skin.spacing.sm)
+                    .padding(.vertical, skin.spacing.xs)
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -208,15 +213,15 @@ struct GroupedSelectPanelView<T: Hashable>: View {
                         }
                     }
                 }
-                .frame(maxHeight: 320)
+                .frame(maxHeight: skin.components.groupedSelectRows.panelMaxHeight)
                 .scrollBounceBehavior(.basedOnSize)
             }
         }
-        .padding(AinkradSpacing.xs)
-        .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.97)))
-        .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentSecondary.opacity(0.55), lineWidth: 1.25))
-        .shadow(color: theme.accentSecondary.opacity(0.35), radius: 10, y: 4)
-        .frame(minWidth: 340)
+        .padding(skin.spacing.xs)
+        .background(shape.fill(skin.color(popover.fill)))
+        .overlay(shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([])))
+        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        .frame(minWidth: skin.components.groupedSelectRows.panelMinWidth)
         .onAppear { DispatchQueue.main.async { searchFocused = true } }
         .onChange(of: query) { _, _ in highlightedIndex = 0 }
         .onKeyPress(.upArrow) { move(-1) }
@@ -229,12 +234,14 @@ struct GroupedSelectPanelView<T: Hashable>: View {
     }
 
     private var searchField: some View {
-        TextField(placeholder, text: $query)
+        let panelSearch = skin.roles.panelSearch
+        let searchShape = AinkradSkinShape(token: panelSearch.shape)
+        return TextField(placeholder, text: $query)
             .textFieldStyle(.plain)
             .focused($searchFocused)
-            .font(AinkradFontResolver.font(.body, typography: typo))
-            .foregroundStyle(theme.foreground)
-            .tint(theme.accentSecondary)
+            .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
+            .foregroundStyle(skin.color(skin.palette.foreground))
+            .tint(skin.color(skin.palette.accentSecondary))
             .onSubmit {
                 let values = highlightableValues
                 if values.indices.contains(highlightedIndex) {
@@ -245,56 +252,62 @@ struct GroupedSelectPanelView<T: Hashable>: View {
                     onClose()
                 }
             }
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs + 2)
-            .background(ChamferShape(cut: 4).fill(theme.surface.opacity(0.7)))
-            .overlay(ChamferShape(cut: 4).strokeBorder(theme.accentPrimary.opacity(0.3), lineWidth: 1))
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, panelSearch.paddingV)
+            .background(searchShape.fill(skin.color(panelSearch.fill)))
+            .overlay(
+                searchShape.strokeBorder(
+                    skin.color(panelSearch.stroke.color), lineWidth: panelSearch.stroke.width.resolve([])))
     }
 
-    // Section header row in the flattened `LazyVStack`. Empty headers are never
-    // emitted into `flatItems`, so this always renders a real label.
     private func headerView(_ header: String) -> some View {
-        Text(header.uppercased())
-            .font(AinkradFontResolver.font(.caption, typography: typo))
-            .foregroundStyle(theme.foreground.opacity(0.45))
-            .kerning(1.0)
+        let grp = skin.components.groupedSelectRows
+        return Text(header.uppercased())
+            .font(skin.font(grp.headerFont, typography: typo))
+            .foregroundStyle(skin.color(grp.headerColor))
+            .kerning(grp.headerKerning)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.top, AinkradSpacing.xs)
-            .padding(.bottom, 2)
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.top, skin.spacing.xs)
+            .padding(.bottom, grp.headerPadBottom)
     }
 
     private func optionRow(_ row: AinkradGroupedRow<T>) -> some View {
         let isSelected = row.value == selection
         let isHovered = row.isEnabled && hoveredValue == row.value
         let isHighlighted = row.isEnabled && highlightableValues.firstIndex(of: row.value) == highlightedIndex
-        let content = HStack(spacing: AinkradSpacing.xs) {
+        let grp = skin.components.groupedSelectRows
+        let rowRole = skin.roles.optionRow
+        let rowShape = AinkradSkinShape(token: rowRole.shape)
+        var iconState: AinkradControlState = []
+        if !row.isEnabled { iconState.insert(.disabled) }
+        let content = HStack(spacing: skin.spacing.xs) {
             Image(systemName: "diamond.fill")
-                .font(.system(size: 6))
-                .foregroundStyle(theme.accentSecondary)
+                .font(skin.font(rowRole.selectedDot, typography: typo))
+                .foregroundStyle(skin.color(skin.palette.accentSecondary))
                 .opacity(isSelected ? 1 : 0)
             if let icon = row.icon {
                 Image(systemName: icon)
-                    .font(.system(size: 11))
-                    .foregroundStyle(theme.foreground.opacity(row.isEnabled ? 0.75 : 0.4))
+                    .font(skin.font(grp.iconFont, typography: typo))
+                    .foregroundStyle(skin.color(grp.iconColor, state: iconState))
             }
             if let dot = row.swatch {
-                ColorSwatchDot(color: dot, size: 9)
+                ColorSwatchDot(color: dot, size: rowRole.swatchDotSize)
             }
             Text(row.title)
-                .font(AinkradFontResolver.font(.body, typography: typo))
-                .foregroundStyle(theme.foreground.opacity(row.isEnabled ? 1 : 0.4))
-            Spacer(minLength: AinkradSpacing.sm)
+                .font(skin.font(grp.titleFont, typography: typo))
+                .foregroundStyle(skin.color(grp.titleColor, state: iconState))
+            Spacer(minLength: skin.spacing.sm)
             if let detail = row.detail {
                 Text(detail)
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(row.isEnabled ? 0.5 : 0.3))
+                    .font(skin.font(grp.detailFont, typography: typo))
+                    .foregroundStyle(skin.color(grp.detailColor, state: iconState))
             }
         }
-        .padding(.horizontal, AinkradSpacing.sm)
-        .padding(.vertical, AinkradSpacing.xs + 2)
+        .padding(.horizontal, skin.spacing.sm)
+        .padding(.vertical, rowRole.paddingV)
         .background(
-            ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear)
+            rowShape.fill(skin.color(rowRole.fill, state: (isHovered || isHighlighted) ? [.hover] : []))
         )
         .contentShape(Rectangle())
 

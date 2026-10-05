@@ -185,7 +185,7 @@ private struct AinkradCommandMenuRow: View {
     let isHighlighted: Bool
     let action: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
@@ -193,50 +193,50 @@ private struct AinkradCommandMenuRow: View {
     private var emphasized: Bool { hovering || isHighlighted }
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: AinkradSpacing.sm) {
+        let cmd = skin.components.commandMenuRow
+        let shape = AinkradSkinShape(token: cmd.shape)
+        var state: AinkradControlState = []
+        if isSelected { state.insert(.selected) }
+        if emphasized { state.insert(.hover) }
+
+        return Button(action: action) {
+            HStack(spacing: skin.spacing.sm) {
                 Image(systemName: icon)
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(width: 18)
-                VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
+                    .font(skin.font(cmd.glyphFont, typography: typo))
+                    .frame(width: cmd.glyphWidth)
+                VStack(alignment: .leading, spacing: skin.spacing.xs / 2) {
                     Text(uppercased ? label.uppercased() : label)
-                        .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-                        .tracking(uppercased ? 0.6 : 0)
+                        .font(skin.font(cmd.titleFont, typography: typo))
+                        .tracking(uppercased ? cmd.uppercasedTracking : 0)
                     if let detail {
                         Text(detail)
-                            .font(AinkradFontResolver.font(.mono, typography: typo))
-                            .foregroundStyle(theme.foreground.opacity(0.45))
+                            .font(skin.font(cmd.detailFont, typography: typo))
+                            .foregroundStyle(skin.color(cmd.detailColor))
                     }
                 }
-                Spacer(minLength: AinkradSpacing.sm)
+                Spacer(minLength: skin.spacing.sm)
                 if let value, !value.isEmpty {
                     Text(value)
-                        .font(AinkradFontResolver.font(.mono, typography: typo))
-                        .foregroundStyle(theme.accentSecondary.opacity(0.85))
+                        .font(skin.font(cmd.valueFont, typography: typo))
+                        .foregroundStyle(skin.color(cmd.valueColor))
                 }
             }
             .foregroundStyle(
-                isSelected ? theme.accentPrimary.contrastingText : theme.foreground.opacity(emphasized ? 0.9 : 0.65)
+                isSelected ? skin.color(skin.palette.accentPrimary).contrastingText : skin.color(cmd.fg, state: state)
             )
-            .padding(.horizontal, AinkradSpacing.md)
-            .padding(.vertical, AinkradSpacing.sm)
-            .background(
-                ChamferShape(cut: 6)
-                    .fill(
-                        isSelected
-                            ? theme.accentPrimary.opacity(0.85) : theme.surfaceElevated.opacity(emphasized ? 0.5 : 0.2))
-            )
+            .padding(.horizontal, skin.spacing.md)
+            .padding(.vertical, skin.spacing.sm)
+            .background(shape.fill(skin.color(cmd.fill, state: state)))
             .overlay(
-                ChamferShape(cut: 6)
-                    .strokeBorder(
-                        theme.accentSecondary.opacity(isSelected ? 0.9 : (emphasized ? 0.5 : 0)), lineWidth: 1.25)
+                shape.strokeBorder(
+                    skin.color(cmd.stroke.color, state: state), lineWidth: cmd.stroke.width.resolve(state))
             )
-            .shadow(color: theme.accentSecondary.opacity(isSelected ? 0.5 : 0), radius: isSelected ? 5 : 0)
+            .shadow(color: skin.color(cmd.glow.color, state: state), radius: cmd.glow.radius.resolve(state))
             .scanlineOverlay(active: hovering && !isSelected)
-            .contentShape(ChamferShape(cut: 6))
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .scaleEffect(hovering && !reduceMotion ? 1.015 : 1.0)
+        .scaleEffect(hovering && !reduceMotion ? cmd.hoverScale : 1.0)
         .animation(AinkradMotion.hover, value: hovering)
         .onHover { hovering = $0 }
     }
@@ -280,38 +280,41 @@ private struct AinkradNavListRow: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: AinkradSpacing.sm) {
+        let nav = skin.components.navListRow
+        let tick = skin.roles.accentTick
+        let shape = AinkradSkinShape(token: nav.shape)
+        var state: AinkradControlState = []
+        if isSelected { state.insert(.selected) }
+        if hovering { state.insert(.hover) }
+
+        return Button(action: action) {
+            HStack(spacing: skin.spacing.sm) {
                 Rectangle()
-                    .fill(theme.accentSecondary)
-                    .frame(width: 2)
+                    .fill(skin.color(tick.fill))
+                    .frame(width: nav.tickWidth)
                     .opacity(isSelected ? 1 : 0)
-                    .shadow(color: theme.accentSecondary.opacity(isSelected ? 0.6 : 0), radius: 2)
+                    .shadow(
+                        color: skin.color(tick.glow.color, state: isSelected ? [.selected] : []),
+                        radius: tick.glow.radius.rest)
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 12, weight: .semibold))
-                        .frame(width: 16)
+                        .font(skin.font(nav.glyphFont, typography: typo))
+                        .frame(width: nav.glyphWidth)
                 }
                 Text(label)
-                    .font(AinkradFontResolver.font(.body, weight: isSelected ? .semibold : .regular, typography: typo))
+                    .font(skin.font(isSelected ? nav.bodySelectedFont : nav.bodyFont, typography: typo))
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(isSelected ? theme.foreground : theme.foreground.opacity(hovering ? 0.85 : 0.6))
-            .padding(.vertical, AinkradSpacing.sm)
-            .padding(.horizontal, AinkradSpacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: AinkradRadius.sm)
-                    .fill(
-                        isSelected
-                            ? theme.surfaceElevated.opacity(0.6)
-                            : (hovering ? theme.surfaceElevated.opacity(0.3) : .clear))
-            )
+            .foregroundStyle(skin.color(nav.fg, state: state))
+            .padding(.vertical, skin.spacing.sm)
+            .padding(.horizontal, skin.spacing.sm)
+            .background(shape.fill(skin.color(nav.fill, state: state)))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

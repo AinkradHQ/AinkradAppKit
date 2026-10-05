@@ -191,7 +191,7 @@ extension AinkradComponentTokens {
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(
                         rest: .palette("accentPrimary", 0.3), focused: .palette("accentPrimary", 0.85)),
-                    width: AinkradStateDouble(rest: 1.0, focused: 1.25)),
+                    width: AinkradStateDouble(rest: 1.25, focused: 1.5)),
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(
                         rest: .palette("accentPrimary", 0.0), focused: .palette("accentPrimary", 0.45)),
@@ -219,7 +219,11 @@ extension AinkradComponentTokens {
                 detailColor: AinkradStateColor(
                     rest: .palette("foreground", 0.5), disabled: .palette("foreground", 0.3)),
                 emptyFont: AinkradFontToken(role: "caption"),
-                emptyColor: .palette("foreground", 0.5)
+                emptyColor: .palette("foreground", 0.5),
+                headerKerning: 1.0,
+                headerPadBottom: 2,
+                panelMaxHeight: 320,
+                panelMinWidth: 340
             )
         )
     }

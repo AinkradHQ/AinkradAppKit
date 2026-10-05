@@ -2,19 +2,19 @@
 # Raising one needs `make lint-rebaseline`, DESIGN_LINT_ALLOW_RAISE=1 on push, and a PR note.
 version 1
 format on
-font-size 25
-padding-literal 9
-spacing-literal 8
-radius-literal 9
+font-size 13
+padding-literal 8
+spacing-literal 6
+radius-literal 1
 hex-color 0
 raw-color 0
 raw-control off AppKit implements the kit controls
-file-length 3
+file-length 2
 try-bang 0
 force-cast 0
 force-unwrap 1
 print 0
-opacity-literal 106
-frame-literal 25
-chamfer-literal 46
+opacity-literal 36
+frame-literal 15
+chamfer-literal 7
 motion-literal 5

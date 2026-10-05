@@ -8,7 +8,9 @@ extension AinkradComponentTokens {
                 glyphFont: AinkradFontToken(size: 12, weight: "semibold", scaled: false),
                 bodyFont: AinkradFontToken(role: "body"),
                 rowShape: AinkradShapeToken(style: "chamfer", cut: 4),
-                rowHoverFill: .palette("accentSecondary", 0.14)
+                rowHoverFill: .palette("accentSecondary", 0.14),
+                rowGap: 2,
+                tint: .palette("foreground", 0.9)
             ),
             tooltipPopover: TooltipPopoverTokens(
                 textFont: AinkradFontToken(role: "caption"),
@@ -34,7 +36,9 @@ extension AinkradComponentTokens {
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(rest: .clear, selected: .palette("accentSecondary", 0.5)),
                     radius: AinkradStateDouble(rest: 0, selected: 5)),
-                hoverScale: 1.015
+                hoverScale: 1.015,
+                glyphWidth: 18,
+                uppercasedTracking: 0.6
             ),
             navListRow: NavListRowTokens(
                 glyphFont: AinkradFontToken(size: 12, weight: "semibold", scaled: false),
@@ -43,9 +47,11 @@ extension AinkradComponentTokens {
                 fg: AinkradStateColor(
                     rest: .palette("foreground", 0.6), hover: .palette("foreground", 0.85),
                     selected: .palette("foreground", 1.0)),
-                shape: AinkradShapeToken(style: "rounded", cut: 8),
+                shape: AinkradShapeToken(style: "continuous", cut: 8),
                 fill: AinkradStateColor(
-                    rest: .clear, hover: .palette("surfaceElevated", 0.3), selected: .palette("surfaceElevated", 0.6))
+                    rest: .clear, hover: .palette("surfaceElevated", 0.3), selected: .palette("surfaceElevated", 0.6)),
+                tickWidth: 2,
+                glyphWidth: 16
             ),
             tabs: TabsTokens(
                 labelFont: AinkradFontToken(role: "caption", weight: "semibold", tracking: 0.8),
@@ -56,7 +62,9 @@ extension AinkradComponentTokens {
                 fill: AinkradStateColor(
                     rest: .palette("surfaceElevated", 0.25), hover: .palette("surfaceElevated", 0.5),
                     selected: .palette("accentPrimary", 0.85)),
-                hoverScale: 1.02
+                hoverScale: 1.02,
+                labelGap: 3,
+                tickHeight: 2
             ),
             breadcrumb: BreadcrumbTokens(
                 chevronFont: AinkradFontToken(size: 10, weight: "bold", scaled: false),
@@ -71,7 +79,8 @@ extension AinkradComponentTokens {
                 currentFill: .palette("accentPrimary", 1.0),
                 dotFill: .palette("foreground", 0.25),
                 currentGlow: AinkradGlowToken(
-                    color: AinkradStateColor(rest: .palette("accentPrimary", 0.6)), radius: AinkradStateDouble(rest: 3)),
+                    color: AinkradStateColor(rest: .clear, selected: .palette("accentPrimary", 0.6)),
+                    radius: AinkradStateDouble(rest: 0, selected: 3)),
                 disabledOpacity: 0.3
             ),
             listRow: ListRowTokens(

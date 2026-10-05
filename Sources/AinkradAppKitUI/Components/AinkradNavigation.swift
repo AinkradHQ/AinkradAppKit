@@ -17,6 +17,7 @@ public struct AinkradTabs<T: Hashable>: View {
     @Binding private var selection: T
     private let label: (T) -> String
 
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     public init(tabs: [T], selection: Binding<T>, label: @escaping (T) -> String) {
@@ -26,7 +27,7 @@ public struct AinkradTabs<T: Hashable>: View {
     }
 
     public var body: some View {
-        HStack(spacing: AinkradSpacing.xs) {
+        HStack(spacing: skin.spacing.xs) {
             ForEach(tabs, id: \.self) { tab in
                 AinkradTabButton(title: label(tab), isSelected: tab == selection) {
                     if reduceMotion {
@@ -37,7 +38,7 @@ public struct AinkradTabs<T: Hashable>: View {
                 }
             }
         }
-        .padding(AinkradSpacing.xs / 2)
+        .padding(skin.spacing.xs / 2)
     }
 }
 
@@ -48,38 +49,44 @@ private struct AinkradTabButton: View {
     let isSelected: Bool
     let action: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 3) {
+        let tabs = skin.components.tabs
+        let tick = skin.roles.accentTick
+        let shape = AinkradSkinShape(token: tabs.shape)
+        var state: AinkradControlState = []
+        if isSelected { state.insert(.selected) }
+        if hovering { state.insert(.hover) }
+
+        return Button(action: action) {
+            VStack(spacing: tabs.labelGap) {
                 Text(title.uppercased())
-                    .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
-                    .tracking(0.8)
+                    .font(skin.font(tabs.labelFont, typography: typo))
+                    .tracking(tabs.labelFont.tracking ?? 0)
                     .foregroundStyle(
                         isSelected
-                            ? theme.accentPrimary.contrastingText : theme.foreground.opacity(hovering ? 0.9 : 0.6))
+                            ? skin.color(skin.palette.accentPrimary).contrastingText
+                            : skin.color(tabs.fg, state: hovering ? [.hover] : [])
+                    )
                 Rectangle()
-                    .fill(theme.accentSecondary)
-                    .frame(height: 2)
+                    .fill(skin.color(tick.fill))
+                    .frame(height: tabs.tickHeight)
                     .opacity(isSelected ? 1 : 0)
-                    .shadow(color: theme.accentSecondary.opacity(isSelected ? 0.6 : 0), radius: 2)
+                    .shadow(
+                        color: skin.color(tick.glow.color, state: isSelected ? [.selected] : []),
+                        radius: tick.glow.radius.rest)
             }
-            .padding(.horizontal, AinkradSpacing.md)
-            .padding(.vertical, AinkradSpacing.sm)
-            .background(
-                ChamferShape(cut: 6)
-                    .fill(
-                        isSelected
-                            ? theme.accentPrimary.opacity(0.85) : theme.surfaceElevated.opacity(hovering ? 0.5 : 0.25))
-            )
-            .contentShape(ChamferShape(cut: 6))
+            .padding(.horizontal, skin.spacing.md)
+            .padding(.vertical, skin.spacing.sm)
+            .background(shape.fill(skin.color(tabs.fill, state: state)))
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .scaleEffect(hovering && !isSelected && !reduceMotion ? 1.02 : 1.0)
+        .scaleEffect(hovering && !isSelected && !reduceMotion ? tabs.hoverScale : 1.0)
         .animation(AinkradMotion.hover, value: hovering)
         .onHover { hovering = $0 }
     }
@@ -93,7 +100,7 @@ public struct AinkradBreadcrumb: View {
     private let items: [String]
     private let onSelect: ((Int) -> Void)?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(items: [String], onSelect: ((Int) -> Void)? = nil) {
@@ -102,25 +109,27 @@ public struct AinkradBreadcrumb: View {
     }
 
     public var body: some View {
-        HStack(spacing: AinkradSpacing.xs) {
+        let bread = skin.components.breadcrumb
+        HStack(spacing: skin.spacing.xs) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 let isLast = index == items.count - 1
-                crumb(item, isLast: isLast, index: index)
+                crumb(item, isLast: isLast, index: index, bread: bread)
                 if !isLast {
                     Image(systemName: "chevron.compact.right")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(theme.accentSecondary.opacity(0.55))
+                        .font(skin.font(bread.chevronFont, typography: typo))
+                        .foregroundStyle(skin.color(bread.chevronColor))
                 }
             }
         }
     }
 
     @ViewBuilder
-    private func crumb(_ text: String, isLast: Bool, index: Int) -> some View {
+    private func crumb(_ text: String, isLast: Bool, index: Int, bread: BreadcrumbTokens) -> some View {
+        let labelFontToken = isLast ? bread.activeFont : bread.font
         let label = Text(text.uppercased())
-            .font(AinkradFontResolver.font(.caption, weight: isLast ? .semibold : .regular, typography: typo))
-            .tracking(0.6)
-            .foregroundStyle(isLast ? theme.accentSecondary : theme.foreground.opacity(0.6))
+            .font(skin.font(labelFontToken, typography: typo))
+            .tracking(labelFontToken.tracking ?? 0.6)
+            .foregroundStyle(skin.color(isLast ? bread.activeColor : bread.itemColor))
 
         if let onSelect, !isLast {
             Button {
@@ -141,7 +150,7 @@ public struct AinkradPagination: View {
     @Binding private var page: Int
     private let pageCount: Int
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     public init(page: Binding<Int>, pageCount: Int) {
@@ -150,17 +159,24 @@ public struct AinkradPagination: View {
     }
 
     public var body: some View {
-        HStack(spacing: AinkradSpacing.sm) {
+        let pag = skin.components.pagination
+        HStack(spacing: skin.spacing.sm) {
             pagerButton(systemName: "chevron.left", enabled: page > 0) {
                 page = clampedPage(page - 1, count: pageCount)
             }
-            HStack(spacing: AinkradSpacing.xs) {
+            HStack(spacing: skin.spacing.xs) {
                 ForEach(0..<max(pageCount, 0), id: \.self) { index in
                     let isCurrent = index == page
                     Circle()
-                        .fill(isCurrent ? theme.accentPrimary : theme.foreground.opacity(0.25))
-                        .frame(width: isCurrent ? 8 : 6, height: isCurrent ? 8 : 6)
-                        .shadow(color: theme.accentPrimary.opacity(isCurrent ? 0.6 : 0), radius: 3)
+                        .fill(skin.color(isCurrent ? pag.currentFill : pag.dotFill))
+                        .frame(
+                            width: isCurrent ? pag.currentDotSize : pag.dotSize,
+                            height: isCurrent ? pag.currentDotSize : pag.dotSize
+                        )
+                        .shadow(
+                            color: skin.color(pag.currentGlow.color, state: isCurrent ? [.selected] : []),
+                            radius: pag.currentGlow.radius.resolve(isCurrent ? [.selected] : [])
+                        )
                         .onTapGesture { page = clampedPage(index, count: pageCount) }
                 }
             }
@@ -172,8 +188,9 @@ public struct AinkradPagination: View {
     }
 
     private func pagerButton(systemName: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        AinkradIconButton(systemName: systemName, action: action)
-            .opacity(enabled ? 1 : 0.3)
+        let pag = skin.components.pagination
+        return AinkradIconButton(systemName: systemName, action: action)
+            .opacity(enabled ? 1 : pag.disabledOpacity)
             .allowsHitTesting(enabled)
     }
 }

@@ -29,6 +29,10 @@ public struct GroupedSelectRowTokens: Codable, Equatable, Sendable {
     public var detailColor: AinkradStateColor
     public var emptyFont: AinkradFontToken
     public var emptyColor: AinkradColorToken
+    public var headerKerning: Double
+    public var headerPadBottom: Double
+    public var panelMaxHeight: Double
+    public var panelMinWidth: Double
 }
 
 public struct ContextMenuTokens: Codable, Equatable, Sendable {
@@ -36,6 +40,8 @@ public struct ContextMenuTokens: Codable, Equatable, Sendable {
     public var bodyFont: AinkradFontToken
     public var rowShape: AinkradShapeToken
     public var rowHoverFill: AinkradColorToken
+    public var rowGap: Double
+    public var tint: AinkradColorToken
 }
 
 public struct TooltipPopoverTokens: Codable, Equatable, Sendable {
@@ -59,6 +65,8 @@ public struct CommandMenuRowTokens: Codable, Equatable, Sendable {
     public var stroke: AinkradStrokeToken
     public var glow: AinkradGlowToken
     public var hoverScale: Double
+    public var glyphWidth: Double
+    public var uppercasedTracking: Double
 }
 
 public struct NavListRowTokens: Codable, Equatable, Sendable {
@@ -68,6 +76,8 @@ public struct NavListRowTokens: Codable, Equatable, Sendable {
     public var fg: AinkradStateColor
     public var shape: AinkradShapeToken
     public var fill: AinkradStateColor
+    public var tickWidth: Double
+    public var glyphWidth: Double
 }
 
 public struct TabsTokens: Codable, Equatable, Sendable {
@@ -76,6 +86,8 @@ public struct TabsTokens: Codable, Equatable, Sendable {
     public var shape: AinkradShapeToken
     public var fill: AinkradStateColor
     public var hoverScale: Double
+    public var labelGap: Double
+    public var tickHeight: Double
 }
 
 public struct BreadcrumbTokens: Codable, Equatable, Sendable {
