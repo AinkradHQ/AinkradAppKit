@@ -144,6 +144,19 @@ enum SkinParityFixturesMissing {
                 name: "brandChevron-16x14",
                 view: AnyView(AinkradBrandChevron().fill(BrandChevronAccent()).frame(width: 16, height: 14))))
 
+        // 9. .ainkradRowBackground on a plain row (rest, hovered, selected)
+        for (name, selected, hovered) in [("rest", false, false), ("hovered", false, true), ("selected", true, false)] {
+            list.append(
+                SkinParityFixture(
+                    name: "rowBackground-\(name)",
+                    view: AnyView(
+                        Text("Plain row")
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .frame(width: 200, alignment: .leading)
+                            .ainkradRowBackground(isSelected: selected, isHovered: hovered))))
+        }
+
         return list
     }
 }
