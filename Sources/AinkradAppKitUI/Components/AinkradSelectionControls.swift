@@ -18,7 +18,7 @@ public struct AinkradCheckbox: View {
     @Binding private var isOn: Bool
     private let label: String?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
@@ -29,37 +29,50 @@ public struct AinkradCheckbox: View {
     }
 
     public var body: some View {
+        let checkbox = skin.components.checkbox
+        let shape = AinkradSkinShape(token: checkbox.shape)
         Button {
             isOn = checkboxToggled(isOn)
         } label: {
             HStack(spacing: AinkradSpacing.sm) {
                 ZStack {
-                    ChamferShape(cut: 3)
-                        .fill(isOn ? theme.accentSecondary.opacity(0.22) : theme.surfaceElevated.opacity(0.5))
-                    ChamferShape(cut: 3)
-                        .strokeBorder(theme.accentSecondary.opacity(isOn || hovering ? 0.85 : 0.4), lineWidth: 1.25)
+                    shape
+                        .fill(skin.color(checkbox.fill, state: state))
+                    shape
+                        .strokeBorder(
+                            skin.color(checkbox.stroke.color, state: state),
+                            lineWidth: checkbox.stroke.width.resolve(state))
                     if isOn {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(theme.accentSecondary)
+                            .font(skin.font(checkbox.checkGlyphFont, typography: typo))
+                            .foregroundStyle(skin.color(skin.palette.accentSecondary))
                     }
                 }
-                .frame(width: 18, height: 18)
-                .shadow(color: theme.accentSecondary.opacity(isOn ? 0.5 : 0), radius: 4)
+                .frame(width: checkbox.size, height: checkbox.size)
+                .shadow(
+                    color: skin.color(checkbox.glow.color, state: state),
+                    radius: checkbox.glow.radius.resolve(state))
 
                 if let label {
                     Text(label)
-                        .font(AinkradFontResolver.font(.body, typography: typo))
-                        .foregroundStyle(theme.foreground)
+                        .font(skin.font(checkbox.labelFont, typography: typo))
+                        .foregroundStyle(skin.color(skin.text.primary))
                 }
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .scaleEffect(hovering && !reduceMotion ? 1.04 : 1.0)
+        .scaleEffect(hovering && !reduceMotion ? checkbox.hoverScale : 1.0)
         .animation(AinkradMotion.hover, value: isOn)
         .animation(AinkradMotion.hover, value: hovering)
         .onHover { hovering = $0 }
+    }
+
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if isOn { state.insert(.selected) }
+        if hovering { state.insert(.hover) }
+        return state
     }
 }
 
@@ -70,7 +83,7 @@ public struct AinkradRadioGroup<T: Hashable>: View {
     @Binding private var selection: T
     private let label: (T) -> String
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hoveredOption: T?
@@ -90,6 +103,10 @@ public struct AinkradRadioGroup<T: Hashable>: View {
     private func row(_ option: T) -> some View {
         let isSelected = option == selection
         let isHovered = hoveredOption == option
+        var rowState: AinkradControlState = []
+        if isSelected { rowState.insert(.selected) }
+        if isHovered { rowState.insert(.hover) }
+        let radio = skin.components.radioGroup
         return Button {
             selection = option
         } label: {
@@ -97,21 +114,24 @@ public struct AinkradRadioGroup<T: Hashable>: View {
                 ZStack {
                     Circle()
                         .strokeBorder(
-                            theme.accentSecondary.opacity(isSelected || isHovered ? 0.9 : 0.4), lineWidth: 1.25)
+                            skin.color(radio.ringStroke.color, state: rowState),
+                            lineWidth: radio.ringStroke.width.resolve(rowState))
                     if isSelected {
                         // Diamond marker — the Cardinal HUD radio "on" glyph,
                         // drawn (not a native radio dot).
                         Diamond()
-                            .fill(theme.accentSecondary)
-                            .frame(width: 8, height: 8)
+                            .fill(skin.color(radio.markerFill))
+                            .frame(width: radio.markerSize, height: radio.markerSize)
                     }
                 }
-                .frame(width: 16, height: 16)
-                .shadow(color: theme.accentSecondary.opacity(isSelected ? 0.5 : 0), radius: 4)
+                .frame(width: radio.ringSize, height: radio.ringSize)
+                .shadow(
+                    color: skin.color(radio.glow.color, state: rowState),
+                    radius: radio.glow.radius.resolve(rowState))
 
                 Text(label(option))
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                    .foregroundStyle(theme.foreground)
+                    .font(skin.font(radio.labelFont, typography: typo))
+                    .foregroundStyle(skin.color(skin.text.primary))
             }
             .contentShape(Rectangle())
         }

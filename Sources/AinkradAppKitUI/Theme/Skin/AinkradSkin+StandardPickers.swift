@@ -14,16 +14,18 @@ extension AinkradComponentTokens {
                     color: AinkradStateColor(
                         rest: .palette("foreground", 0.18), hover: .palette("foreground", 0.35),
                         selected: .palette("accentSecondary", 0.75)),
-                    width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
+                    width: AinkradStateDouble(rest: 1.25, selected: 1.25)),
                 knobColor: .palette("white", 1.0),
+                knobInset: 3,
                 knobShadow: AinkradShadowToken(color: .palette("black", 0.4), radius: 3, x: 0, y: 0),
+                knobSelectedShadowColor: .palette("accentSecondary", 0.75),
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.0), selected: .palette("accentSecondary", 0.45)),
                     radius: AinkradStateDouble(rest: 0, selected: 6))
             ),
             secureField: FieldControlTokens(
-                font: AinkradFontToken(role: "mono"),
+                font: AinkradFontToken(role: "mono", mono: "family"),
                 leadingGlyphFont: AinkradFontToken(size: 12, scaled: false),
                 leadingGlyphColor: .palette("foreground", 0.55),
                 searchGlyphFont: AinkradFontToken(size: 12, weight: "semibold", scaled: false),
@@ -56,13 +58,16 @@ extension AinkradComponentTokens {
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(
                         rest: .palette("accentPrimary", 0.25), focused: .palette("accentPrimary", 0.9)),
-                    width: AinkradStateDouble(rest: 1.0, focused: 1.5)),
+                    width: AinkradStateDouble(rest: 1.25, focused: 1.5)),
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.0), focused: .palette("accentSecondary", 0.4)),
                     radius: AinkradStateDouble(rest: 0, focused: 6)),
                 placeholderFont: AinkradFontToken(role: "body"),
                 placeholderColor: .palette("foreground", 0.4),
+                placeholderPadHAutoGrow: 17,
+                placeholderPadHLegacy: 16,
+                placeholderPadVLegacy: 12,
                 minHeight: 80,
                 caretColor: .palette("accentSecondary", 1.0)
             ),
@@ -74,18 +79,28 @@ extension AinkradComponentTokens {
                 )
             ),
             formRow: FormRowTokens(
+                tickWidth: 2, tickHeight: 12,
                 tickColor: .palette("accentSecondary", 0.55),
                 labelFont: AinkradFontToken(role: "body"),
                 hintFont: AinkradFontToken(role: "caption"),
-                hintColor: .palette("foreground", 0.55)
+                hintColor: .palette("foreground", 0.55),
+                hintLeading: 6
             ),
             stepper: StepperTokens(
-                valueFont: AinkradFontToken(role: "mono", weight: "medium", monospacedDigits: true),
+                valueFont: AinkradFontToken(role: "mono", weight: "medium", mono: "family", monospacedDigits: true),
+                valueMinWidth: 28,
                 shape: AinkradShapeToken(style: "chamfer", cut: 6),
                 fill: .palette("surfaceElevated", 0.5),
                 stroke: AinkradStrokeToken(
                     color: AinkradStateColor(rest: .palette("accentPrimary", 0.3)),
                     width: AinkradStateDouble(rest: 1.25)),
+                buttonSize: 20,
+                buttonShape: AinkradShapeToken(style: "chamfer", cut: 4),
+                buttonFill: .palette("surfaceElevated", 0.6),
+                buttonStroke: AinkradStrokeToken(
+                    color: AinkradStateColor(
+                        rest: .palette("accentSecondary", 0.5), disabled: .palette("accentSecondary", 0.15)),
+                    width: AinkradStateDouble(rest: 1.0)),
                 buttonGlyphFont: AinkradFontToken(size: 10, weight: "bold", scaled: false),
                 buttonGlyphColor: AinkradStateColor(
                     rest: .palette("accentSecondary", 1.0), disabled: .palette("foreground", 0.25))
@@ -106,7 +121,7 @@ extension AinkradComponentTokens {
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.4), hover: .palette("accentSecondary", 0.85),
                         selected: .palette("accentSecondary", 0.85)),
-                    width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
+                    width: AinkradStateDouble(rest: 1.25, selected: 1.25)),
                 checkGlyphFont: AinkradFontToken(size: 10, weight: "bold", scaled: false),
                 glow: AinkradGlowToken(
                     color: AinkradStateColor(
@@ -121,7 +136,7 @@ extension AinkradComponentTokens {
                     color: AinkradStateColor(
                         rest: .palette("accentSecondary", 0.4), hover: .palette("accentSecondary", 0.9),
                         selected: .palette("accentSecondary", 0.9)),
-                    width: AinkradStateDouble(rest: 1.0, selected: 1.25)),
+                    width: AinkradStateDouble(rest: 1.25, selected: 1.25)),
                 markerShape: "Diamond",
                 markerSize: 8,
                 markerFill: .palette("accentSecondary", 1.0),
@@ -137,7 +152,7 @@ extension AinkradComponentTokens {
                 swatchStroke: AinkradStrokeToken(
                     color: AinkradStateColor(
                         rest: .palette("accentPrimary", 0.35), focused: .palette("accentPrimary", 0.9)),
-                    width: AinkradStateDouble(rest: 1.0, focused: 1.25)),
+                    width: AinkradStateDouble(rest: 1.25, focused: 1.5)),
                 swatchGlow: AinkradGlowToken(
                     color: AinkradStateColor(
                         rest: .palette("accentPrimary", 0.0), focused: .palette("accentPrimary", 0.45)),
@@ -147,7 +162,11 @@ extension AinkradComponentTokens {
                 previewStroke: AinkradStrokeToken(
                     color: AinkradStateColor(rest: .palette("accentPrimary", 0.3)), width: AinkradStateDouble(rest: 1.0)
                 ),
-                channelTickColor: .palette("accentSecondary", 0.55)
+                channelTickWidth: 2,
+                channelTickHeight: 10,
+                channelTickColor: .palette("accentSecondary", 0.55),
+                labelColor: .palette("foreground", 0.8),
+                valueColor: .palette("foreground", 0.6)
             ),
             segmentedPicker: SegmentedPickerTokens(
                 labelFont: AinkradFontToken(role: "caption"),

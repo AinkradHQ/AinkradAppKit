@@ -6,29 +6,36 @@ import SwiftUI
 /// luminous thumb, and an accent glow that brightens while on.
 public struct AinkradToggle: View {
     @Binding private var isOn: Bool
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
 
     public init(isOn: Binding<Bool>) { self._isOn = isOn }
 
     public var body: some View {
+        let toggle = skin.components.toggle
+        let shape = AinkradSkinShape(token: toggle.shape)
         Button {
             isOn.toggle()
         } label: {
             ZStack(alignment: isOn ? .trailing : .leading) {
-                ChamferShape(cut: 6, corners: .all)
-                    .fill(isOn ? theme.accentPrimary.opacity(0.9) : theme.surfaceElevated.opacity(0.6))
-                ChamferShape(cut: 6, corners: .all)
+                shape
+                    .fill(skin.color(toggle.fill, state: state))
+                shape
                     .strokeBorder(
-                        isOn ? theme.accentSecondary.opacity(0.75) : theme.foreground.opacity(hovering ? 0.35 : 0.18),
-                        lineWidth: 1.25)
-                Circle().fill(.white).padding(3)
-                    .shadow(color: isOn ? theme.accentSecondary.opacity(0.75) : .black.opacity(0.4), radius: 3)
+                        skin.color(toggle.stroke.color, state: state),
+                        lineWidth: toggle.stroke.width.resolve(state))
+                Circle().fill(skin.color(toggle.knobColor)).padding(toggle.knobInset)
+                    .shadow(
+                        color: skin.color(
+                            isOn ? toggle.knobSelectedShadowColor : toggle.knobShadow.color),
+                        radius: toggle.knobShadow.radius)
             }
-            .frame(width: 40, height: 22)
-            .shadow(color: theme.accentSecondary.opacity(isOn ? 0.45 : 0), radius: isOn ? 6 : 0)
-            .contentShape(ChamferShape(cut: 6, corners: .all))
+            .frame(width: toggle.width, height: toggle.height)
+            .shadow(
+                color: skin.color(toggle.glow.color, state: state), radius: toggle.glow.radius.resolve(state)
+            )
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
         // It is a `Button`, never a native `Toggle`, so nothing announces that
@@ -39,5 +46,12 @@ public struct AinkradToggle: View {
         .animation(AinkradMotion.hover, value: isOn)
         .animation(AinkradMotion.hover, value: hovering)
         .onHover { hovering = $0 }
+    }
+
+    private var state: AinkradControlState {
+        var state: AinkradControlState = []
+        if isOn { state.insert(.selected) }
+        if hovering { state.insert(.hover) }
+        return state
     }
 }

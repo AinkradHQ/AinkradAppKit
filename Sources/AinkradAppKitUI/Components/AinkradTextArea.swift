@@ -22,7 +22,7 @@ public struct AinkradTextArea: View {
     /// newline; Option+Return still inserts a newline. Auto-grow composers only.
     private let onSubmit: (() -> Void)?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @FocusState private var isFocused: Bool
     /// Measured content height (auto-grow mode only), reported by the AppKit
@@ -97,14 +97,20 @@ public struct AinkradTextArea: View {
     /// auto-grow mode, the SwiftUI focus state otherwise.
     private var focusRingActive: Bool { maxHeight == nil ? isFocused : nsFocused }
 
+    private var state: AinkradControlState {
+        focusRingActive ? [.focused] : []
+    }
+
     public var body: some View {
+        let area = skin.components.textArea
+        let shape = AinkradSkinShape(token: area.shape)
         editorSurface
-            .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.5)))
+            .background(shape.fill(skin.color(area.fill)))
             .overlay(
-                ChamferShape(cut: 8).strokeBorder(
-                    theme.accentPrimary.opacity(focusRingActive ? 0.9 : 0.25), lineWidth: focusRingActive ? 1.5 : 1.25)
+                shape.strokeBorder(
+                    skin.color(area.stroke.color, state: state), lineWidth: area.stroke.width.resolve(state))
             )
-            .shadow(color: theme.accentSecondary.opacity(focusRingActive ? 0.4 : 0), radius: focusRingActive ? 6 : 0)
+            .shadow(color: skin.color(area.glow.color, state: state), radius: area.glow.radius.resolve(state))
             .animation(AinkradMotion.hover, value: focusRingActive)
             .onAppear {
                 // Legacy (TextEditor) autofocus; the AppKit path autofocuses
@@ -115,6 +121,7 @@ public struct AinkradTextArea: View {
     }
 
     @ViewBuilder private var editorSurface: some View {
+        let area = skin.components.textArea
         if let maxHeight {
             // Auto-grow via an AppKit-backed NSTextView that reports its true
             // content height (SwiftUI's own TextEditor measurement never grew
@@ -127,17 +134,17 @@ public struct AinkradTextArea: View {
                     // exactly where typed text will. `allowsHitTesting(false)`
                     // lets clicks fall through to the editor.
                     Text(placeholder)
-                        .font(AinkradFontResolver.font(.body, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.4))
-                        .padding(.horizontal, AinkradSpacing.md + 5)
+                        .font(skin.font(area.placeholderFont, typography: typo))
+                        .foregroundStyle(skin.color(area.placeholderColor))
+                        .padding(.horizontal, area.placeholderPadHAutoGrow)
                         .padding(.vertical, AinkradSpacing.sm)
                         .allowsHitTesting(false)
                 }
                 AutoGrowingTextView(
                     text: $text,
                     font: nsBodyFont,
-                    textColor: NSColor(theme.foreground),
-                    tintColor: NSColor(theme.accentSecondary),
+                    textColor: NSColor(skin.color(skin.text.primary)),
+                    tintColor: NSColor(skin.color(area.caretColor)),
                     inset: CGSize(width: AinkradSpacing.md, height: AinkradSpacing.sm),
                     autoFocus: autoFocus,
                     onSubmit: onSubmit,
@@ -163,15 +170,16 @@ public struct AinkradTextArea: View {
     private var nsBodyFont: NSFont {
         let size = AinkradFontResolver.pointSize(.body, typography: typo)
         if let family = typo.fontFamilyName, let f = NSFont(name: family, size: size) { return f }
-        return NSFont.systemFont(ofSize: size)
+        return NSFont.systemFont(ofSize: size)  // design-lint: allow font-size AppKit fallback at runtime size
     }
 
     private var placeholderText: some View {
-        Text(placeholder)
-            .font(AinkradFontResolver.font(.body, typography: typo))
-            .foregroundStyle(theme.foreground.opacity(0.4))
-            .padding(.horizontal, AinkradSpacing.md + 4)
-            .padding(.vertical, AinkradSpacing.sm + 4)
+        let area = skin.components.textArea
+        return Text(placeholder)
+            .font(skin.font(area.placeholderFont, typography: typo))
+            .foregroundStyle(skin.color(area.placeholderColor))
+            .padding(.horizontal, area.placeholderPadHLegacy)
+            .padding(.vertical, area.placeholderPadVLegacy)
             .allowsHitTesting(false)
     }
 
@@ -180,8 +188,8 @@ public struct AinkradTextArea: View {
             .focused($isFocused)
             .scrollContentBackground(.hidden)
             .font(AinkradFontResolver.font(.body, typography: typo))
-            .foregroundStyle(theme.foreground)
-            .tint(theme.accentSecondary)
+            .foregroundStyle(skin.color(skin.text.primary))
+            .tint(skin.color(skin.palette.accentSecondary))
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
             // Plain Return submits; Option+Return falls through to the editor to

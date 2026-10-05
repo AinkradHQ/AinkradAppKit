@@ -7,7 +7,7 @@ import SwiftUI
 public struct AinkradSlider: View {
     @Binding private var value: Double
     private let bounds: ClosedRange<Double>
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var dragging = false
 
@@ -19,20 +19,31 @@ public struct AinkradSlider: View {
     private var span: Double { max(bounds.upperBound - bounds.lowerBound, .leastNonzeroMagnitude) }
     private func fraction(_ value: Double) -> CGFloat { CGFloat((value - bounds.lowerBound) / span) }
 
+    private var state: AinkradControlState {
+        dragging ? [.pressed] : []
+    }
+
     public var body: some View {
+        let track = skin.roles.track
+        let thumb = skin.roles.thumb
+        let container = skin.components.slider
+        let containerShape = AinkradSkinShape(token: container.containerShape)
         GeometryReader { proxy in
             let width = proxy.size.width
             let x = fraction(value) * width
 
             ZStack(alignment: .leading) {
-                Capsule().fill(theme.surfaceElevated.opacity(0.6)).frame(height: 4)
-                Capsule().fill(theme.accentSecondary.opacity(0.85)).frame(width: max(x, 0), height: 4)
+                Capsule().fill(skin.color(track.fill)).frame(height: track.height)
+                Capsule().fill(skin.color(track.activeFill)).frame(width: max(x, 0), height: track.height)
                 Circle()
-                    .fill(theme.accentSecondary)
-                    .frame(width: 14, height: 14)
-                    .shadow(color: theme.accentSecondary.opacity(dragging ? 0.9 : 0.55), radius: dragging ? 8 : 4)
-                    .scaleEffect(dragging && !reduceMotion ? 1.15 : 1.0)
-                    .offset(x: x - 7)
+                    .fill(skin.color(thumb.fill))
+                    .frame(width: thumb.size, height: thumb.size)
+                    .shadow(
+                        color: skin.color(thumb.glow.color, state: state),
+                        radius: thumb.glow.radius.resolve(state)
+                    )
+                    .scaleEffect(dragging && !reduceMotion ? thumb.dragScale : 1.0)
+                    .offset(x: x - thumb.offset)
             }
             .contentShape(Rectangle())
             .gesture(
@@ -45,12 +56,15 @@ public struct AinkradSlider: View {
                     .onEnded { _ in dragging = false }
             )
         }
-        .frame(height: 20)
+        .frame(height: track.rowHeight)
         .animation(AinkradMotion.hover, value: dragging)
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.xs)
-        .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.3)))
-        .overlay(ChamferShape(cut: 6).strokeBorder(theme.accentPrimary.opacity(0.2), lineWidth: 1))
+        .background(containerShape.fill(skin.color(container.containerFill)))
+        .overlay(
+            containerShape.strokeBorder(
+                skin.color(container.containerStroke.color), lineWidth: container.containerStroke.width.resolve([]))
+        )
         // The control was a bare `DragGesture` with no accessibility of any
         // kind: no value, no action, and a drag is a pointer gesture. It was
         // therefore not merely unlabelled but INOPERABLE without a mouse —

@@ -8,7 +8,7 @@ import SwiftUI
 public struct AinkradSecureField: View {
     @Binding private var text: String
     private let placeholder: String
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @State private var isRevealed = false
     @FocusState private var isFocused: Bool
@@ -18,6 +18,9 @@ public struct AinkradSecureField: View {
         self.placeholder = placeholder
     }
     public var body: some View {
+        let field = skin.roles.field
+        let secure = skin.components.secureField
+        let shape = AinkradSkinShape(token: field.shape)
         HStack(spacing: AinkradSpacing.sm) {
             Group {
                 if isRevealed {
@@ -28,27 +31,31 @@ public struct AinkradSecureField: View {
             }
             .focused($isFocused)
             .textFieldStyle(.plain)
-            .font(AinkradFontResolver.font(.mono, typography: typo))
-            .foregroundStyle(theme.foreground)
-            .tint(theme.accentSecondary)
+            .font(skin.font(secure.font, typography: typo))
+            .foregroundStyle(skin.color(skin.text.primary))
+            .tint(skin.color(skin.palette.accentSecondary))
 
             Button {
                 isRevealed.toggle()
             } label: {
                 Image(systemName: isRevealed ? "eye.slash" : "eye")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.foreground.opacity(0.55))
+                    .font(skin.font(secure.leadingGlyphFont, typography: typo))
+                    .foregroundStyle(skin.color(secure.leadingGlyphColor))
             }.buttonStyle(.plain)
         }
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
-        .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.5)))
+        .background(shape.fill(skin.color(field.fill)))
         .overlay(
-            ChamferShape(cut: 6).strokeBorder(
-                theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25)
+            shape.strokeBorder(
+                skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
         )
-        .shadow(color: theme.accentSecondary.opacity(isFocused ? 0.45 : 0), radius: isFocused ? 6 : 0)
+        .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
         .animation(AinkradMotion.hover, value: isFocused)
+    }
+
+    private var state: AinkradControlState {
+        isFocused ? [.focused] : []
     }
 }
 
@@ -57,7 +64,7 @@ public struct AinkradSecureField: View {
 public struct AinkradTextField: View {
     @Binding private var text: String
     private let placeholder: String
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @FocusState private var isFocused: Bool
 
@@ -66,21 +73,28 @@ public struct AinkradTextField: View {
         self.placeholder = placeholder
     }
     public var body: some View {
+        let field = skin.roles.field
+        let tokens = skin.components.textField
+        let shape = AinkradSkinShape(token: field.shape)
         TextField(placeholder, text: $text)
             .focused($isFocused)
             .textFieldStyle(.plain)
-            .font(AinkradFontResolver.font(.body, typography: typo))
-            .foregroundStyle(theme.foreground)
-            .tint(theme.accentSecondary)
+            .font(skin.font(tokens.font, typography: typo))
+            .foregroundStyle(skin.color(skin.text.primary))
+            .tint(skin.color(skin.palette.accentSecondary))
             .padding(.horizontal, AinkradSpacing.md)
             .padding(.vertical, AinkradSpacing.sm)
-            .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.5)))
+            .background(shape.fill(skin.color(field.fill)))
             .overlay(
-                ChamferShape(cut: 6).strokeBorder(
-                    theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25)
+                shape.strokeBorder(
+                    skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
             )
-            .shadow(color: theme.accentSecondary.opacity(isFocused ? 0.45 : 0), radius: isFocused ? 6 : 0)
+            .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
             .animation(AinkradMotion.hover, value: isFocused)
+    }
+
+    private var state: AinkradControlState {
+        isFocused ? [.focused] : []
     }
 }
 
@@ -95,7 +109,7 @@ public struct AinkradSearchField: View {
     /// `@FocusState` — every existing call site is unaffected.
     private let externalFocus: FocusState<Bool>.Binding?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @FocusState private var internalFocus: Bool
 
@@ -112,10 +126,13 @@ public struct AinkradSearchField: View {
     private var isFocused: Bool { externalFocus?.wrappedValue ?? internalFocus }
 
     public var body: some View {
+        let field = skin.roles.field
+        let search = skin.components.searchField
+        let shape = AinkradSkinShape(token: field.shape)
         HStack(spacing: AinkradSpacing.sm) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(theme.accentSecondary.opacity(isFocused ? 0.95 : 0.55))
+                .font(skin.font(search.searchGlyphFont, typography: typo))
+                .foregroundStyle(skin.color(search.searchGlyphColor, state: state))
 
             textField
 
@@ -124,30 +141,34 @@ public struct AinkradSearchField: View {
                     text = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(theme.foreground.opacity(0.45))
+                        .font(skin.font(search.clearGlyphFont, typography: typo))
+                        .foregroundStyle(skin.color(search.clearGlyphColor))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
-        .background(ChamferShape(cut: 6).fill(theme.surfaceElevated.opacity(0.5)))
+        .background(shape.fill(skin.color(field.fill)))
         .overlay(
-            ChamferShape(cut: 6).strokeBorder(
-                theme.accentPrimary.opacity(isFocused ? 0.9 : 0.25), lineWidth: isFocused ? 1.5 : 1.25)
+            shape.strokeBorder(
+                skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
         )
-        .shadow(color: theme.accentSecondary.opacity(isFocused ? 0.45 : 0), radius: isFocused ? 6 : 0)
+        .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
         .animation(AinkradMotion.hover, value: isFocused)
+    }
+
+    private var state: AinkradControlState {
+        isFocused ? [.focused] : []
     }
 
     @ViewBuilder
     private var textField: some View {
         let base = TextField(placeholder, text: $text)
             .textFieldStyle(.plain)
-            .font(AinkradFontResolver.font(.body, typography: typo))
-            .foregroundStyle(theme.foreground)
-            .tint(theme.accentSecondary)
+            .font(skin.font(skin.components.searchField.font, typography: typo))
+            .foregroundStyle(skin.color(skin.text.primary))
+            .tint(skin.color(skin.palette.accentSecondary))
             .onSubmit { onSubmit?() }
 
         if let externalFocus {

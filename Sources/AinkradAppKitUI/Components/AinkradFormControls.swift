@@ -15,7 +15,7 @@ public struct AinkradFormRow<Control: View>: View {
     private let control: Control
     private let accessory: AnyView?
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
     public init(
@@ -35,6 +35,7 @@ public struct AinkradFormRow<Control: View>: View {
     }
 
     public var body: some View {
+        let row = skin.components.formRow
         // `.center`, not `.firstTextBaseline`: with a two-line label (title +
         // help) baseline alignment pins the control to the title's line,
         // floating it at the top of the row instead of the middle of the
@@ -46,21 +47,21 @@ public struct AinkradFormRow<Control: View>: View {
             VStack(alignment: .leading, spacing: AinkradSpacing.xs / 2) {
                 HStack(spacing: AinkradSpacing.xs) {
                     Rectangle()
-                        .fill(theme.accentSecondary.opacity(0.55))
-                        .frame(width: 2, height: 12)
+                        .fill(skin.color(row.tickColor))
+                        .frame(width: row.tickWidth, height: row.tickHeight)
                     Text(title)
-                        .font(AinkradFontResolver.font(.body, typography: typo))
-                        .foregroundStyle(theme.foreground)
+                        .font(skin.font(row.labelFont, typography: typo))
+                        .foregroundStyle(skin.color(skin.text.primary))
                     ForEach(badges, id: \.self) { badge in
-                        AinkradBadge(text: badge, tint: theme.accentSecondary)
+                        AinkradBadge(text: badge, tint: skin.color(skin.palette.accentSecondary))
                     }
                     if let accessory { accessory }
                 }
                 if let help {
                     Text(help)
-                        .font(AinkradFontResolver.font(.caption, typography: typo))
-                        .foregroundStyle(theme.foreground.opacity(0.55))
-                        .padding(.leading, AinkradSpacing.xs + 2)
+                        .font(skin.font(row.hintFont, typography: typo))
+                        .foregroundStyle(skin.color(row.hintColor))
+                        .padding(.leading, row.hintLeading)
                 }
             }
             Spacer(minLength: AinkradSpacing.lg)
