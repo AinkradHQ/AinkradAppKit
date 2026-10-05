@@ -32,23 +32,25 @@ struct MultiSelectPanelView<T: Hashable>: View {
     let label: (T) -> String
     var swatch: (T) -> Color? = { _ in nil }
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @State private var highlightedIndex = 0
     @State private var hoveredItem: T?
     @FocusState private var focused: Bool
 
     var body: some View {
+        let popover = skin.roles.popover
+        let shape = AinkradSkinShape(token: popover.shape)
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 optionRow(item, index: index)
             }
         }
-        .padding(AinkradSpacing.xs)
-        .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.97)))
-        .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentSecondary.opacity(0.55), lineWidth: 1.25))
-        .shadow(color: theme.accentSecondary.opacity(0.35), radius: 10, y: 4)
-        .frame(minWidth: 160)
+        .padding(skin.spacing.xs)
+        .background(shape.fill(skin.color(popover.fill)))
+        .overlay(shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([])))
+        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        .frame(minWidth: popover.minWidth)
         .focusable()
         .focused($focused)
         .onAppear { DispatchQueue.main.async { focused = true } }
@@ -69,39 +71,39 @@ struct MultiSelectPanelView<T: Hashable>: View {
     }
 
     private func optionRow(_ item: T, index: Int) -> some View {
-        // Reads live from the `@Binding` on every call — this view's own
-        // `body` re-invokes whenever `selection` changes (it's a real
-        // `@Binding` on a real mounted `View`), so `isSelected` is never
-        // stale the way a value baked into a one-shot closure would be.
         let isSelected = selection.contains(item)
         let isHovered = hoveredItem == item
         let isHighlighted = index == highlightedIndex
+        let check = skin.components.multiSelectCheck
+        let checkShape = AinkradSkinShape(token: check.shape)
+        let row = skin.roles.optionRow
+        let rowShape = AinkradSkinShape(token: row.shape)
         return Button {
             selection = toggledSelection(item, in: selection)
         } label: {
-            HStack(spacing: AinkradSpacing.xs) {
+            HStack(spacing: skin.spacing.xs) {
                 ZStack {
-                    ChamferShape(cut: 2)
-                        .strokeBorder(theme.accentSecondary.opacity(0.6), lineWidth: 1)
-                        .frame(width: 12, height: 12)
+                    checkShape
+                        .strokeBorder(skin.color(check.stroke.color), lineWidth: check.stroke.width.resolve([]))
+                        .frame(width: check.size, height: check.size)
                     if isSelected {
                         Image(systemName: "checkmark")
-                            .font(.system(size: 8, weight: .bold))
-                            .foregroundStyle(theme.accentSecondary)
+                            .font(skin.font(check.glyphFont, typography: typo))
+                            .foregroundStyle(skin.color(check.stroke.color))
                     }
                 }
                 if let dot = swatch(item) {
-                    ColorSwatchDot(color: dot, size: 9)
+                    ColorSwatchDot(color: dot, size: row.swatchDotSize)
                 }
                 Text(label(item))
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                    .foregroundStyle(theme.foreground)
+                    .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
+                    .foregroundStyle(skin.color(skin.palette.foreground))
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs + 2)
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, row.paddingV)
             .background(
-                ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear)
+                rowShape.fill(skin.color(row.fill, state: (isHovered || isHighlighted) ? [.hover] : []))
             )
             .contentShape(Rectangle())
         }
@@ -129,7 +131,7 @@ struct SearchableSelectPanelView<T: Hashable>: View {
     var swatch: (T) -> Color? = { _ in nil }
     let onClose: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @State private var query = ""
     @State private var highlightedIndex = 0
@@ -139,32 +141,27 @@ struct SearchableSelectPanelView<T: Hashable>: View {
     private var filtered: [T] { comboboxFilter(items: items, query: query, label: label) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.xs) {
+        let popover = skin.roles.popover
+        let shape = AinkradSkinShape(token: popover.shape)
+        VStack(alignment: .leading, spacing: skin.spacing.xs) {
             searchField
             if filtered.isEmpty {
                 Text("No matches")
-                    .font(AinkradFontResolver.font(.caption, typography: typo))
-                    .foregroundStyle(theme.foreground.opacity(0.5))
-                    .padding(.horizontal, AinkradSpacing.sm)
-                    .padding(.vertical, AinkradSpacing.xs)
+                    .font(skin.font(AinkradFontToken(role: "caption"), typography: typo))
+                    .foregroundStyle(skin.color(skin.text.muted))
+                    .padding(.horizontal, skin.spacing.sm)
+                    .padding(.vertical, skin.spacing.xs)
             } else {
                 ForEach(Array(filtered.enumerated()), id: \.offset) { index, item in
                     optionRow(item, index: index)
                 }
             }
         }
-        .padding(AinkradSpacing.xs)
-        .background(ChamferShape(cut: 8).fill(theme.surfaceElevated.opacity(0.97)))
-        .overlay(ChamferShape(cut: 8).strokeBorder(theme.accentSecondary.opacity(0.55), lineWidth: 1.25))
-        .shadow(color: theme.accentSecondary.opacity(0.35), radius: 10, y: 4)
-        .frame(minWidth: 200)
-        // `@FocusState` across a freshly-presented nonactivating `NSPanel` is
-        // flaky the instant the panel appears — the async hop gives the
-        // hosted view one more runloop tick to actually attach to the now-key
-        // window before SwiftUI tries to move first responder. Belt-and-
-        // suspenders: `AinkradFloatingPanelController` ALSO walks the hosted
-        // `NSHostingView`'s subviews for the backing `NSTextField` and calls
-        // `makeFirstResponder` on it directly via `autofocusTextField`.
+        .padding(skin.spacing.xs)
+        .background(shape.fill(skin.color(popover.fill)))
+        .overlay(shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([])))
+        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        .frame(minWidth: skin.roles.panelSearch.panelMinWidth)
         .onAppear { DispatchQueue.main.async { searchFocused = true } }
         .onChange(of: query) { _, _ in highlightedIndex = 0 }
         .onKeyPress(.upArrow) { move(-1) }
@@ -177,12 +174,14 @@ struct SearchableSelectPanelView<T: Hashable>: View {
     }
 
     private var searchField: some View {
-        TextField(placeholder, text: $query)
+        let panelSearch = skin.roles.panelSearch
+        let searchShape = AinkradSkinShape(token: panelSearch.shape)
+        return TextField(placeholder, text: $query)
             .textFieldStyle(.plain)
             .focused($searchFocused)
-            .font(AinkradFontResolver.font(.body, typography: typo))
-            .foregroundStyle(theme.foreground)
-            .tint(theme.accentSecondary)
+            .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
+            .foregroundStyle(skin.color(skin.palette.foreground))
+            .tint(skin.color(skin.palette.accentSecondary))
             .onSubmit {
                 if filtered.indices.contains(highlightedIndex) {
                     selection = filtered[highlightedIndex]
@@ -192,37 +191,41 @@ struct SearchableSelectPanelView<T: Hashable>: View {
                     onClose()
                 }
             }
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs + 2)
-            .background(ChamferShape(cut: 4).fill(theme.surface.opacity(0.7)))
-            .overlay(ChamferShape(cut: 4).strokeBorder(theme.accentPrimary.opacity(0.3), lineWidth: 1))
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, panelSearch.paddingV)
+            .background(searchShape.fill(skin.color(panelSearch.fill)))
+            .overlay(
+                searchShape.strokeBorder(
+                    skin.color(panelSearch.stroke.color), lineWidth: panelSearch.stroke.width.resolve([])))
     }
 
     private func optionRow(_ item: T, index: Int) -> some View {
         let isSelected = item == selection
         let isHovered = hoveredItem == item
         let isHighlighted = index == highlightedIndex
+        let row = skin.roles.optionRow
+        let rowShape = AinkradSkinShape(token: row.shape)
         return Button {
             selection = item
             onClose()
         } label: {
-            HStack(spacing: AinkradSpacing.xs) {
+            HStack(spacing: skin.spacing.xs) {
                 Image(systemName: "diamond.fill")
-                    .font(.system(size: 6))
-                    .foregroundStyle(theme.accentSecondary)
+                    .font(skin.font(row.selectedDot, typography: typo))
+                    .foregroundStyle(skin.color(skin.palette.accentSecondary))
                     .opacity(isSelected ? 1 : 0)
                 if let dot = swatch(item) {
-                    ColorSwatchDot(color: dot, size: 9)
+                    ColorSwatchDot(color: dot, size: row.swatchDotSize)
                 }
                 Text(label(item))
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                    .foregroundStyle(theme.foreground)
+                    .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
+                    .foregroundStyle(skin.color(skin.palette.foreground))
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs + 2)
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, row.paddingV)
             .background(
-                ChamferShape(cut: 4).fill((isHovered || isHighlighted) ? theme.accentSecondary.opacity(0.18) : .clear)
+                rowShape.fill(skin.color(row.fill, state: (isHovered || isHighlighted) ? [.hover] : []))
             )
             .contentShape(Rectangle())
         }

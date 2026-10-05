@@ -108,8 +108,10 @@ private struct AinkradContextMenuList: View {
     let items: [AinkradMenuItem]
     let dismiss: () -> Void
 
+    @Environment(\.ainkradSkin) private var skin
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: skin.components.contextMenu.rowGap) {
             ForEach(items) { item in
                 AinkradContextMenuRow(item: item) {
                     item.action()
@@ -130,38 +132,37 @@ private struct AinkradContextMenuRow: View {
     let item: AinkradMenuItem
     let onSelect: () -> Void
 
-    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradStatusColors) private var statusColors
     @Environment(\.ainkradTypography) private var typo
     @State private var hovering = false
 
-    private var tint: Color { item.isDestructive ? statusColors.danger : theme.foreground.opacity(0.9) }
+    private var tint: Color {
+        item.isDestructive ? statusColors.danger : skin.color(skin.components.contextMenu.tint)
+    }
 
     var body: some View {
+        let menu = skin.components.contextMenu
+        let shape = AinkradSkinShape(token: menu.rowShape)
         Button(action: onSelect) {
-            HStack(spacing: AinkradSpacing.sm) {
+            HStack(spacing: skin.spacing.sm) {
                 if let systemName = item.systemName {
-                    Image(systemName: systemName).font(.system(size: 12, weight: .semibold))
+                    Image(systemName: systemName).font(skin.font(menu.glyphFont, typography: typo))
                 }
                 Text(item.title)
-                    .font(AinkradFontResolver.font(.body, typography: typo))
-                Spacer(minLength: AinkradSpacing.md)
-                // The chord as a real keycap, in its own right-aligned column:
-                // the menu teaches the keyboard rather than replacing it.
+                    .font(skin.font(menu.bodyFont, typography: typo))
+                Spacer(minLength: skin.spacing.md)
                 if let shortcut = item.shortcut {
                     AinkradKbd(shortcut)
                 }
             }
             .foregroundStyle(tint)
-            .padding(.horizontal, AinkradSpacing.sm)
-            .padding(.vertical, AinkradSpacing.xs)
-            .background(ChamferShape(cut: 4).fill(hovering ? theme.accentSecondary.opacity(0.14) : .clear))
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, skin.spacing.xs)
+            .background(shape.fill(hovering ? skin.color(menu.rowHoverFill) : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        // The panel gives its first button keyboard focus, and SwiftUI's
-        // default focus ring is a heavy system rectangle with nothing to do
-        // with this design language. Hover is the only highlight here.
         .focusEffectDisabled()
         .onHover { hovering = $0 }
     }

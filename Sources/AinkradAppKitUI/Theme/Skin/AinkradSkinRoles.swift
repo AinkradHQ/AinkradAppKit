@@ -158,6 +158,7 @@ public struct AinkradPopoverRoleTokens: Codable, Equatable, Sendable {
     public var fill: AinkradColorToken
     public var stroke: AinkradStrokeToken
     public var shadow: AinkradShadowToken
+    public var minWidth: Double
 }
 
 public struct AinkradBubbleRoleTokens: Codable, Equatable, Sendable {
@@ -202,6 +203,7 @@ public struct AinkradPanelSearchRoleTokens: Codable, Equatable, Sendable {
     public var fill: AinkradColorToken
     public var stroke: AinkradStrokeToken
     public var paddingV: Double
+    public var panelMinWidth: Double
 }
 
 public struct AinkradAccentTickRoleTokens: Codable, Equatable, Sendable {
