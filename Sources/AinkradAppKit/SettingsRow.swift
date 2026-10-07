@@ -181,16 +181,12 @@ public struct SettingsRow: View {
                     .fixedSize()
             }
         case .slider(let range, let step, let value):
-            // `AinkradSlider` has no native step, so it's wrapped in a
-            // shim binding that quantizes writes via `Self.quantize`
-            // before they reach the underlying `value` binding.
-            AinkradSlider(
-                value: Binding(
-                    get: { value.wrappedValue },
-                    set: { value.wrappedValue = Self.quantize($0, step: step, range: range) }
-                ),
-                in: range
-            )
+            // `AinkradSlider` has no native step, so writes are quantized via
+            // `Self.quantize`. Projected through a key path, NOT wrapped in
+            // `Binding(get:set:)`: a closure capturing `value` reads the
+            // snapshot taken when the catalog was built, so the thumb froze
+            // while the store moved (host 0.27.0).
+            AinkradSlider(value: value[quantizedBy: SettingsSliderStep(step: step, range: range)], in: range)
         case .text(let binding):
             AinkradTextField(text: binding, placeholder: "")
         case .secure(let binding):
@@ -204,5 +200,20 @@ public struct SettingsRow: View {
         case .custom(let view):
             view
         }
+    }
+}
+
+/// The key-path argument for `Double[quantizedBy:]` — key-path subscript
+/// arguments must be `Hashable`.
+struct SettingsSliderStep: Hashable {
+    let step: Double
+    let range: ClosedRange<Double>
+}
+
+extension Double {
+    /// Reads through unchanged; writes snap to the slider's step.
+    subscript(quantizedBy s: SettingsSliderStep) -> Double {
+        get { self }
+        set { self = SettingsRow.quantize(newValue, step: s.step, range: s.range) }
     }
 }
