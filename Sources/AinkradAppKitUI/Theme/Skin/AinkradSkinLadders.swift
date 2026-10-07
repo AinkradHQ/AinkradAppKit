@@ -72,6 +72,8 @@ public struct AinkradTypeTokens: Codable, Equatable, Sendable {
     public var monoFamily: String
     public var uiFamily: String?
     public var sizes: AinkradTypeSizeTokens
+    /// Epic 6.0 token gap (Lore's editor). Not an `init` parameter (ABI).
+    public var editor = AinkradTypeEditorTokens()
 
     public init(
         roles: AinkradTypeRoleTokens, monoFamily: String = "JetBrains Mono", uiFamily: String? = nil,
@@ -272,6 +274,9 @@ public struct AinkradSizeTokens: Codable, Equatable, Sendable {
     public var s10: Double
     public var s11: Double
     public var s12: Double
+    /// Epic 6.0 token gap (host Setup headline gap, Thrall service glyph). Not
+    /// an `init` parameter: adding one would change the public init's ABI.
+    public var s13: Double = 13
     public var s14: Double
     public var s15: Double
     public var s16: Double

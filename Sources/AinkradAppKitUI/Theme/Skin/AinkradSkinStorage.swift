@@ -26,6 +26,8 @@ extension AinkradSkin {
         var effects: AinkradEffectTokens
         var chrome: AinkradChromeTokens
         var components: AinkradComponentTokens
+        /// Epic 6.0 token gap. Not an `AinkradSkin.init` parameter (ABI).
+        var colors = AinkradFixedColorTokens()
     }
 
     final class Box: @unchecked Sendable {
@@ -118,6 +120,10 @@ extension AinkradSkin {
     public var chrome: AinkradChromeTokens {
         get { box.fields.chrome }
         set { uniqueBox().fields.chrome = newValue }
+    }
+    public var colors: AinkradFixedColorTokens {
+        get { box.fields.colors }
+        set { uniqueBox().fields.colors = newValue }
     }
     package var components: AinkradComponentTokens {
         get { box.fields.components }
