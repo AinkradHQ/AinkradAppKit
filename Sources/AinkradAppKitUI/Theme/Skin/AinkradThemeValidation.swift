@@ -78,6 +78,7 @@ func ainkradDecodeThemeFile(_ data: Data, bases: [String: AinkradThemeFile] = [:
         throw AinkradThemeError.invalidJSON(path: "$", details: "Failed to convert standard skin to JSON object")
     }
 
+    ainkradBackfillAddedKeys(&mergedDict, standard: standardDictObj)
     try ainkradValidateKeys(merged: mergedDict, standard: standardDictObj, path: "$")
 
     // Step 6: Decode into AinkradSkin
@@ -116,6 +117,34 @@ func ainkradDeepMerge(override: [String: Any], onto base: inout [String: Any], p
         } else {
             base[key] = overrideVal
         }
+    }
+}
+
+/// Keys added after schema version 1 shipped (Epic 6.0 token-gap batch). A
+/// file written before them, such as a `default.theme` with no `base`, gets
+/// today's value instead of failing with `missingKey`. A key is only filled
+/// when its parent group is present, so a truncated file still fails.
+let ainkradAddedKeyPaths: [[String]] = [
+    ["size", "s13"],
+    ["motion", "durations", "d1_4"],
+    ["type", "editor"],
+    ["syntax", "callout"],
+    ["colors"],
+]
+
+func ainkradBackfillAddedKeys(_ merged: inout [String: Any], standard: [String: Any]) {
+    for path in ainkradAddedKeyPaths {
+        ainkradBackfill(path[...], in: &merged, standard: standard)
+    }
+}
+
+private func ainkradBackfill(_ path: ArraySlice<String>, in node: inout [String: Any], standard: [String: Any]) {
+    guard let key = path.first else { return }
+    if path.count == 1 {
+        if node[key] == nil { node[key] = standard[key] }
+    } else if var child = node[key] as? [String: Any], let standardChild = standard[key] as? [String: Any] {
+        ainkradBackfill(path.dropFirst(), in: &child, standard: standardChild)
+        node[key] = child
     }
 }
 
@@ -275,6 +304,9 @@ func ainkradValidateValue(_ value: Any, paletteKeys: Set<String>, path: String) 
             if h < 0 || h > 360 {
                 throw AinkradThemeError.syntaxHueOutOfRange(path: "\(path).\(name)", hue: h)
             }
+        }
+        for (name, h) in syntaxTokens.callout.hues where h < 0 || h > 360 {
+            throw AinkradThemeError.syntaxHueOutOfRange(path: "\(path).callout.\(name)", hue: h)
         }
     }
 

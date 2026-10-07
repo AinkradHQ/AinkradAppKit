@@ -46,6 +46,9 @@ public struct AinkradMotionDurationTokens: Codable, Equatable, Sendable {
     public var d0_2: Double
     public var d0_22: Double
     public var d0_32: Double
+    /// Epic 6.0 token gap (Thrall incident pulse period). Not an `init`
+    /// parameter, for the same ABI reason as `AinkradSizeTokens.s13`.
+    public var d1_4: Double = 1.4
     public var breathe: Double
 
     public init(

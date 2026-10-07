@@ -25,6 +25,8 @@ public struct AinkradSyntaxTokens: Codable, Equatable, Sendable {
     public var typeHue: Double
     public var onDark: AinkradSyntaxTone
     public var onLight: AinkradSyntaxTone
+    /// Epic 6.0 token gap (Lore callouts). Not an `init` parameter (ABI).
+    public var callout = AinkradSyntaxCalloutTokens()
 
     public init(
         comment: AinkradColorToken = .palette("foreground", 0.45),
