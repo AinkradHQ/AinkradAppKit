@@ -25,7 +25,7 @@ private struct AinkradOverlayChromeModifier: ViewModifier {
             .background {
                 ZStack {
                     if blurEnabled ?? skin.material.blurEnabled {
-                        VisualEffectBlur(blendingMode: blending)
+                        AinkradMaterialBackground(blending: blending)
                     }
                     skin.color(skin.palette.background).opacity(backgroundOpacity ?? overlay.backgroundOpacity)
                 }

@@ -2,6 +2,15 @@
 import Foundation
 
 func ainkradDecodeThemeFile(_ data: Data, bases: [String: AinkradThemeFile] = [:]) throws -> AinkradThemeFile {
+    var warnings: [AinkradThemeError] = []
+    return try ainkradDecodeThemeFile(data, bases: bases, warnings: &warnings)
+}
+
+/// `warnings` collects the non-fatal issues (an unknown language value) that
+/// `ainkradLoadThemes` reports beside a file that still loaded.
+func ainkradDecodeThemeFile(
+    _ data: Data, bases: [String: AinkradThemeFile], warnings: inout [AinkradThemeError]
+) throws -> AinkradThemeFile {
     if data.count > 256 * 1024 {
         throw AinkradThemeError.fileSizeExceedsLimit(path: "$", bytes: data.count, limitBytes: 256 * 1024)
     }
@@ -83,7 +92,7 @@ func ainkradDecodeThemeFile(_ data: Data, bases: [String: AinkradThemeFile] = [:
 
     // Step 6: Decode into AinkradSkin
     let finalMergedData = try JSONSerialization.data(withJSONObject: mergedDict, options: [])
-    let skin: AinkradSkin
+    var skin: AinkradSkin
     do {
         let decoder = JSONDecoder()
         skin = try decoder.decode(AinkradSkin.self, from: finalMergedData)
@@ -95,6 +104,7 @@ func ainkradDecodeThemeFile(_ data: Data, bases: [String: AinkradThemeFile] = [:
 
     // Step 7 & 8: Semantic validation
     try ainkradValidateSemanticRules(skin)
+    warnings += ainkradNormalizeLanguageValues(&skin)
 
     return AinkradThemeFile(skin: skin, host: hostData)
 }
@@ -130,6 +140,7 @@ let ainkradAddedKeyPaths: [[String]] = [
     ["type", "editor"],
     ["syntax", "callout"],
     ["colors"],
+    ["material", "kind"],
 ]
 
 func ainkradBackfillAddedKeys(_ merged: inout [String: Any], standard: [String: Any]) {
@@ -146,6 +157,17 @@ private func ainkradBackfill(_ path: ArraySlice<String>, in node: inout [String:
         ainkradBackfill(path.dropFirst(), in: &child, standard: standardChild)
         node[key] = child
     }
+}
+
+/// The values a language switch knows. Anything else degrades to the first
+/// (`standard`'s) and is reported, so a theme written for a newer host loads.
+let ainkradMaterialKinds = ["blur", "glass", "solid"]
+
+func ainkradNormalizeLanguageValues(_ skin: inout AinkradSkin) -> [AinkradThemeError] {
+    let kind = skin.material.kind
+    guard !ainkradMaterialKinds.contains(kind) else { return [] }
+    skin.material.kind = ainkradMaterialKinds[0]
+    return [.unknownValue(path: "$.material.kind", value: kind, fallback: ainkradMaterialKinds[0])]
 }
 
 func ainkradValidateKeys(merged: [String: Any], standard: [String: Any], path: String) throws {
