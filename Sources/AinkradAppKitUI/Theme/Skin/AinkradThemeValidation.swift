@@ -88,6 +88,7 @@ func ainkradDecodeThemeFile(
     }
 
     ainkradBackfillAddedKeys(&mergedDict, standard: standardDictObj)
+    ainkradApplyShapeLanguage(&mergedDict)
     try ainkradValidateKeys(merged: mergedDict, standard: standardDictObj, path: "$")
 
     // Step 6: Decode into AinkradSkin
@@ -163,11 +164,46 @@ private func ainkradBackfill(_ path: ArraySlice<String>, in node: inout [String:
 /// (`standard`'s) and is reported, so a theme written for a newer host loads.
 let ainkradMaterialKinds = ["blur", "glass", "solid"]
 
+let ainkradShapeStyles = ["chamfer", "continuous", "circular"]
+
 func ainkradNormalizeLanguageValues(_ skin: inout AinkradSkin) -> [AinkradThemeError] {
+    var issues: [AinkradThemeError] = []
     let kind = skin.material.kind
-    guard !ainkradMaterialKinds.contains(kind) else { return [] }
-    skin.material.kind = ainkradMaterialKinds[0]
-    return [.unknownValue(path: "$.material.kind", value: kind, fallback: ainkradMaterialKinds[0])]
+    if !ainkradMaterialKinds.contains(kind) {
+        skin.material.kind = ainkradMaterialKinds[0]
+        issues.append(.unknownValue(path: "$.material.kind", value: kind, fallback: ainkradMaterialKinds[0]))
+    }
+    let style = skin.shape.style
+    if !ainkradShapeStyles.contains(style) {
+        skin.shape.style = ainkradShapeStyles[0]
+        issues.append(.unknownValue(path: "$.shape.style", value: style, fallback: ainkradShapeStyles[0]))
+    }
+    return issues
+}
+
+/// The shape language: a top-level `shape.style` other than `chamfer` rewrites
+/// every `"style": "chamfer"` shape token under `components` and `roles` to it.
+/// Tokens that already name another style keep it. An unknown style rewrites
+/// nothing and is reported by `ainkradNormalizeLanguageValues`.
+func ainkradApplyShapeLanguage(_ merged: inout [String: Any]) {
+    guard let style = (merged["shape"] as? [String: Any])?["style"] as? String,
+        style != ainkradShapeStyles[0], ainkradShapeStyles.contains(style)
+    else { return }
+    for key in ["components", "roles"] {
+        if let group = merged[key] { merged[key] = ainkradReplaceChamfer(in: group, with: style) }
+    }
+}
+
+private func ainkradReplaceChamfer(in node: Any, with style: String) -> Any {
+    if var dict = node as? [String: Any] {
+        for (key, value) in dict {
+            dict[key] = ainkradReplaceChamfer(in: value, with: style)
+        }
+        if dict["style"] as? String == ainkradShapeStyles[0] { dict["style"] = style }
+        return dict
+    }
+    if let array = node as? [Any] { return array.map { ainkradReplaceChamfer(in: $0, with: style) } }
+    return node
 }
 
 func ainkradValidateKeys(merged: [String: Any], standard: [String: Any], path: String) throws {
