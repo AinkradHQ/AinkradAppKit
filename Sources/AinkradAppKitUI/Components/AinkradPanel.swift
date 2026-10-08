@@ -3,7 +3,7 @@ import AppKit
 import SwiftUI
 
 /// The shared HUD panel finish: blur backing + translucent theme background +
-/// chamfered clip + luminous accent stroke + optional corner brackets +
+/// skin-shaped clip (`shape.style`) + luminous accent stroke + optional corner brackets +
 /// elevation glow. Generalizes the host's `hudPanelChrome`. Reads the theme
 /// from `@Environment(\.ainkradTheme)`.
 public struct AinkradPanel<Content: View>: View {
@@ -53,9 +53,9 @@ public struct AinkradPanel<Content: View>: View {
                     theme.background.opacity(surfaceOpacity ?? backgroundOpacity)
                 }
             }
-            .clipShape(ChamferShape(cut: AinkradRadius.panel))
+            .clipShape(skin.shape(cut: AinkradRadius.panel))
             .overlay(
-                ChamferShape(cut: AinkradRadius.panel)
+                skin.shape(cut: AinkradRadius.panel)
                     .strokeBorder(skin.color(p.stroke.color), lineWidth: p.stroke.width.resolve([]))
             )
             .apply { showsBrackets ? AnyView($0.cornerBrackets()) : AnyView($0) }

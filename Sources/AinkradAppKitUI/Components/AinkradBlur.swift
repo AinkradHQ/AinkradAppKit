@@ -63,7 +63,7 @@ private struct EdgeRing: ViewModifier {
     func body(content: Content) -> some View {
         let e = skin.effects.edgeRing
         content.overlay(
-            ChamferShape(cut: radius)
+            skin.shape(cut: radius)
                 .strokeBorder(
                     LinearGradient(
                         colors: [

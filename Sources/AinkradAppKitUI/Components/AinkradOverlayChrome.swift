@@ -30,12 +30,12 @@ private struct AinkradOverlayChromeModifier: ViewModifier {
                     skin.color(skin.palette.background).opacity(backgroundOpacity ?? overlay.backgroundOpacity)
                 }
             }
-            .clipShape(ChamferShape(cut: skin.radius.panel))
-            // Accent border must follow the CHAMFER (the SDK `.ainkradEdgeRing`
+            .clipShape(skin.shape(cut: skin.radius.panel))
+            // Accent border must follow the panel SHAPE (the SDK `.ainkradEdgeRing`
             // strokes the same shape, but this gradient is the overlay's own
             // token pair), so the frame reads as Cardinal HUD.
             .overlay(
-                ChamferShape(cut: skin.radius.panel)
+                skin.shape(cut: skin.radius.panel)
                     .strokeBorder(
                         LinearGradient(
                             colors: [skin.color(overlay.edgeFrom), skin.color(overlay.edgeTo)],
