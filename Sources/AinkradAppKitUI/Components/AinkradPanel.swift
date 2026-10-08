@@ -9,7 +9,8 @@ import SwiftUI
 public struct AinkradPanel<Content: View>: View {
     private let blur: AinkradBlurLevel
     private let blending: NSVisualEffectView.BlendingMode
-    private let backgroundOpacity: Double
+    /// Nil: the skin's `material.panelOpacity`.
+    private let backgroundOpacity: Double?
     private let showsBrackets: Bool
     private let content: Content
     @Environment(\.ainkradTheme) private var theme
@@ -27,12 +28,32 @@ public struct AinkradPanel<Content: View>: View {
     ///   window, so a `.withinWindow` blur has nothing to sample and renders as
     ///   a flat fill: the panel reads as an opaque slab rather than glass.
     ///   Those need `.behindWindow`.
+    /// - Parameter backgroundOpacity: overrides the skin's `material.panelOpacity`.
     public init(
         blur: AinkradBlurLevel = .panel,
         blending: NSVisualEffectView.BlendingMode = .withinWindow,
         backgroundOpacity: Double = 0.94,
         showsBrackets: Bool = false,
         @ViewBuilder content: () -> Content
+    ) {
+        self.init(blur, blending, backgroundOpacity, showsBrackets, content)
+    }
+
+    /// The fill follows the skin's `material.panelOpacity`. An overload, not a
+    /// change to the init above: that symbol is linked by installed plugins,
+    /// and its 0.94 default cannot be told apart from an explicit 0.94.
+    public init(
+        blur: AinkradBlurLevel = .panel,
+        blending: NSVisualEffectView.BlendingMode = .withinWindow,
+        showsBrackets: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(blur, blending, nil, showsBrackets, content)
+    }
+
+    private init(
+        _ blur: AinkradBlurLevel, _ blending: NSVisualEffectView.BlendingMode, _ backgroundOpacity: Double?,
+        _ showsBrackets: Bool, _ content: () -> Content
     ) {
         self.blur = blur
         self.blending = blending
@@ -50,7 +71,7 @@ public struct AinkradPanel<Content: View>: View {
                     // user who turned blur off is usually asking for the cost
                     // back as much as for the look.
                     if surfaceBlur { AinkradMaterialBackground(level: blur, blending: blending) }
-                    theme.background.opacity(surfaceOpacity ?? backgroundOpacity)
+                    theme.background.opacity(surfaceOpacity ?? backgroundOpacity ?? skin.material.panelOpacity)
                 }
             }
             .clipShape(skin.shape(cut: AinkradRadius.panel))
@@ -77,5 +98,14 @@ extension View {
             blur: blur, blending: blending, backgroundOpacity: backgroundOpacity,
             showsBrackets: showsBrackets
         ) { self }
+    }
+
+    /// The fill follows the skin's `material.panelOpacity` (see `AinkradPanel`).
+    public func ainkradPanel(
+        blur: AinkradBlurLevel = .panel,
+        blending: NSVisualEffectView.BlendingMode = .withinWindow,
+        showsBrackets: Bool = false
+    ) -> some View {
+        AinkradPanel(blur: blur, blending: blending, showsBrackets: showsBrackets) { self }
     }
 }
