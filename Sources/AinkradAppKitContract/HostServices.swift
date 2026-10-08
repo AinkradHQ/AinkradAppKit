@@ -74,6 +74,12 @@ public final class HostTheme {
     /// colors.
     public private(set) var statusColors: HostStatusColors
 
+    /// The active theme's terminal palette, published by the host. `nil` means
+    /// the host published none (a pre-generation-12 host never does), so a
+    /// consumer keeps its own fallback. Stored here for the same reason as
+    /// `statusColors`: `HostThemeTokens` is frozen. Added v12.
+    public private(set) var terminalPalette: HostTerminalPalette?
+
     public init(_ tokens: HostThemeTokens) {
         self.tokens = tokens
         self.statusColors = HostStatusColors(derivedFrom: tokens)
@@ -87,6 +93,32 @@ public final class HostTheme {
     /// Publishes the host's real status palette, replacing the derived default.
     public func updateStatusColors(_ colors: HostStatusColors) {
         self.statusColors = colors
+    }
+
+    /// Publishes the active theme's terminal palette. Added v12.
+    public func updateTerminalPalette(_ palette: HostTerminalPalette) {
+        self.terminalPalette = palette
+    }
+}
+
+/// The active theme's terminal palette, as `RRGGBB` hex: the form Rune and
+/// the theme files already use, so nothing is lost converting. A contract
+/// type rather than `AinkradTerminalTokens` because the contract must not
+/// depend on the UI module. Added v12.
+public struct HostTerminalPalette: Equatable, Sendable {
+    public let background: String
+    public let foreground: String
+    public let cursor: String
+    public let selection: String
+    /// 16 entries.
+    public let ansi: [String]
+
+    public init(background: String, foreground: String, cursor: String, selection: String, ansi: [String]) {
+        self.background = background
+        self.foreground = foreground
+        self.cursor = cursor
+        self.selection = selection
+        self.ansi = ansi
     }
 }
 

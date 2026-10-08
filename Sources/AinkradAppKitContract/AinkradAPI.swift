@@ -40,7 +40,15 @@ public enum AinkradAppKit {
     /// the *compilation* of the fake conformances in Raven's, Rune's and Git
     /// Mage's test support, exactly as `signals` did at generation 9. They fix
     /// it when they move their pin.
-    public static let apiVersion = 11
+    ///
+    /// **Generation 12 publishes the terminal palette** on `HostTheme`
+    /// (`terminalPalette`, `updateTerminalPalette(_:)`, `HostTerminalPalette`).
+    /// Additive only: a stored property on the non-frozen `HostTheme`, a new
+    /// struct and a new method, and NO protocol requirement — `HostServices`
+    /// and `AinkradApp` are unchanged, so no fake conformance needs updating.
+    /// It is a generation because a plugin that reads `terminalPalette` would
+    /// fail to bind on a host whose embedded AppKit lacks it.
+    public static let apiVersion = 12
 
     /// The oldest generation a host built on this SDK still loads.
     ///
