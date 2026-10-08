@@ -49,7 +49,7 @@ public struct AinkradPanel<Content: View>: View {
                     // NSVisualEffectView still costs a backdrop sample, and a
                     // user who turned blur off is usually asking for the cost
                     // back as much as for the look.
-                    if surfaceBlur { VisualEffectBlur(level: blur, blendingMode: blending) }
+                    if surfaceBlur { AinkradMaterialBackground(level: blur, blending: blending) }
                     theme.background.opacity(surfaceOpacity ?? backgroundOpacity)
                 }
             }

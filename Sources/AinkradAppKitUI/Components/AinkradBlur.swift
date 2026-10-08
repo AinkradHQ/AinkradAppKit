@@ -30,16 +30,32 @@ public struct VisualEffectBlur: NSViewRepresentable {
     }
     public func makeNSView(context: Context) -> NSVisualEffectView {
         let v = NSVisualEffectView()
-        v.material = level.material
+        v.material = ainkradVisualEffectMaterial(level, context.environment.ainkradSkin.material)
         v.blendingMode = blendingMode
         v.state = .active
         return v
     }
     public func updateNSView(_ v: NSVisualEffectView, context: Context) {
-        v.material = level.material
+        v.material = ainkradVisualEffectMaterial(level, context.environment.ainkradSkin.material)
         v.blendingMode = blendingMode
     }
 }
+
+/// The skin's `material.panel` / `material.hud` name for `level`, as an
+/// `NSVisualEffectView.Material`. An unknown name keeps `level.material`.
+func ainkradVisualEffectMaterial(
+    _ level: AinkradBlurLevel, _ tokens: AinkradMaterialTokens
+) -> NSVisualEffectView.Material {
+    let name = level == .panel ? tokens.panel : tokens.hud
+    return ainkradVisualEffectMaterials[name] ?? level.material
+}
+
+private let ainkradVisualEffectMaterials: [String: NSVisualEffectView.Material] = [
+    "titlebar": .titlebar, "selection": .selection, "menu": .menu, "popover": .popover, "sidebar": .sidebar,
+    "headerView": .headerView, "sheet": .sheet, "windowBackground": .windowBackground, "hudWindow": .hudWindow,
+    "fullScreenUI": .fullScreenUI, "toolTip": .toolTip, "contentBackground": .contentBackground,
+    "underWindowBackground": .underWindowBackground, "underPageBackground": .underPageBackground,
+]
 
 private struct EdgeRing: ViewModifier {
     let radius: CGFloat

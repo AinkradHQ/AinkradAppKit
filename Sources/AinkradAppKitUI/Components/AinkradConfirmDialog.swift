@@ -66,7 +66,7 @@ private struct AinkradConfirmDialogModifier: ViewModifier {
                         // view even when that host is small/compact. The
                         // blur is intentionally light (panel-level material)
                         // so it reads as depth, not a heavy frosted cover.
-                        VisualEffectBlur(level: .panel, blendingMode: .withinWindow)
+                        AinkradMaterialBackground(level: .panel, blending: .withinWindow)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .opacity(scrim.opacity)
                         skin.color(scrim.color)

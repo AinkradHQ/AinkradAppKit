@@ -105,6 +105,10 @@ public struct AinkradMotionTokens: Codable, Equatable, Sendable {
 }
 
 public struct AinkradMaterialTokens: Codable, Equatable, Sendable {
+    /// The surface language: `blur` (an `NSVisualEffectView`), `glass` (native
+    /// glass on macOS 26+, blur before), `solid` (no material — the surface's
+    /// own `panelOpacity` fill shows). Unknown values render as `blur`.
+    public var kind: String
     public var panel: String
     public var hud: String
     public var panelOpacity: Double
@@ -113,6 +117,16 @@ public struct AinkradMaterialTokens: Codable, Equatable, Sendable {
     public init(
         panel: String = "hudWindow", hud: String = "fullScreenUI", panelOpacity: Double = 0.94, blurEnabled: Bool = true
     ) {
+        self.init(kind: "blur", panel: panel, hud: hud, panelOpacity: panelOpacity, blurEnabled: blurEnabled)
+    }
+
+    // An overload, not a defaulted parameter on the init above: adding one
+    // would change that init's symbol and break installed plugins.
+    public init(
+        kind: String, panel: String = "hudWindow", hud: String = "fullScreenUI", panelOpacity: Double = 0.94,
+        blurEnabled: Bool = true
+    ) {
+        self.kind = kind
         self.panel = panel
         self.hud = hud
         self.panelOpacity = panelOpacity

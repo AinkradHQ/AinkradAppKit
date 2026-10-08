@@ -64,6 +64,8 @@ public enum AinkradThemeError: Error, Equatable, Sendable, CustomStringConvertib
     case invalidId(path: String, id: String)
     case invalidTerminalAnsiCount(path: String, count: Int)
     case syntaxHueOutOfRange(path: String, hue: Double)
+    /// Not fatal: the file still loads, and the value renders as `standard`'s.
+    case unknownValue(path: String, value: String, fallback: String)
 
     public var path: String {
         switch self {
@@ -85,6 +87,7 @@ public enum AinkradThemeError: Error, Equatable, Sendable, CustomStringConvertib
         case .invalidId(let path, _): return path
         case .invalidTerminalAnsiCount(let path, _): return path
         case .syntaxHueOutOfRange(let path, _): return path
+        case .unknownValue(let path, _, _): return path
         }
     }
 
@@ -126,6 +129,8 @@ public enum AinkradThemeError: Error, Equatable, Sendable, CustomStringConvertib
             return "Terminal ANSI colors count must be 16 at \(path), got \(count)"
         case .syntaxHueOutOfRange(let path, let hue):
             return "Syntax hue out of range [0, 360] at \(path): \(hue)"
+        case .unknownValue(let path, let value, let fallback):
+            return "Unknown value '\(value)' at \(path); using '\(fallback)'"
         }
     }
 }
@@ -196,8 +201,10 @@ public func ainkradLoadThemes(_ files: [Data]) -> AinkradThemeLoadResult {
 
             // Attempt to decode
             do {
-                let themeFile = try ainkradDecodeThemeFile(rawFile.data, bases: loadedThemes)
+                var warnings: [AinkradThemeError] = []
+                let themeFile = try ainkradDecodeThemeFile(rawFile.data, bases: loadedThemes, warnings: &warnings)
                 loadedThemes[themeFile.skin.id] = themeFile
+                issues += warnings.map { AinkradThemeIssue(fileId: rawFile.fileId, error: $0) }
                 progressMade = true
             } catch let issue as AinkradThemeIssue {
                 var issueWithId = issue

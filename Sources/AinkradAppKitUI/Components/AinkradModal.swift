@@ -45,7 +45,7 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
         content.overlay {
             if isPresented {
                 ZStack {
-                    VisualEffectBlur(level: .panel, blendingMode: .withinWindow)
+                    AinkradMaterialBackground(level: .panel, blending: .withinWindow)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .opacity(scrim.opacity)
                     skin.color(scrim.color)
