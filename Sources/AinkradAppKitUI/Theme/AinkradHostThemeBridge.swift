@@ -51,3 +51,20 @@ extension AinkradStatusColors {
         self.init(success: host.success, warning: host.warning, danger: host.danger)
     }
 }
+
+extension HostTerminalPalette {
+    /// Adapts the skin's terminal tokens into the contract's palette, each
+    /// `.hex` token formatted as `RRGGBB` (alpha dropped: a terminal colour is
+    /// opaque). A `.palette`/`.tint`/`.clear` token has no fixed colour without
+    /// the skin, so it maps to `""` and the consumer keeps its own fallback.
+    public init(_ terminal: AinkradTerminalTokens) {
+        func rrggbb(_ token: AinkradColorToken) -> String {
+            guard case .hex(let r, let g, let b, _) = token else { return "" }
+            return String(
+                format: "%02X%02X%02X", Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
+        }
+        self.init(
+            background: rrggbb(terminal.background), foreground: rrggbb(terminal.foreground),
+            cursor: rrggbb(terminal.cursor), selection: rrggbb(terminal.selection), ansi: terminal.ansi.map(rrggbb))
+    }
+}
