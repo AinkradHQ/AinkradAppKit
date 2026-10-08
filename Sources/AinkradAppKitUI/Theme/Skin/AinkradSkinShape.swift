@@ -1,4 +1,4 @@
-// design-lint: allow-file radius-literal,opacity-literal,frame-literal,chamfer-literal theme layer — skin shape implementation
+// design-lint: allow-file radius-literal,opacity-literal,frame-literal,chamfer-literal,chamfer-direct theme layer — skin shape implementation
 import CoreGraphics
 import SwiftUI
 

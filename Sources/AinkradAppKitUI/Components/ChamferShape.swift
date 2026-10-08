@@ -1,3 +1,4 @@
+// design-lint: allow-file chamfer-direct theme layer — ChamferShape itself
 import AinkradAppKitContract
 import CoreGraphics
 import SwiftUI
