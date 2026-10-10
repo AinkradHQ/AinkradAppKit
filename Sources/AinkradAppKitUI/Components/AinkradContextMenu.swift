@@ -177,15 +177,21 @@ private struct AinkradContextMenuModifier: ViewModifier {
     @Environment(\.ainkradSkinStorage) private var skinStorage
     @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
     @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
+    @Environment(\.ainkradSkin) private var skin
     @State private var controller = AinkradFloatingPanelController()
 
     func body(content: Content) -> some View {
-        // OVERLAY, not background — see `AinkradRightClickCatcherView`. The
-        // catcher is hit-test-transparent to everything but a right-click, so
-        // being on top costs the content nothing.
-        content.overlay(
-            AinkradContextMenuCatcher(controller: controller, onRightClick: present)
-        )
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: a real `NSMenu`, which macOS draws as glass.
+            content.contextMenu { NativeMenuItems(items: items) }
+        } else {
+            // OVERLAY, not background — see `AinkradRightClickCatcherView`. The
+            // catcher is hit-test-transparent to everything but a right-click, so
+            // being on top costs the content nothing.
+            content.overlay(
+                AinkradContextMenuCatcher(controller: controller, onRightClick: present)
+            )
+        }
     }
 
     private func present(at screenPoint: CGPoint) {
@@ -270,6 +276,7 @@ public struct AinkradMenuButton<Label: View>: View {
     @Environment(\.ainkradSkinStorage) private var skinStorage
     @Environment(\.ainkradSurfaceOpacity) private var surfaceOpacity
     @Environment(\.ainkradSurfaceBlur) private var surfaceBlur
+    @Environment(\.ainkradSkin) private var skin
 
     public init(
         items: [AinkradMenuItem],
@@ -297,6 +304,22 @@ public struct AinkradMenuButton<Label: View>: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's pull-down menu behind the caller's label.
+            Menu {
+                NativeMenuItems(items: items)
+            } label: {
+                label
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         Button {
             isPresented.toggle()
         } label: {
@@ -313,4 +336,53 @@ public struct AinkradMenuButton<Label: View>: View {
                     surfaceBlur: surfaceBlur)
         }
     }
+}
+
+/// Kit menu items as native menu buttons: icon, destructive role, and the
+/// item's shortcut glyphs shown as the menu's key equivalent.
+private struct NativeMenuItems: View {
+    let items: [AinkradMenuItem]
+
+    var body: some View {
+        ForEach(items) { item in
+            let button = Button(role: item.isDestructive ? .destructive : nil, action: item.action) {
+                if let systemName = item.systemName {
+                    Label(item.title, systemImage: systemName)
+                } else {
+                    Text(item.title)
+                }
+            }
+            if let shortcut = item.shortcut.flatMap(ainkradKeyboardShortcut) {
+                button.keyboardShortcut(shortcut)
+            } else {
+                button
+            }
+        }
+    }
+}
+
+/// Parses an `AinkradMenuItem.shortcut` glyph string ("⌘R", "⇧⌘K", "⌥↩")
+/// into a `KeyboardShortcut`, so a native menu shows it as the key equivalent.
+/// Nil for a string it cannot read: better no shortcut than a wrong one.
+func ainkradKeyboardShortcut(_ glyphs: String) -> KeyboardShortcut? {
+    var modifiers: EventModifiers = []
+    var rest = Substring(glyphs.trimmingCharacters(in: .whitespaces))
+    let flags: [Character: EventModifiers] = ["⌘": .command, "⌥": .option, "⇧": .shift, "⌃": .control]
+    while let first = rest.first, let flag = flags[first] {
+        modifiers.insert(flag)
+        rest = rest.dropFirst()
+    }
+    let named: [String: KeyEquivalent] = [
+        "↩": .return, "⏎": .return, "⌫": .delete, "⌦": .deleteForward, "⎋": .escape, "⇥": .tab,
+        "←": .leftArrow, "→": .rightArrow, "↑": .upArrow, "↓": .downArrow, "Space": .space, "␣": .space,
+    ]
+    let key: KeyEquivalent
+    if let special = named[String(rest)] {
+        key = special
+    } else if rest.count == 1, let character = rest.first {
+        key = KeyEquivalent(Character(character.lowercased()))
+    } else {
+        return nil
+    }
+    return KeyboardShortcut(key, modifiers: modifiers)
 }
