@@ -106,3 +106,23 @@ struct PanelSearchChrome: ViewModifier {
         }
     }
 }
+
+/// The macOS selection look for a row, rail tile or list item under Glass
+/// Native: an accent rounded fill when selected, a quiet system fill on hover.
+struct NativeSelectionBackground: View {
+    let isSelected: Bool
+    let isHovered: Bool
+    let accent: Color
+    var cornerRadius: CGFloat = 8
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if isSelected {
+            shape.fill(accent)
+        } else if isHovered {
+            shape.fill(.quaternary)
+        } else {
+            shape.fill(.clear)
+        }
+    }
+}

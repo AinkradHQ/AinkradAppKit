@@ -62,10 +62,66 @@ public struct AinkradRailItem: View {
         return skin.color(tile.glyphColor, state: state)
     }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: a sidebar icon — the accent selection fill, a
+    /// quiet hover fill, a red count badge, no outline, glow or edge tick.
+    @available(macOS 26, *)
+    private var nativeBody: some View {
+        let tile = skin.components.railItem
+        return Image(systemName: systemName)
+            .font(skin.font(tile.glyphFont, typography: typo))
+            .foregroundStyle(
+                isSelected
+                    ? skin.color(skin.palette.accentPrimary).contrastingText
+                    : skin.color(isDimmed ? skin.text.muted : skin.text.primary)
+            )
+            .frame(width: tile.size, height: tile.size)
+            .background(
+                NativeSelectionBackground(
+                    isSelected: isSelected, isHovered: hovering, accent: skin.color(skin.palette.accentPrimary))
+            )
+            .overlay(alignment: .topTrailing) {
+                if let text = ainkradRailBadgeText(unread) {
+                    Text(text)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(skin.color(skin.palette.danger).contrastingText)
+                        .padding(.horizontal, skin.spacing.xs)
+                        .background(skin.color(skin.palette.danger), in: .capsule)
+                        .offset(x: tile.badgeOffsetX, y: tile.badgeOffsetY)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if let cornerSymbol {
+                    Image(systemName: cornerSymbol)
+                        .font(skin.font(tile.cornerFont, typography: typo))
+                        .foregroundStyle(skin.color(tile.cornerColor))
+                        .padding(tile.cornerPadding)
+                        .background(Circle().fill(skin.color(tile.cornerFill)))
+                        .offset(x: tile.cornerOffset, y: tile.cornerOffset)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+            .modifier(RailItemTap(action: action))
+            .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: hovering)
+            .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: isSelected)
+            .help(help)
+            .accessibilityLabel(help)
+            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    private var kitBody: some View {
         let tile = skin.components.railItem
         let shape = AinkradSkinShape(token: tile.shape)
-        Image(systemName: systemName)
+        return Image(systemName: systemName)
             .font(skin.font(isSelected ? tile.glyphSelectedFont : tile.glyphFont, typography: typo))
             .foregroundStyle(glyphColor)
             .shadow(

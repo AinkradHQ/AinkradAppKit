@@ -51,10 +51,21 @@ public struct AinkradStatusBar: View {
     private var filled: Int { filledSegments(value: value, total: total, segments: segments) }
     private var color: Color { kind.color(skin: skin) }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's linear progress bar.
+            ProgressView(value: total > 0 ? min(max(value / total, 0), 1) : 0)
+                .progressViewStyle(.linear)
+                .tint(color)
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let bar = skin.components.statusBar
         let shape = AinkradSkinShape(token: bar.shape)
-        HStack(spacing: bar.gap) {
+        return HStack(spacing: bar.gap) {
             ForEach(0..<max(segments, 0), id: \.self) { index in
                 let isFilled = index < filled
                 shape

@@ -24,10 +24,30 @@ private struct AinkradRowBackground: ViewModifier {
         }
     }
 
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
+        if skin.usesNativeGlass {
+            // Glass Native: the macOS selection highlight, no accent bar.
+            content
+                .foregroundStyle(
+                    rowState == .selected
+                        ? skin.color(skin.palette.accentPrimary).contrastingText : skin.color(skin.text.primary)
+                )
+                .background(
+                    NativeSelectionBackground(
+                        isSelected: rowState == .selected, isHovered: rowState == .hovered,
+                        accent: skin.color(skin.palette.accentPrimary))
+                )
+                .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: rowState)
+        } else {
+            kitBody(content)
+        }
+    }
+
+    private func kitBody(_ content: Content) -> some View {
         let row = skin.components.listRow
         let shape = AinkradSkinShape(token: row.shape)
-        content
+        return
+            content
             .background(shape.fill(skin.color(row.fill, state: state)))
             .overlay(alignment: .leading) {
                 Rectangle()
