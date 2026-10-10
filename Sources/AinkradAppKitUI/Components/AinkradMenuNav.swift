@@ -226,17 +226,11 @@ private struct AinkradCommandMenuRow: View {
             )
             .padding(.horizontal, skin.spacing.md)
             .padding(.vertical, skin.spacing.sm)
-            .background(shape.fill(skin.color(cmd.fill, state: state)))
-            .overlay(
-                shape.strokeBorder(
-                    skin.color(cmd.stroke.color, state: state), lineWidth: cmd.stroke.width.resolve(state))
-            )
-            .shadow(color: skin.color(cmd.glow.color, state: state), radius: cmd.glow.radius.resolve(state))
-            .scanlineOverlay(active: hovering && !isSelected)
+            .modifier(CommandRowChrome(shape: shape, state: state, isSelected: isSelected, emphasized: emphasized))
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .scaleEffect(hovering && !reduceMotion ? cmd.hoverScale : 1.0)
+        .scaleEffect(hovering && !reduceMotion && !skin.usesNativeGlass ? cmd.hoverScale : 1.0)
         .animation(AinkradMotion.hover, value: hovering)
         .onHover { hovering = $0 }
     }
@@ -297,8 +291,8 @@ private struct AinkradNavListRow: View {
             HStack(spacing: skin.spacing.sm) {
                 Rectangle()
                     .fill(skin.color(tick.fill))
-                    .frame(width: nav.tickWidth)
-                    .opacity(isSelected ? 1 : 0)
+                    .frame(width: skin.usesNativeGlass ? 0 : nav.tickWidth)
+                    .opacity(isSelected && !skin.usesNativeGlass ? 1 : 0)
                     .shadow(
                         color: skin.color(tick.glow.color, state: isSelected ? [.selected] : []),
                         radius: tick.glow.radius.rest)
@@ -311,14 +305,55 @@ private struct AinkradNavListRow: View {
                     .font(skin.font(isSelected ? nav.bodySelectedFont : nav.bodyFont, typography: typo))
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(skin.color(nav.fg, state: state))
+            .foregroundStyle(
+                skin.usesNativeGlass
+                    ? (isSelected
+                        ? skin.color(skin.palette.accentPrimary).contrastingText : skin.color(skin.text.primary))
+                    : skin.color(nav.fg, state: state)
+            )
             .padding(.vertical, skin.spacing.sm)
             .padding(.horizontal, skin.spacing.sm)
-            .background(shape.fill(skin.color(nav.fill, state: state)))
+            .background {
+                if skin.usesNativeGlass {
+                    NativeSelectionBackground(
+                        isSelected: isSelected, isHovered: hovering, accent: skin.color(skin.palette.accentPrimary))
+                } else {
+                    shape.fill(skin.color(nav.fill, state: state))
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .animation(AinkradMotion.hover, value: hovering)
         .onHover { hovering = $0 }
+    }
+}
+
+/// A command row's chrome: Neon's fill, stroke, glow and scanline, or the
+/// macOS menu highlight under Glass Native.
+private struct CommandRowChrome: ViewModifier {
+    let shape: AinkradSkinShape
+    let state: AinkradControlState
+    let isSelected: Bool
+    let emphasized: Bool
+
+    @Environment(\.ainkradSkin) private var skin
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if skin.usesNativeGlass {
+            content.background(
+                NativeSelectionBackground(
+                    isSelected: isSelected, isHovered: emphasized, accent: skin.color(skin.palette.accentPrimary)))
+        } else {
+            let cmd = skin.components.commandMenuRow
+            content
+                .background(shape.fill(skin.color(cmd.fill, state: state)))
+                .overlay(
+                    shape.strokeBorder(
+                        skin.color(cmd.stroke.color, state: state), lineWidth: cmd.stroke.width.resolve(state))
+                )
+                .shadow(color: skin.color(cmd.glow.color, state: state), radius: cmd.glow.radius.resolve(state))
+                .scanlineOverlay(active: emphasized && !isSelected)
+        }
     }
 }

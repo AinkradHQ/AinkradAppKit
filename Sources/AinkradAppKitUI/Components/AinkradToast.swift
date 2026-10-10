@@ -184,10 +184,32 @@ public struct AinkradBanner: View {
         status.color(in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
     }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: an inline notice — status-tinted rounded
+            // fill, no outline, a borderless dismiss button.
+            HStack(spacing: skin.spacing.sm) {
+                Image(systemName: status.iconName).foregroundStyle(color)
+                Text(message).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                if let onDismiss {
+                    Button(action: onDismiss) { Image(systemName: "xmark") }
+                        .buttonStyle(.borderless)
+                        .help("Dismiss")
+                }
+            }
+            .padding(.horizontal, skin.spacing.md)
+            .padding(.vertical, skin.spacing.sm)
+            .background(color.opacity(skin.opacity.o15), in: .rect(cornerRadius: skin.size.s10))
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let banner = skin.components.banner
         let shape = AinkradSkinShape(token: banner.shape)
-        HStack(spacing: skin.spacing.sm) {
+        return HStack(spacing: skin.spacing.sm) {
             Image(systemName: status.iconName)
                 .font(skin.font(banner.iconFont, typography: typo))
                 .foregroundStyle(color)

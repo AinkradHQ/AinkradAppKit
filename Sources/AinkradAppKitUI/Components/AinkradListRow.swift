@@ -126,10 +126,32 @@ public struct AinkradIconGlyph: View {
     /// Glyph point size scaled off the frame — 8.8 at the historical 16×16.
     private var glyphSize: CGFloat { size * skin.components.iconGlyph.glyphRatio }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if skin.usesNativeGlass {
+            // Glass Native: a plain glyph, on the accent fill when filled.
+            Image(systemName: systemName)
+                .font(
+                    .system(size: glyphSize, weight: .semibold)  // design-lint: allow font-size caller-sized glyph
+                )
+                .foregroundStyle(
+                    filled ? skin.color(skin.palette.accentPrimary).contrastingText : skin.color(skin.text.muted)
+                )
+                .frame(width: size, height: size)
+                .background {
+                    if filled {
+                        AinkradSkinShape(token: skin.components.iconGlyph.shape)
+                            .fill(skin.color(skin.palette.accentPrimary))
+                    }
+                }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let glyph = skin.components.iconGlyph
         let shape = AinkradSkinShape(token: glyph.shape)
-        Image(systemName: systemName)
+        return Image(systemName: systemName)
             .font(
                 .system(size: glyphSize, weight: .semibold)  // design-lint: allow font-size caller-sized glyph
             )
