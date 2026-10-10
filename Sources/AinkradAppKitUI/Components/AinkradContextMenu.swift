@@ -311,7 +311,11 @@ public struct AinkradMenuButton<Label: View>: View {
             } label: {
                 label
             }
-            .menuStyle(.borderlessButton)
+            // `.button` + `.plain`, not `.borderlessButton`: the borderless
+            // style flattens a custom label to its title text, which dropped
+            // Thrall's engine status dot and the label's own capsule.
+            .menuStyle(.button)
+            .buttonStyle(.plain)
             .menuIndicator(.hidden)
             .fixedSize()
         } else {
