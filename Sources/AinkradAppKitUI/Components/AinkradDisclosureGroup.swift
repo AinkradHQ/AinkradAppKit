@@ -34,10 +34,28 @@ public struct AinkradDisclosureGroup<Content: View>: View {
         isExpanded ? "chevron.down" : "chevron.right"
     }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's disclosure group.
+            DisclosureGroup(isExpanded: isExpanded) {
+                content.frame(maxWidth: .infinity, alignment: .leading)
+            } label: {
+                HStack(spacing: skin.spacing.xs) {
+                    Text(title).font(.headline)
+                    if hitCount > 0 {
+                        AinkradBadge(text: "\(hitCount)", tint: skin.color(skin.palette.accentPrimary))
+                    }
+                }
+            }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let group = skin.components.disclosureGroup
         let shape = AinkradSkinShape(token: group.headerShape)
-        VStack(alignment: .leading, spacing: skin.spacing.sm) {
+        return VStack(alignment: .leading, spacing: skin.spacing.sm) {
             Button {
                 isExpanded.wrappedValue.toggle()
             } label: {

@@ -171,7 +171,18 @@ public struct AinkradSpinner: View {
 
     private var lineWidth: CGFloat { max(spinnerTokens.lineMinWidth, size * spinnerTokens.lineWidthRatio) }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: the system spinner at the nearest size.
+            ProgressView()
+                .controlSize(size <= 12 ? .mini : size <= 20 ? .small : size <= 36 ? .regular : .large)
+                .frame(width: size, height: size)
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         BudgetedTimelineView { date in
             if reduceMotion {
                 ring(angle: .zero, arcOpacity: spinnerPulseOpacity(date: date, period: spinnerTokens.pulsePeriod))

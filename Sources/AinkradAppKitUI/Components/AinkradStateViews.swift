@@ -25,9 +25,26 @@ public struct AinkradEmptyState: View {
     /// Whether a call-to-action button is present.
     public var hasAction: Bool { action != nil && actionTitle != nil }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's content-unavailable view.
+            ContentUnavailableView {
+                Label(title, systemImage: icon)
+            } description: {
+                Text(message)
+            } actions: {
+                if hasAction, let actionTitle, let action {
+                    AinkradButton(title: actionTitle, style: .primary, action: action)
+                }
+            }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let empty = skin.components.emptyState
-        VStack(spacing: skin.spacing.md) {
+        return VStack(spacing: skin.spacing.md) {
             Image(systemName: icon)
                 .font(skin.font(empty.glyphFont, typography: typo))
                 .foregroundStyle(skin.color(empty.glyphColor))
@@ -90,10 +107,25 @@ public struct AinkradErrorState: View {
     /// Whether a retry action is present.
     public var hasRetry: Bool { retry != nil && retryTitle != nil }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's content-unavailable view.
+            ContentUnavailableView {
+                Label(message, systemImage: "exclamationmark.triangle")
+            } actions: {
+                if hasRetry, let retryTitle, let retry {
+                    AinkradButton(title: retryTitle, style: .secondary, icon: "arrow.clockwise", action: retry)
+                }
+            }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let error = skin.components.errorState
         let shape = AinkradSkinShape(token: error.shape)
-        VStack(spacing: skin.spacing.md) {
+        return VStack(spacing: skin.spacing.md) {
             Image(systemName: "exclamationmark.triangle")
                 .font(skin.font(error.glyphFont, typography: typo))
                 .foregroundStyle(skin.color(error.glyphColor))
@@ -127,9 +159,25 @@ public struct AinkradSectionHeader: View {
         self.title = title
         self.subtitle = subtitle
     }
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: a system section heading, no accent tick.
+            VStack(alignment: .leading, spacing: skin.spacing.xs / 2) {
+                Text(title).font(.headline)
+                if let subtitle {
+                    Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.top, skin.spacing.sm)
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let header = skin.components.sectionHeader
-        VStack(alignment: .leading, spacing: skin.spacing.xs / 2) {
+        return VStack(alignment: .leading, spacing: skin.spacing.xs / 2) {
             HStack(spacing: skin.spacing.xs) {
                 Rectangle()
                     .fill(skin.color(skin.roles.accentTick.fill))
