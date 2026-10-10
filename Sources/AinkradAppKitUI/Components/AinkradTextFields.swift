@@ -18,10 +18,42 @@ public struct AinkradSecureField: View {
         self.placeholder = placeholder
     }
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: Apple's rounded field, the reveal eye inside it.
+    @available(macOS 26, *)
+    private var nativeBody: some View {
+        Group {
+            if isRevealed {
+                TextField(placeholder, text: $text)
+            } else {
+                SecureField(placeholder, text: $text)
+            }
+        }
+        .textFieldStyle(.roundedBorder)
+        .controlSize(.large)
+        .overlay(alignment: .trailing) {
+            Button {
+                isRevealed.toggle()
+            } label: {
+                Image(systemName: isRevealed ? "eye.slash" : "eye")
+            }
+            .buttonStyle(.borderless)
+            .padding(.trailing, AinkradSpacing.sm)
+            .help(isRevealed ? "Hide" : "Show")
+        }
+    }
+
+    private var kitBody: some View {
         let field = skin.roles.field
         let secure = skin.components.secureField
         let shape = AinkradSkinShape(token: field.shape)
-        HStack(spacing: AinkradSpacing.sm) {
+        return HStack(spacing: AinkradSpacing.sm) {
             Group {
                 if isRevealed {
                     TextField(placeholder, text: $text)
@@ -73,10 +105,21 @@ public struct AinkradTextField: View {
         self.placeholder = placeholder
     }
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's rounded text field.
+            TextField(placeholder, text: $text)
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.large)
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let field = skin.roles.field
         let tokens = skin.components.textField
         let shape = AinkradSkinShape(token: field.shape)
-        TextField(placeholder, text: $text)
+        return TextField(placeholder, text: $text)
             .focused($isFocused)
             .textFieldStyle(.plain)
             .font(skin.font(tokens.font, typography: typo))
@@ -126,10 +169,52 @@ public struct AinkradSearchField: View {
     private var isFocused: Bool { externalFocus?.wrappedValue ?? internalFocus }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: the system search look — a glass capsule with the
+    /// magnifier and a clear button (SwiftUI has no standalone search field
+    /// outside a toolbar's `.searchable`).
+    @available(macOS 26, *)
+    private var nativeBody: some View {
+        HStack(spacing: AinkradSpacing.xs) {
+            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            nativeTextField
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.borderless)
+                .help("Clear")
+            }
+        }
+        .padding(.horizontal, AinkradSpacing.md)
+        .padding(.vertical, AinkradSpacing.sm)
+        .glassEffect(.regular, in: .capsule)
+    }
+
+    @ViewBuilder private var nativeTextField: some View {
+        let base = TextField(placeholder, text: $text)
+            .textFieldStyle(.plain)
+            .onSubmit { onSubmit?() }
+        if let externalFocus {
+            base.focused(externalFocus)
+        } else {
+            base.focused($internalFocus)
+        }
+    }
+
+    private var kitBody: some View {
         let field = skin.roles.field
         let search = skin.components.searchField
         let shape = AinkradSkinShape(token: field.shape)
-        HStack(spacing: AinkradSpacing.sm) {
+        return HStack(spacing: AinkradSpacing.sm) {
             Image(systemName: "magnifyingglass")
                 .font(skin.font(search.searchGlyphFont, typography: typo))
                 .foregroundStyle(skin.color(search.searchGlyphColor, state: state))

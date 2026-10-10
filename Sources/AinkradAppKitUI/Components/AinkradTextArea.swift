@@ -102,9 +102,25 @@ public struct AinkradTextArea: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: the same editor in Apple's field bezel.
+            editorSurface
+                .nativeFieldChrome(focused: focusRingActive, accent: skin.color(skin.palette.accentPrimary))
+                .animation(AinkradMotion.hover, value: focusRingActive)
+                .onAppear {
+                    guard autoFocus, maxHeight == nil else { return }
+                    DispatchQueue.main.async { isFocused = true }
+                }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let area = skin.components.textArea
         let shape = AinkradSkinShape(token: area.shape)
-        editorSurface
+        return
+            editorSurface
             .background(shape.fill(skin.color(area.fill)))
             .overlay(
                 shape.strokeBorder(

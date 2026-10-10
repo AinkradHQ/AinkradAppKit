@@ -59,7 +59,8 @@ public struct AinkradCommandField: View {
                     .fill(skin.color(tokens.markColor))
                     .frame(width: tokens.markWidth, height: tokens.markHeight)
                     .shadow(
-                        color: skin.color(tokens.markGlow.color), radius: tokens.markGlow.radius.resolve([]))
+                        color: skin.usesNativeGlass ? .clear : skin.color(tokens.markGlow.color),
+                        radius: skin.usesNativeGlass ? 0 : tokens.markGlow.radius.resolve([]))
             }
 
             TextField(placeholder, text: $text)
