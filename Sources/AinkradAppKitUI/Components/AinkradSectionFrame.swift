@@ -16,11 +16,24 @@ public struct AinkradSectionFrame<Content: View>: View {
         self.content = content()
     }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's group box.
+            GroupBox {
+                content.frame(maxWidth: .infinity, alignment: .leading)
+            } label: {
+                Text(title).font(.headline)
+            }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let frame = skin.components.sectionFrame
         let tick = skin.roles.accentTick
         let shape = AinkradSkinShape(token: frame.bodyShape)
-        VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
+        return VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
             HStack(spacing: AinkradSpacing.xs) {
                 Rectangle()
                     .fill(skin.color(tick.fill))

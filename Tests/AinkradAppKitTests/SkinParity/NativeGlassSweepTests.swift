@@ -45,7 +45,18 @@ struct NativeGlassSweepTests {
     /// Open picker panels, which the parity fixtures (closed triggers) never show.
     static var panelFixtures: [SkinParityFixture] {
         let colours = ["Blue", "Green", "Orange", "Purple"]
+        let busyBackdrop = ZStack {
+            Circle().fill(.orange).frame(width: 120).offset(x: -90, y: -20)
+            Circle().fill(.pink).frame(width: 90).offset(x: 80, y: 30)
+            Text("Content behind the glass").font(.title2.bold()).foregroundStyle(.white)
+        }
         return [
+            SkinParityFixture(
+                name: "panel-overContent",
+                view: AnyView(
+                    busyBackdrop.overlay {
+                        AinkradPanel { Text("Glass panel").padding(24) }
+                    })),
             SkinParityFixture(
                 name: "panel-select",
                 view: AnyView(

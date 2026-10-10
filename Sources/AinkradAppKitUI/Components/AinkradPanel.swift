@@ -61,9 +61,28 @@ public struct AinkradPanel<Content: View>: View {
         self.showsBrackets = showsBrackets
         self.content = content()
     }
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: a Liquid Glass surface in the skin's shape,
+            // no stroke, brackets or glow. Overlays → blur off asks for a solid
+            // surface, so it gets the opaque fill instead of glass.
+            let shape = skin.shape(cut: AinkradRadius.panel)
+            if surfaceBlur {
+                content.glassEffect(.regular, in: shape)
+            } else {
+                content.background(
+                    theme.background.opacity(surfaceOpacity ?? backgroundOpacity ?? skin.material.panelOpacity),
+                    in: shape)
+            }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let p = skin.components.panel
-        content
+        return
+            content
             .background {
                 ZStack {
                     // Skipped rather than made transparent: an inactive

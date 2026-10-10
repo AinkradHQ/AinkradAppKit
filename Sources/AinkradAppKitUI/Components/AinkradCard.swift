@@ -22,10 +22,34 @@ public struct AinkradCard<Content: View>: View {
     /// Whether the card routes taps (drives accessibility + hit testing).
     public var isInteractive: Bool { onTap != nil }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: content, not chrome — a grouped box (system
+            // fill), the accent outline while selected, a lift on hover. No
+            // glass on glass, no brackets, no scale.
+            let shape = AinkradSkinShape(token: skin.components.card.shape)
+            content
+                .padding(skin.components.card.padding)
+                .background(hovering ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.quaternary), in: shape)
+                .overlay {
+                    if isSelected {
+                        shape.strokeBorder(skin.color(skin.palette.accentPrimary), lineWidth: 2)
+                    }
+                }
+                .animation(AinkradMotion.hover, value: hovering)
+                .contentShape(Rectangle())
+                .onHover { hovering = $0 }
+                .apply { if let onTap { $0.onTapGesture(perform: onTap) } else { $0 } }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let card = skin.components.card
         let shape = AinkradSkinShape(token: card.shape)
-        content
+        return
+            content
             .padding(card.padding)
             .background(shape.fill(skin.color(card.fill)))
             .overlay(
