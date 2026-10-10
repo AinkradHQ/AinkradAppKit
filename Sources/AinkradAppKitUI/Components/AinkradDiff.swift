@@ -1,7 +1,8 @@
 import Foundation
 
 public struct AinkradDiffLine: Equatable, Sendable {
-    public enum Kind: Equatable, Sendable { case context, insertion, deletion }
+    /// Frozen: a diff line is one of these three, forever — callers switch on it exhaustively.
+    @frozen public enum Kind: Equatable, Sendable { case context, insertion, deletion }
     public let kind: Kind
     public let oldNumber: Int?  // 1-based line number in the original, nil for insertions
     public let newNumber: Int?  // 1-based line number in the updated file, nil for deletions
