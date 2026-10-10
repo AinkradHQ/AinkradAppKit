@@ -64,6 +64,18 @@ struct NativeGlassSweepTests {
                         Text("Overlay chrome").padding(32).ainkradOverlayChrome(blending: .withinWindow)
                     })),
             SkinParityFixture(
+                name: "panel-menuButtonRichLabel",
+                view: AnyView(
+                    AinkradMenuButton(items: [AinkradMenuItem(title: "Docker", action: {})]) {
+                        HStack(spacing: 6) {
+                            Circle().fill(.green).frame(width: 8, height: 8)
+                            Text("Docker")
+                            Image(systemName: "chevron.down").imageScale(.small)
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(.quaternary, in: .capsule)
+                    })),
+            SkinParityFixture(
                 name: "panel-select",
                 view: AnyView(
                     SearchableSelectPanelView(
