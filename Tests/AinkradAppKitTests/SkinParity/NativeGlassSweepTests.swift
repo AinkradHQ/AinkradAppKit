@@ -26,7 +26,7 @@ struct NativeGlassSweepTests {
         try FileManager.default.createDirectory(atPath: out, withIntermediateDirectories: true)
         // AINKRAD_SWEEP_ONLY=button,toggle shoots only fixtures with those name prefixes.
         let only = env["AINKRAD_SWEEP_ONLY"]?.split(separator: ",").map(String.init) ?? []
-        for fixture in SkinParityFixtures.allFixtures
+        for fixture in SkinParityFixtures.allFixtures + Self.panelFixtures
         where only.isEmpty || only.contains(where: { fixture.name.hasPrefix($0) }) {
             for (name, skin) in [("neon", AinkradSkin.standard), ("glass", glass)] {
                 let view = fixture.view
@@ -40,6 +40,36 @@ struct NativeGlassSweepTests {
                     to: URL(fileURLWithPath: out).appendingPathComponent("\(fixture.name)-\(name).png"))
             }
         }
+    }
+
+    /// Open picker panels, which the parity fixtures (closed triggers) never show.
+    static var panelFixtures: [SkinParityFixture] {
+        let colours = ["Blue", "Green", "Orange", "Purple"]
+        return [
+            SkinParityFixture(
+                name: "panel-select",
+                view: AnyView(
+                    SearchableSelectPanelView(
+                        items: colours, selection: .constant("Green"), label: { $0 }, placeholder: "Search…",
+                        onClose: {}))),
+            SkinParityFixture(
+                name: "panel-multiSelect",
+                view: AnyView(
+                    MultiSelectPanelView(items: colours, selection: .constant(["Blue", "Orange"]), label: { $0 }))),
+            SkinParityFixture(
+                name: "panel-groupedSelect",
+                view: AnyView(
+                    GroupedSelectPanelView(
+                        sections: [
+                            AinkradGroupedSection(
+                                header: "Models",
+                                rows: [
+                                    AinkradGroupedRow(value: "a", title: "Opus", detail: "1M", icon: "sparkles"),
+                                    AinkradGroupedRow(value: "b", title: "Sonnet", detail: "200K"),
+                                    AinkradGroupedRow(value: "c", title: "Offline", isEnabled: false),
+                                ])
+                        ], selection: .constant("b"), placeholder: "Search…", onClose: {}))),
+        ]
     }
 
     /// `glass-dark.theme` on the standard skin, coloured by `glass-dark.scheme`,

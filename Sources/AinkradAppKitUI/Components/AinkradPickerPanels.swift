@@ -40,16 +40,13 @@ struct MultiSelectPanelView<T: Hashable>: View {
 
     var body: some View {
         let popover = skin.roles.popover
-        let shape = AinkradSkinShape(token: popover.shape)
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 optionRow(item, index: index)
             }
         }
         .padding(skin.spacing.xs)
-        .background(shape.fill(skin.color(popover.fill)))
-        .overlay(shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([])))
-        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        .modifier(PopoverChrome())
         .frame(minWidth: popover.minWidth)
         .focusable()
         .focused($focused)
@@ -70,27 +67,38 @@ struct MultiSelectPanelView<T: Hashable>: View {
         return .handled
     }
 
+    /// Neon's drawn check box.
+    private func kitCheck(isSelected: Bool) -> some View {
+        let check = skin.components.multiSelectCheck
+        let checkShape = AinkradSkinShape(token: check.shape)
+        return ZStack {
+            checkShape
+                .strokeBorder(skin.color(check.stroke.color), lineWidth: check.stroke.width.resolve([]))
+                .frame(width: check.size, height: check.size)
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(skin.font(check.glyphFont, typography: typo))
+                    .foregroundStyle(skin.color(check.stroke.color))
+            }
+        }
+    }
+
     private func optionRow(_ item: T, index: Int) -> some View {
         let isSelected = selection.contains(item)
         let isHovered = hoveredItem == item
         let isHighlighted = index == highlightedIndex
-        let check = skin.components.multiSelectCheck
-        let checkShape = AinkradSkinShape(token: check.shape)
         let row = skin.roles.optionRow
         let rowShape = AinkradSkinShape(token: row.shape)
         return Button {
             selection = toggledSelection(item, in: selection)
         } label: {
             HStack(spacing: skin.spacing.xs) {
-                ZStack {
-                    checkShape
-                        .strokeBorder(skin.color(check.stroke.color), lineWidth: check.stroke.width.resolve([]))
-                        .frame(width: check.size, height: check.size)
-                    if isSelected {
-                        Image(systemName: "checkmark")
-                            .font(skin.font(check.glyphFont, typography: typo))
-                            .foregroundStyle(skin.color(check.stroke.color))
-                    }
+                if skin.usesNativeGlass {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.bold))
+                        .opacity(isSelected ? 1 : 0)
+                } else {
+                    kitCheck(isSelected: isSelected)
                 }
                 if let dot = swatch(item) {
                     ColorSwatchDot(color: dot, size: row.swatchDotSize)
@@ -103,7 +111,10 @@ struct MultiSelectPanelView<T: Hashable>: View {
             .padding(.horizontal, skin.spacing.sm)
             .padding(.vertical, row.paddingV)
             .background(
-                rowShape.fill(skin.color(row.fill, state: (isHovered || isHighlighted) ? [.hover] : []))
+                optionRowBackground(
+                    native: skin.usesNativeGlass, highlighted: isHovered || isHighlighted,
+                    accent: skin.color(skin.palette.accentPrimary),
+                    kit: rowShape.fill(skin.color(row.fill, state: (isHovered || isHighlighted) ? [.hover] : [])))
             )
             .contentShape(Rectangle())
         }
@@ -142,7 +153,6 @@ struct SearchableSelectPanelView<T: Hashable>: View {
 
     var body: some View {
         let popover = skin.roles.popover
-        let shape = AinkradSkinShape(token: popover.shape)
         VStack(alignment: .leading, spacing: skin.spacing.xs) {
             searchField
             if filtered.isEmpty {
@@ -158,9 +168,7 @@ struct SearchableSelectPanelView<T: Hashable>: View {
             }
         }
         .padding(skin.spacing.xs)
-        .background(shape.fill(skin.color(popover.fill)))
-        .overlay(shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([])))
-        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        .modifier(PopoverChrome())
         .frame(minWidth: skin.roles.panelSearch.panelMinWidth)
         .onAppear { DispatchQueue.main.async { searchFocused = true } }
         .onChange(of: query) { _, _ in highlightedIndex = 0 }
@@ -174,10 +182,7 @@ struct SearchableSelectPanelView<T: Hashable>: View {
     }
 
     private var searchField: some View {
-        let panelSearch = skin.roles.panelSearch
-        let searchShape = AinkradSkinShape(token: panelSearch.shape)
-        return TextField(placeholder, text: $query)
-            .textFieldStyle(.plain)
+        TextField(placeholder, text: $query)
             .focused($searchFocused)
             .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
             .foregroundStyle(skin.color(skin.palette.foreground))
@@ -191,12 +196,7 @@ struct SearchableSelectPanelView<T: Hashable>: View {
                     onClose()
                 }
             }
-            .padding(.horizontal, skin.spacing.sm)
-            .padding(.vertical, panelSearch.paddingV)
-            .background(searchShape.fill(skin.color(panelSearch.fill)))
-            .overlay(
-                searchShape.strokeBorder(
-                    skin.color(panelSearch.stroke.color), lineWidth: panelSearch.stroke.width.resolve([])))
+            .modifier(PanelSearchChrome())
     }
 
     private func optionRow(_ item: T, index: Int) -> some View {
@@ -210,9 +210,9 @@ struct SearchableSelectPanelView<T: Hashable>: View {
             onClose()
         } label: {
             HStack(spacing: skin.spacing.xs) {
-                Image(systemName: "diamond.fill")
-                    .font(skin.font(row.selectedDot, typography: typo))
-                    .foregroundStyle(skin.color(skin.palette.accentSecondary))
+                Image(systemName: optionSelectedGlyph(native: skin.usesNativeGlass))
+                    .font(skin.usesNativeGlass ? .caption.weight(.bold) : skin.font(row.selectedDot, typography: typo))
+                    .foregroundStyle(skin.usesNativeGlass ? Color.primary : skin.color(skin.palette.accentSecondary))
                     .opacity(isSelected ? 1 : 0)
                 if let dot = swatch(item) {
                     ColorSwatchDot(color: dot, size: row.swatchDotSize)
@@ -225,7 +225,10 @@ struct SearchableSelectPanelView<T: Hashable>: View {
             .padding(.horizontal, skin.spacing.sm)
             .padding(.vertical, row.paddingV)
             .background(
-                rowShape.fill(skin.color(row.fill, state: (isHovered || isHighlighted) ? [.hover] : []))
+                optionRowBackground(
+                    native: skin.usesNativeGlass, highlighted: isHovered || isHighlighted,
+                    accent: skin.color(skin.palette.accentPrimary),
+                    kit: rowShape.fill(skin.color(row.fill, state: (isHovered || isHighlighted) ? [.hover] : [])))
             )
             .contentShape(Rectangle())
         }

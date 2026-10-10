@@ -24,3 +24,85 @@ extension View {
         modifier(NativeFieldChrome(focused: focused, accent: accent))
     }
 }
+
+/// A picker panel's chrome: Neon's popover fill, stroke and shadow, or under
+/// Glass Native (macOS 26+) a glass panel like a system menu. Reads the skin
+/// from the environment so the large struct is never copied into the modifier.
+struct PopoverChrome: ViewModifier {
+    @Environment(\.ainkradSkin) private var skin
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            content.glassEffect(.regular, in: .rect(cornerRadius: 12))
+        } else {
+            let popover = skin.roles.popover
+            let shape = AinkradSkinShape(token: popover.shape)
+            content
+                .background(shape.fill(skin.color(popover.fill)))
+                .overlay(
+                    shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([]))
+                )
+                .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        }
+    }
+}
+
+/// A picker row's hover/highlight background: the kit's `kit` fill, or under
+/// Glass Native the system menu highlight (an accent rounded rectangle).
+@ViewBuilder
+func optionRowBackground(native: Bool, highlighted: Bool, accent: Color, kit: some View) -> some View {
+    if native {
+        RoundedRectangle(cornerRadius: 6, style: .continuous).fill(highlighted ? accent : .clear)
+    } else {
+        kit
+    }
+}
+
+/// The selected-row marker: Neon's diamond, a menu checkmark under Glass Native.
+func optionSelectedGlyph(native: Bool) -> String { native ? "checkmark" : "diamond.fill" }
+
+/// A select's trigger under Glass Native: Apple's pop-up button look — a
+/// glass capsule with the value and the up/down chevrons.
+@available(macOS 26, *)
+struct NativePopUpButton: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: AinkradSpacing.sm) {
+                Text(title).lineLimit(1)
+                Spacer(minLength: AinkradSpacing.sm)
+                Image(systemName: "chevron.up.chevron.down")
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.glass)
+        .controlSize(.large)
+    }
+}
+
+/// A panel's search field: the kit's own chrome, or Apple's rounded field
+/// under Glass Native.
+struct PanelSearchChrome: ViewModifier {
+    @Environment(\.ainkradSkin) private var skin
+
+    func body(content: Content) -> some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            content.textFieldStyle(.roundedBorder)
+        } else {
+            let panelSearch = skin.roles.panelSearch
+            let searchShape = AinkradSkinShape(token: panelSearch.shape)
+            content
+                .textFieldStyle(.plain)
+                .padding(.horizontal, skin.spacing.sm)
+                .padding(.vertical, panelSearch.paddingV)
+                .background(searchShape.fill(skin.color(panelSearch.fill)))
+                .overlay(
+                    searchShape.strokeBorder(
+                        skin.color(panelSearch.stroke.color), lineWidth: panelSearch.stroke.width.resolve([])))
+        }
+    }
+}
