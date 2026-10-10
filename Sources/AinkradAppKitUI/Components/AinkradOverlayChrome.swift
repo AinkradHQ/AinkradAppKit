@@ -19,9 +19,28 @@ private struct AinkradOverlayChromeModifier: ViewModifier {
     let blending: NSVisualEffectView.BlendingMode
     @Environment(\.ainkradSkin) private var skin
 
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: the overlay is Liquid Glass in the skin's
+            // shape — no edge ring or glow. Blur off asks for a solid surface.
+            let shape = skin.shape(cut: skin.radius.panel)
+            if blurEnabled ?? skin.material.blurEnabled {
+                content.glassEffect(.regular, in: shape)
+            } else {
+                content.background(
+                    skin.color(skin.palette.background)
+                        .opacity(backgroundOpacity ?? skin.chrome.overlay.backgroundOpacity),
+                    in: shape)
+            }
+        } else {
+            kitBody(content)
+        }
+    }
+
+    private func kitBody(_ content: Content) -> some View {
         let overlay = skin.chrome.overlay
-        content
+        return
+            content
             .background {
                 ZStack {
                     if blurEnabled ?? skin.material.blurEnabled {
