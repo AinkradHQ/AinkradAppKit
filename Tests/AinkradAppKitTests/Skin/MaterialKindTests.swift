@@ -78,7 +78,9 @@ struct MaterialKindTests {
 
         let glass = Self.views(inPanelWithKind: "glass")
         if #available(macOS 26, *) {
-            #expect(glass.contains { $0 is NSGlassEffectView })
+            // Glass Native E2.1: the panel is SwiftUI `glassEffect`, which
+            // hosts no AppKit view of its own — what matters is that the
+            // blur is gone.
             #expect(!glass.contains { $0 is NSVisualEffectView })
         } else {
             #expect(glass.contains { $0 is NSVisualEffectView })

@@ -28,7 +28,7 @@ private struct AinkradDrawerModifier<DrawerContent: View>: ViewModifier {
                         .padding(skin.spacing.lg)
                         .frame(width: width)
                         .frame(maxHeight: .infinity, alignment: .top)
-                        .ainkradPanel(showsBrackets: true)
+                        .ainkradPanel(showsBrackets: !skin.usesNativeGlass)
                         .transition(
                             reduceMotion
                                 ? .opacity

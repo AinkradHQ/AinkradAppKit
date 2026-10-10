@@ -56,6 +56,13 @@ public struct AinkradSettingsPanel<Content: View>: View {
         }
         .padding(p.padding)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AinkradSkinShape(token: p.shape).fill(skin.color(p.fill)))
+        .background {
+            // Glass on macOS 26+: the grouped system fill System Settings uses.
+            if skin.usesNativeGlass {
+                AinkradSkinShape(token: p.shape).fill(.quaternary)
+            } else {
+                AinkradSkinShape(token: p.shape).fill(skin.color(p.fill))
+            }
+        }
     }
 }
