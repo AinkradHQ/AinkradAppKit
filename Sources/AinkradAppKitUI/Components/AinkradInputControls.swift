@@ -39,9 +39,26 @@ public struct AinkradStepper: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's stepper; the callbacks keep the
+            // kit's snap-to-step clamp.
+            Stepper {
+                Text("\(value)").monospacedDigit()
+            } onIncrement: {
+                value = steppedClamp(value + step, in: bounds, step: step)
+            } onDecrement: {
+                value = steppedClamp(value - step, in: bounds, step: step)
+            }
+            .accessibilityValue("\(value)")
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let stepper = skin.components.stepper
         let shape = AinkradSkinShape(token: stepper.shape)
-        HStack(spacing: AinkradSpacing.xs) {
+        return HStack(spacing: AinkradSpacing.xs) {
             stepButton(systemName: "minus", enabled: value > bounds.lowerBound) {
                 value = steppedClamp(value - step, in: bounds, step: step)
             }
@@ -136,12 +153,15 @@ public struct AinkradRangeSlider: View {
             let upperX = fraction(for: range.upperBound) * width
 
             ZStack(alignment: .leading) {
-                Capsule().fill(skin.color(track.fill))
+                let systemTrack = Color(nsColor: .tertiarySystemFill)  // design-lint: allow raw-color Glass
+                Capsule().fill(skin.usesNativeGlass ? systemTrack : skin.color(track.fill))
                     .frame(height: track.height)
 
-                Capsule().fill(skin.color(track.activeFill))
-                    .frame(width: max(upperX - lowerX, 0), height: track.height)
-                    .offset(x: lowerX)
+                Capsule().fill(
+                    skin.usesNativeGlass ? skin.color(skin.palette.accentPrimary) : skin.color(track.activeFill)
+                )
+                .frame(width: max(upperX - lowerX, 0), height: track.height)
+                .offset(x: lowerX)
 
                 thumb(isDragging: draggingLower)
                     .offset(x: lowerX - skin.roles.thumb.offset)
@@ -160,15 +180,24 @@ public struct AinkradRangeSlider: View {
     private func thumb(isDragging: Bool) -> some View {
         let thumb = skin.roles.thumb
         let thumbState: AinkradControlState = isDragging ? [.pressed] : []
-        return Circle()
-            .fill(skin.color(thumb.fill))
-            .frame(width: thumb.size, height: thumb.size)
-            .shadow(
-                color: skin.color(thumb.glow.color, state: thumbState),
-                radius: thumb.glow.radius.resolve(thumbState)
-            )
-            .scaleEffect(isDragging && !reduceMotion ? thumb.dragScale : 1.0)
-            .animation(AinkradMotion.hover, value: isDragging)
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple has no dual-thumb slider, so the kit
+            // control keeps its geometry with Liquid Glass thumbs.
+            return AnyView(
+                Circle().fill(.white)  // design-lint: allow raw-color system slider thumb under Glass Native
+                    .frame(width: thumb.size, height: thumb.size)
+                    .glassEffect(.regular.interactive(), in: .circle))
+        }
+        return AnyView(
+            Circle()
+                .fill(skin.color(thumb.fill))
+                .frame(width: thumb.size, height: thumb.size)
+                .shadow(
+                    color: skin.color(thumb.glow.color, state: thumbState),
+                    radius: thumb.glow.radius.resolve(thumbState)
+                )
+                .scaleEffect(isDragging && !reduceMotion ? thumb.dragScale : 1.0)
+                .animation(AinkradMotion.hover, value: isDragging))
     }
 
     private func dragGesture(width: CGFloat, isLower: Bool) -> some Gesture {
