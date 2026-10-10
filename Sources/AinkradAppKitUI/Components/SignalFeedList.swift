@@ -208,7 +208,7 @@ public struct SignalFeedList: View {
         return Text(Self.dayLabel(day, now: now, calendar: calendar))
             .font(skin.font(list.dayHeaderFont, typography: typo))
             .foregroundStyle(skin.color(list.dayHeaderColor))
-            .textCase(.uppercase)
+            .textCase(skin.labelTextCase)
             .tracking(list.dayHeaderFont.tracking ?? 0)
             .padding(.horizontal, skin.spacing.md)
             .padding(.top, AinkradSpacing.sm + 2)

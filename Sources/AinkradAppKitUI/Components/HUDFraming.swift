@@ -91,7 +91,7 @@ public struct AccentRule: View {
                 .shadow(color: skin.color(tick.glow.color.rest), radius: tick.glow.radius.rest)
 
             if let label {
-                Text(label.uppercased())
+                Text(skin.labelCased(label))
                     .font(AinkradFontResolver.font(.caption, typography: typography))
                     .tracking(rule.labelFont.tracking ?? 0)
                     .foregroundStyle(skin.color(rule.labelColor))

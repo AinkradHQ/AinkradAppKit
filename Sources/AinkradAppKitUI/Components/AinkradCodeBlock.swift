@@ -26,7 +26,7 @@ public struct AinkradCodeBlock: View {
         VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
             HStack {
                 if let language {
-                    Text(language.uppercased())
+                    Text(skin.labelCased(language))
                         .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
                         .tracking(block.headerFont.tracking ?? 0)
                         .foregroundStyle(skin.color(block.headerColor))

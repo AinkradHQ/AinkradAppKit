@@ -26,7 +26,7 @@ public struct AinkradSectionFrame<Content: View>: View {
                     .fill(skin.color(tick.fill))
                     .frame(width: frame.tickWidth, height: frame.tickHeight)
                     .shadow(color: skin.color(tick.glow.color.rest), radius: tick.glow.radius.rest)
-                Text(title.uppercased())
+                Text(skin.labelCased(title))
                     .font(AinkradFontResolver.font(.caption, weight: .semibold, typography: typo))
                     .foregroundStyle(skin.color(frame.titleColor))
                     .tracking(frame.titleFont.tracking ?? 0)

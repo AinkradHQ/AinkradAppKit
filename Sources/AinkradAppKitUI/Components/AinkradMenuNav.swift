@@ -205,7 +205,7 @@ private struct AinkradCommandMenuRow: View {
                     .font(skin.font(cmd.glyphFont, typography: typo))
                     .frame(width: cmd.glyphWidth)
                 VStack(alignment: .leading, spacing: skin.spacing.xs / 2) {
-                    Text(uppercased ? label.uppercased() : label)
+                    Text(uppercased ? skin.labelCased(label) : label)
                         .font(skin.font(cmd.titleFont, typography: typo))
                         .tracking(uppercased ? cmd.uppercasedTracking : 0)
                     if let detail {

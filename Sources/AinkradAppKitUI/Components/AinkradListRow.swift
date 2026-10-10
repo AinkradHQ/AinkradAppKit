@@ -95,7 +95,7 @@ public struct AinkradStatRow: View {
     public var body: some View {
         let row = skin.components.statRow
         HStack {
-            Text(label.uppercased())
+            Text(skin.labelCased(label))
                 .font(skin.font(row.labelFont, typography: typo))
                 .tracking(row.labelFont.tracking ?? 0)
                 .foregroundStyle(skin.color(row.labelColor))

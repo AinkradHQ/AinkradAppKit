@@ -46,7 +46,7 @@ public struct AinkradDisclosureGroup<Content: View>: View {
                         // SF Symbol glyph sizing.
                         .font(skin.font(group.chevronFont, typography: typo))
                         .foregroundStyle(skin.color(group.chevronColor))
-                    Text(title.uppercased())
+                    Text(skin.labelCased(title))
                         .font(skin.font(group.titleFont, typography: typo))
                         .foregroundStyle(skin.color(group.titleColor))
                         .tracking(group.titleFont.tracking ?? 0)

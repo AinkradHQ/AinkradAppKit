@@ -124,7 +124,7 @@ public struct AinkradToggleButton: View {
                     Image(systemName: systemName).font(skin.font(btn.iconFont, typography: typo))
                 }
                 if let title {
-                    Text(title.uppercased())
+                    Text(skin.labelCased(title))
                         .font(skin.font(btn.labelFont, typography: typo))
                         .tracking(btn.labelFont.tracking ?? 0)
                 }

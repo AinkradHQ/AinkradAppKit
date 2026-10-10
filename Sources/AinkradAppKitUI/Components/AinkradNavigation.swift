@@ -64,7 +64,7 @@ private struct AinkradTabButton: View {
 
         return Button(action: action) {
             VStack(spacing: tabs.labelGap) {
-                Text(title.uppercased())
+                Text(skin.labelCased(title))
                     .font(skin.font(tabs.labelFont, typography: typo))
                     .tracking(tabs.labelFont.tracking ?? 0)
                     .foregroundStyle(
@@ -126,7 +126,7 @@ public struct AinkradBreadcrumb: View {
     @ViewBuilder
     private func crumb(_ text: String, isLast: Bool, index: Int, bread: BreadcrumbTokens) -> some View {
         let labelFontToken = isLast ? bread.activeFont : bread.font
-        let label = Text(text.uppercased())
+        let label = Text(skin.labelCased(text))
             .font(skin.font(labelFontToken, typography: typo))
             .tracking(labelFontToken.tracking ?? 0.6)
             .foregroundStyle(skin.color(isLast ? bread.activeColor : bread.itemColor))

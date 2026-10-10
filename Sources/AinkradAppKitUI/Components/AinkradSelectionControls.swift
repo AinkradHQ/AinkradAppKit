@@ -117,11 +117,16 @@ public struct AinkradRadioGroup<T: Hashable>: View {
                             skin.color(radio.ringStroke.color, state: rowState),
                             lineWidth: radio.ringStroke.width.resolve(rowState))
                     if isSelected {
-                        // Diamond marker — the Cardinal HUD radio "on" glyph,
-                        // drawn (not a native radio dot).
-                        Diamond()
-                            .fill(skin.color(radio.markerFill))
-                            .frame(width: radio.markerSize, height: radio.markerSize)
+                        // `markerShape`: Neon's drawn diamond (the Cardinal HUD
+                        // radio "on" glyph), or a dot for `Circle`.
+                        Group {
+                            if radio.markerShape == "Circle" {
+                                Circle().fill(skin.color(radio.markerFill))
+                            } else {
+                                Diamond().fill(skin.color(radio.markerFill))
+                            }
+                        }
+                        .frame(width: radio.markerSize, height: radio.markerSize)
                     }
                 }
                 .frame(width: radio.ringSize, height: radio.ringSize)
