@@ -55,6 +55,34 @@ public struct AinkradIconButton: View {
     private var glyphSize: CGFloat { size * skin.components.iconButton.glyphRatio }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: an interactive glass circle at the caller's `size`
+    /// (`.buttonStyle(.glass)` sizes itself to its label and came out 22pt at
+    /// 30), with the system tooltip.
+    @available(macOS 26, *)
+    @ViewBuilder private var nativeBody: some View {
+        let button = Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: glyphSize, weight: .medium))  // design-lint: allow font-size caller-sized glyph
+                .frame(width: size, height: size)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        if let tooltip {
+            button.help(tooltip)
+        } else {
+            button
+        }
+    }
+
+    @ViewBuilder private var kitBody: some View {
         let btn = skin.components.iconButton
         let shape = AinkradSkinShape(token: btn.shape)
         let button = Button(action: action) {
@@ -114,9 +142,38 @@ public struct AinkradToggleButton: View {
     public var isActive: Bool { isOn }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: `.glassProminent` with the accent while latched on,
+    /// `.glass` while off.
+    @available(macOS 26, *)
+    @ViewBuilder private var nativeBody: some View {
+        let button = Button { isOn.toggle() } label: {
+            if let systemName, let title {
+                Label(title, systemImage: systemName)
+            } else if let systemName {
+                Image(systemName: systemName)
+            } else if let title {
+                Text(title)
+            }
+        }
+        .controlSize(.large)
+        if isActive {
+            button.buttonStyle(.glassProminent).tint(skin.color(skin.palette.accentPrimary))
+        } else {
+            button.buttonStyle(.glass)
+        }
+    }
+
+    private var kitBody: some View {
         let btn = skin.components.toggleButton
         let shape = AinkradSkinShape(token: btn.shape)
-        Button {
+        return Button {
             isOn.toggle()
         } label: {
             HStack(spacing: skin.spacing.xs) {
