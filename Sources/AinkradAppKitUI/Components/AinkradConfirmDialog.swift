@@ -17,9 +17,40 @@ struct AinkradConfirmDialogCard: View {
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
-    var body: some View {
-        let dialog = skin.components.confirmDialog
+    @ViewBuilder var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: a macOS alert — bold title, secondary message,
+    /// Return confirms and Esc cancels, on the panel's glass.
+    @available(macOS 26, *)
+    private var nativeBody: some View {
         VStack(alignment: .leading, spacing: skin.spacing.md) {
+            Text(title).font(.headline)
+            Text(message).font(.callout).foregroundStyle(.secondary)
+            HStack(spacing: skin.spacing.sm) {
+                Spacer(minLength: 0)
+                AinkradButton(title: "Cancel", style: .secondary, action: onCancel)
+                    .keyboardShortcut(.cancelAction)
+                AinkradButton(title: confirmTitle, style: isDestructive ? .danger : .primary) {
+                    onConfirm()
+                    onCancel()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(skin.spacing.lg)
+        .frame(maxWidth: skin.components.confirmDialog.maxWidth)
+        .ainkradPanel()
+    }
+
+    private var kitBody: some View {
+        let dialog = skin.components.confirmDialog
+        return VStack(alignment: .leading, spacing: skin.spacing.md) {
             Text(skin.labelCased(title))
                 .font(skin.font(dialog.titleFont, typography: typo))
                 .tracking(dialog.titleFont.tracking ?? 0)
