@@ -153,7 +153,9 @@ public struct AinkradToggleButton: View {
     /// `.glass` while off.
     @available(macOS 26, *)
     @ViewBuilder private var nativeBody: some View {
-        let button = Button { isOn.toggle() } label: {
+        let button = Button {
+            isOn.toggle()
+        } label: {
             if let systemName, let title {
                 Label(title, systemImage: systemName)
             } else if let systemName {

@@ -87,7 +87,8 @@ enum LiveGlassCapture {
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         panel.hasShadow = false
         panel.contentView = NSHostingView(
-            rootView: view
+            rootView:
+                view
                 .environment(\.ainkradMotionBudget, .frozen)
                 .environment(\.controlActiveState, .key)
                 .frame(width: size.width, height: size.height))
