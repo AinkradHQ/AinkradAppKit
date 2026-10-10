@@ -62,9 +62,19 @@ private struct AinkradTooltipModifier: ViewModifier {
     @State private var hovering = false
     @State private var visible = false
 
-    func body(content: Content) -> some View {
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: the system tooltip.
+            content.help(text)
+        } else {
+            kitBody(content)
+        }
+    }
+
+    private func kitBody(_ content: Content) -> some View {
         let tt = skin.components.tooltipPopover
-        content
+        return
+            content
             .onHover { isHovering in
                 hovering = isHovering
                 guard isHovering else {
@@ -114,9 +124,20 @@ public struct AinkradPopover<PopoverContent: View>: ViewModifier {
         self.popoverContent = content
     }
 
-    public func body(content: Content) -> some View {
+    @ViewBuilder public func body(content: Content) -> some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: the system popover, which macOS draws as glass.
+            content.popover(isPresented: $isPresented) {
+                popoverContent().padding(skin.spacing.md)
+            }
+        } else {
+            kitBody(content)
+        }
+    }
+
+    private func kitBody(_ content: Content) -> some View {
         let tt = skin.components.tooltipPopover
-        content.ainkradFloatingPanel(isPresented: $isPresented, maxHeight: tt.popoverMaxHeight) {
+        return content.ainkradFloatingPanel(isPresented: $isPresented, maxHeight: tt.popoverMaxHeight) {
             AinkradFloatingMaterialize {
                 AinkradBubbleChrome {
                     popoverContent()
