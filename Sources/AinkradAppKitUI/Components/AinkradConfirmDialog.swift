@@ -20,7 +20,7 @@ struct AinkradConfirmDialogCard: View {
     var body: some View {
         let dialog = skin.components.confirmDialog
         VStack(alignment: .leading, spacing: skin.spacing.md) {
-            Text(title.uppercased())
+            Text(skin.labelCased(title))
                 .font(skin.font(dialog.titleFont, typography: typo))
                 .tracking(dialog.titleFont.tracking ?? 0)
                 .foregroundStyle(skin.color(skin.text.primary))

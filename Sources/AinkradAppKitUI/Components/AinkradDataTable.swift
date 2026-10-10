@@ -201,7 +201,7 @@ public struct AinkradDataTable<Row: Identifiable>: View {
             sort.wrappedValue = nextSort(current: sort.wrappedValue, column: column.id)
         } label: {
             HStack(spacing: table.headerCellGap) {
-                Text(column.title.uppercased())
+                Text(skin.labelCased(column.title))
                     .font(skin.font(table.headerFont, typography: typo))
                     .tracking(table.headerFont.tracking ?? 0)
                 if sort?.wrappedValue?.columnID == column.id {

@@ -262,7 +262,7 @@ struct GroupedSelectPanelView<T: Hashable>: View {
 
     private func headerView(_ header: String) -> some View {
         let grp = skin.components.groupedSelectRows
-        return Text(header.uppercased())
+        return Text(skin.labelCased(header))
             .font(skin.font(grp.headerFont, typography: typo))
             .foregroundStyle(skin.color(grp.headerColor))
             .kerning(grp.headerKerning)

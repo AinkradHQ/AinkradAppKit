@@ -130,7 +130,7 @@ public struct AinkradButton: View {
             if let icon {
                 Image(systemName: icon).font(skin.font(btn.iconFont, typography: typo))
             }
-            Text(title.uppercased())
+            Text(skin.labelCased(title))
                 .font(skin.font(btn.labelFont, typography: typo))
                 .tracking(btn.labelFont.tracking ?? 0)
         }

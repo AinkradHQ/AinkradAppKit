@@ -118,7 +118,7 @@ public struct SettingsRow: View {
         return AinkradFormRow(
             title: field.label,
             help: field.help,
-            badges: Self.badges(for: field).map { $0.uppercased() },
+            badges: Self.badges(for: field).map(skin.labelCased),
             controlWidth: layout == .sideBySide ? SettingsMetrics.controlColumnWidth : nil,
             // Handed to FormRow whenever the affordance is *meaningful*
             // (modified + resettable), not only while hovered. Passing it

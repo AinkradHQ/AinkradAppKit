@@ -55,7 +55,7 @@ public struct AinkradMeter: View {
                     .font(skin.font(meter.valueFont, typography: typo))
                     .foregroundStyle(skin.color(skin.text.primary))
                 if let label {
-                    Text(label.uppercased())
+                    Text(skin.labelCased(label))
                         .font(skin.font(meter.labelFont, typography: typo))
                         .tracking(meter.labelFont.tracking ?? 0)
                         .foregroundStyle(skin.color(meter.labelColor))

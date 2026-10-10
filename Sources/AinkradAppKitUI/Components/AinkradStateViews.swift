@@ -137,7 +137,7 @@ public struct AinkradSectionHeader: View {
                     .shadow(
                         color: skin.color(skin.roles.accentTick.glow.color),
                         radius: skin.roles.accentTick.glow.radius.resolve([]))
-                Text(title.uppercased())
+                Text(skin.labelCased(title))
                     .font(skin.font(header.titleFont, typography: typo))
                     .foregroundStyle(skin.color(header.titleColor))
                     .tracking(header.titleFont.tracking ?? 0)

@@ -203,7 +203,7 @@ public struct AinkradBadge: View {
     public var body: some View {
         let badge = skin.components.badge
         let shape = AinkradSkinShape(token: badge.shape)
-        Text(text.uppercased())
+        Text(skin.labelCased(text))
             .font(skin.font(badge.font, typography: typo))
             .tracking(badge.font.tracking ?? 0)
             .foregroundStyle(color)

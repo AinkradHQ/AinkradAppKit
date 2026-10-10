@@ -102,12 +102,17 @@ public struct AinkradSkin: Codable, Equatable, Sendable {
         spacing: standardSpacing,
         radius: standardRadius,
         elevation: standardElevation,
-        type: AinkradTypeTokens(
-            roles: standardTypeRoles,
-            monoFamily: "JetBrains Mono",
-            uiFamily: nil,
-            sizes: AinkradTypeSizeTokens()
-        ),
+        type: {
+            var type = AinkradTypeTokens(
+                roles: standardTypeRoles,
+                monoFamily: "JetBrains Mono",
+                uiFamily: nil,
+                sizes: AinkradTypeSizeTokens()
+            )
+            // Written out so a theme file may set the key (validation allows only keys `standard` has).
+            type.labelCase = "upper"
+            return type
+        }(),
         opacity: AinkradOpacityTokens(),
         size: AinkradSizeTokens(),
         cut: AinkradCutTokens(),

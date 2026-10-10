@@ -74,6 +74,10 @@ public struct AinkradTypeTokens: Codable, Equatable, Sendable {
     public var sizes: AinkradTypeSizeTokens
     /// Epic 6.0 token gap (Lore's editor). Not an `init` parameter (ABI).
     public var editor = AinkradTypeEditorTokens()
+    /// How kit labels are cased: `upper` (Neon) or `none` (as written). Nil reads
+    /// as `upper`, so theme files written before the token keep their look.
+    /// Not an `init` parameter (ABI). See `AinkradSkin.labelCased(_:)`.
+    public var labelCase: String?
 
     public init(
         roles: AinkradTypeRoleTokens, monoFamily: String = "JetBrains Mono", uiFamily: String? = nil,
