@@ -67,6 +67,16 @@ public struct AinkradColorPicker: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's colour well and the system colour panel.
+            ColorPicker("", selection: $selection, supportsOpacity: false)
+                .labelsHidden()
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         trigger
             .ainkradFloatingPanel(isPresented: $isOpen, maxHeight: skin.components.colorPicker.panelMaxHeight) {
                 ColorPickerMaterialize {

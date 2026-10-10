@@ -24,8 +24,19 @@ public struct AinkradSegmentedPicker<T: Hashable>: View {
     }
     public var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: skin.spacing.xs + 2) {
-                ForEach(items, id: \.self) { item in segment(item) }
+            if #available(macOS 26, *), skin.usesNativeGlass {
+                // Glass on macOS 26+: Apple's segmented control.
+                Picker("", selection: $selection) {
+                    ForEach(items, id: \.self) { item in Text(label(item)).tag(item) }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .tint(skin.color(skin.palette.accentPrimary))
+                .fixedSize()
+            } else {
+                HStack(spacing: skin.spacing.xs + 2) {
+                    ForEach(items, id: \.self) { item in segment(item) }
+                }
             }
         }
         .animation(AinkradMotion.hover, value: selection)
@@ -195,7 +206,15 @@ public struct AinkradSelect<T: Hashable>: View {
     private func open() { isOpen = true }
     private func close() { isOpen = false }
 
-    private var trigger: some View {
+    @ViewBuilder private var trigger: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            NativePopUpButton(title: label(selection)) { isOpen ? close() : open() }
+        } else {
+            kitTrigger
+        }
+    }
+
+    private var kitTrigger: some View {
         let trig = skin.components.selectTrigger
         let shape = AinkradSkinShape(token: trig.shape)
         var state: AinkradControlState = []
@@ -273,7 +292,15 @@ public struct AinkradMultiSelect<T: Hashable>: View {
     private func open() { isOpen = true }
     private func close() { isOpen = false }
 
-    private var trigger: some View {
+    @ViewBuilder private var trigger: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            NativePopUpButton(title: triggerText) { isOpen ? close() : open() }
+        } else {
+            kitTrigger
+        }
+    }
+
+    private var kitTrigger: some View {
         let trig = skin.components.multiSelectTrigger
         let shape = AinkradSkinShape(token: trig.shape)
         var state: AinkradControlState = []
@@ -347,7 +374,19 @@ public struct AinkradCombobox<T: Hashable>: View {
             }
     }
 
-    private var field: some View {
+    @ViewBuilder private var field: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's rounded field.
+            TextField("", text: $text)
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.large)
+                .focused($isFocused)
+        } else {
+            kitField
+        }
+    }
+
+    private var kitField: some View {
         let fieldTokens = skin.components.combobox
         let shape = AinkradSkinShape(token: fieldTokens.shape)
         var state: AinkradControlState = []
@@ -372,14 +411,11 @@ public struct AinkradCombobox<T: Hashable>: View {
 
     private var optionsPanel: some View {
         let popover = skin.roles.popover
-        let shape = AinkradSkinShape(token: popover.shape)
         return VStack(alignment: .leading, spacing: 0) {
             ForEach(filtered, id: \.self) { item in optionRow(item) }
         }
         .padding(skin.spacing.xs)
-        .background(shape.fill(skin.color(popover.fill)))
-        .overlay(shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([])))
-        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        .modifier(PopoverChrome())
         .frame(minWidth: popover.minWidth)
     }
 
@@ -394,9 +430,9 @@ public struct AinkradCombobox<T: Hashable>: View {
             isFocused = false
         } label: {
             HStack(spacing: skin.spacing.xs) {
-                Image(systemName: "diamond.fill")
-                    .font(skin.font(row.selectedDot, typography: typo))
-                    .foregroundStyle(skin.color(skin.palette.accentSecondary))
+                Image(systemName: optionSelectedGlyph(native: skin.usesNativeGlass))
+                    .font(skin.usesNativeGlass ? .caption.weight(.bold) : skin.font(row.selectedDot, typography: typo))
+                    .foregroundStyle(skin.usesNativeGlass ? Color.primary : skin.color(skin.palette.accentSecondary))
                     .opacity(isSelected ? 1 : 0)
                 Text(label(item))
                     .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
@@ -405,7 +441,12 @@ public struct AinkradCombobox<T: Hashable>: View {
             }
             .padding(.horizontal, skin.spacing.sm)
             .padding(.vertical, row.paddingV)
-            .background(rowShape.fill(skin.color(row.fill, state: isHovered ? [.hover] : [])))
+            .background(
+                optionRowBackground(
+                    native: skin.usesNativeGlass, highlighted: isHovered,
+                    accent: skin.color(skin.palette.accentPrimary),
+                    kit: rowShape.fill(skin.color(row.fill, state: isHovered ? [.hover] : [])))
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

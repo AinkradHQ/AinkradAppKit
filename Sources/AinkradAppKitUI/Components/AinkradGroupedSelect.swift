@@ -126,7 +126,15 @@ public struct AinkradGroupedSelect<T: Hashable>: View {
     private func open() { isOpen = true }
     private func close() { isOpen = false }
 
-    private var trigger: some View {
+    @ViewBuilder private var trigger: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            NativePopUpButton(title: triggerLabel) { isOpen ? close() : open() }
+        } else {
+            kitTrigger
+        }
+    }
+
+    private var kitTrigger: some View {
         let trig = skin.components.groupedSelectTrigger
         let shape = AinkradSkinShape(token: trig.shape)
         var state: AinkradControlState = []
@@ -193,7 +201,6 @@ struct GroupedSelectPanelView<T: Hashable>: View {
 
     var body: some View {
         let popover = skin.roles.popover
-        let shape = AinkradSkinShape(token: popover.shape)
         VStack(alignment: .leading, spacing: skin.spacing.xs) {
             searchField
             if filteredSections.isEmpty {
@@ -218,9 +225,7 @@ struct GroupedSelectPanelView<T: Hashable>: View {
             }
         }
         .padding(skin.spacing.xs)
-        .background(shape.fill(skin.color(popover.fill)))
-        .overlay(shape.strokeBorder(skin.color(popover.stroke.color), lineWidth: popover.stroke.width.resolve([])))
-        .shadow(color: skin.color(popover.shadow.color), radius: popover.shadow.radius, y: popover.shadow.y)
+        .modifier(PopoverChrome())
         .frame(minWidth: skin.components.groupedSelectRows.panelMinWidth)
         .onAppear { DispatchQueue.main.async { searchFocused = true } }
         .onChange(of: query) { _, _ in highlightedIndex = 0 }
@@ -234,10 +239,7 @@ struct GroupedSelectPanelView<T: Hashable>: View {
     }
 
     private var searchField: some View {
-        let panelSearch = skin.roles.panelSearch
-        let searchShape = AinkradSkinShape(token: panelSearch.shape)
-        return TextField(placeholder, text: $query)
-            .textFieldStyle(.plain)
+        TextField(placeholder, text: $query)
             .focused($searchFocused)
             .font(skin.font(AinkradFontToken(role: "body"), typography: typo))
             .foregroundStyle(skin.color(skin.palette.foreground))
@@ -252,12 +254,7 @@ struct GroupedSelectPanelView<T: Hashable>: View {
                     onClose()
                 }
             }
-            .padding(.horizontal, skin.spacing.sm)
-            .padding(.vertical, panelSearch.paddingV)
-            .background(searchShape.fill(skin.color(panelSearch.fill)))
-            .overlay(
-                searchShape.strokeBorder(
-                    skin.color(panelSearch.stroke.color), lineWidth: panelSearch.stroke.width.resolve([])))
+            .modifier(PanelSearchChrome())
     }
 
     private func headerView(_ header: String) -> some View {
@@ -282,9 +279,9 @@ struct GroupedSelectPanelView<T: Hashable>: View {
         var iconState: AinkradControlState = []
         if !row.isEnabled { iconState.insert(.disabled) }
         let content = HStack(spacing: skin.spacing.xs) {
-            Image(systemName: "diamond.fill")
-                .font(skin.font(rowRole.selectedDot, typography: typo))
-                .foregroundStyle(skin.color(skin.palette.accentSecondary))
+            Image(systemName: optionSelectedGlyph(native: skin.usesNativeGlass))
+                .font(skin.usesNativeGlass ? .caption.weight(.bold) : skin.font(rowRole.selectedDot, typography: typo))
+                .foregroundStyle(skin.usesNativeGlass ? Color.primary : skin.color(skin.palette.accentSecondary))
                 .opacity(isSelected ? 1 : 0)
             if let icon = row.icon {
                 Image(systemName: icon)
@@ -307,7 +304,10 @@ struct GroupedSelectPanelView<T: Hashable>: View {
         .padding(.horizontal, skin.spacing.sm)
         .padding(.vertical, rowRole.paddingV)
         .background(
-            rowShape.fill(skin.color(rowRole.fill, state: (isHovered || isHighlighted) ? [.hover] : []))
+            optionRowBackground(
+                native: skin.usesNativeGlass, highlighted: isHovered || isHighlighted,
+                accent: skin.color(skin.palette.accentPrimary),
+                kit: rowShape.fill(skin.color(rowRole.fill, state: (isHovered || isHighlighted) ? [.hover] : [])))
         )
         .contentShape(Rectangle())
 
