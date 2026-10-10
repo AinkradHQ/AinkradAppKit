@@ -81,9 +81,48 @@ public struct AinkradButton: View {
     private var foreground: Color { style.usesAccentFill ? accentColor.contrastingText : accentColor }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: Apple's own button. Primary and danger are
+    /// `.glassProminent` tinted with the accent (danger: the danger colour and
+    /// the destructive role), secondary is untinted `.glass`, ghost is
+    /// `.borderless` accent text.
+    @available(macOS 26, *)
+    @ViewBuilder private var nativeBody: some View {
+        let button = Button(role: style.isDanger ? .destructive : nil, action: action) {
+            ZStack {
+                nativeLabel.opacity(isLoading ? 0 : 1)
+                ProgressView().controlSize(.small).opacity(isLoading ? 1 : 0)
+            }
+        }
+        .disabled(isLoading)
+        .controlSize(.large)
+        // Only the prominent styles take the tint: on `.glass` a tint fills the
+        // whole capsule, which would make secondary read as primary.
+        switch style {
+        case .primary, .danger: button.buttonStyle(.glassProminent).tint(accentColor)
+        case .secondary: button.buttonStyle(.glass)
+        case .ghost: button.buttonStyle(.borderless).tint(accentColor)
+        }
+    }
+
+    @ViewBuilder private var nativeLabel: some View {
+        if let icon {
+            Label(title, systemImage: icon)
+        } else {
+            Text(title)
+        }
+    }
+
+    private var kitBody: some View {
         let btn = skin.components.button
         let shape = AinkradSkinShape(token: btn.shape)
-        Button(action: action) {
+        return Button(action: action) {
             ZStack {
                 // Both mounted; only opacity toggles so the label and spinner
                 // crossfade in place (no layout jump).
