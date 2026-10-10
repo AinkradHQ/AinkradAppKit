@@ -15,7 +15,20 @@ public struct AinkradLabel: View {
         self.systemName = systemName
     }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's label.
+            if let systemName {
+                Label(text, systemImage: systemName)
+            } else {
+                Text(text)
+            }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         HStack(spacing: AinkradSpacing.xs) {
             if let systemName {
                 Image(systemName: systemName)

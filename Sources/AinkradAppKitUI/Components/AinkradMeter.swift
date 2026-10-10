@@ -13,6 +13,10 @@ public func meterFraction(value: Double, total: Double) -> Double {
 /// progress bar. Reads theme/status colors from the environment; under
 /// `ainkradReduceMotion` the arc is set directly to its target fraction
 /// instead of sweeping in.
+/// The intrinsic side of Apple's `.accessoryCircularCapacity` gauge, which
+/// the native meter scales to the caller's `size`.
+private let nativeGaugeSide: CGFloat = 58  // design-lint: allow frame-literal system gauge metric
+
 public struct AinkradMeter: View {
     private let value: Double
     private let total: Double
@@ -41,7 +45,33 @@ public struct AinkradMeter: View {
 
     private var meter: MeterTokens { skin.components.meter }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's circular capacity gauge, scaled to `size`.
+            Gauge(value: fraction) {
+                EmptyView()
+            }
+            .gaugeStyle(.accessoryCircularCapacity)
+            .tint(color)
+            .accessibilityLabel(label ?? "")
+            .scaleEffect(size / nativeGaugeSide)
+            .frame(width: size, height: size)
+            // The capacity style shows one short value; the kit's percentage
+            // and caption sit over the ring so nothing the meter said is lost.
+            .overlay {
+                VStack(spacing: meter.gap) {
+                    Text("\(Int((fraction * 100).rounded()))%").font(.title3.weight(.semibold))
+                    if let label {
+                        Text(label).font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         ZStack {
             Circle()
                 .stroke(skin.color(meter.trackColor), lineWidth: lineWidth)

@@ -41,9 +41,34 @@ public struct AinkradChip: View {
     public var isRemovable: Bool { onRemove != nil }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: a glass capsule tag with a borderless remove.
+            HStack(spacing: skin.spacing.xs) {
+                if let systemName { Image(systemName: systemName) }
+                Text(label)
+                if isRemovable {
+                    Button {
+                        onRemove?()
+                    } label: {
+                        Image(systemName: "xmark").imageScale(.small)
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Remove")
+                }
+            }
+            .font(.callout)
+            .padding(.horizontal, skin.spacing.sm)
+            .padding(.vertical, skin.spacing.xs)
+            .glassEffect(.regular, in: .capsule)
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let chip = skin.components.chip
         let shape = AinkradSkinShape(token: chip.shape)
-        HStack(spacing: skin.spacing.xs) {
+        return HStack(spacing: skin.spacing.xs) {
             if let systemName {
                 Image(systemName: systemName).font(skin.font(chip.iconFont, typography: typo))
             }
@@ -124,7 +149,46 @@ public struct AinkradSwatchChip: View {
     /// Whether this chip behaves as a tappable toggle (vs. a static tag).
     public var isToggle: Bool { onTap != nil }
 
-    public var body: some View {
+    @ViewBuilder public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            nativeBody
+        } else {
+            kitBody
+        }
+    }
+
+    /// Glass on macOS 26+: a glass capsule; a toggle chip is a `.glass`
+    /// button, `.glassProminent` with the accent while on (a glass tint alone
+    /// was too faint to read as on).
+    @available(macOS 26, *)
+    @ViewBuilder private var nativeBody: some View {
+        let content = HStack(spacing: skin.spacing.xs) {
+            ColorSwatchDot(color: swatch, size: skin.components.swatchChip.swatchSize)
+            Text(label)
+        }
+        .font(.callout)
+        if let onTap, isOn {
+            Button(action: onTap) { content }
+                .buttonStyle(.glassProminent)
+                .tint(skin.color(skin.palette.accentPrimary))
+        } else if let onTap {
+            Button(action: onTap) { content }
+                .buttonStyle(.glass)
+        } else if isOn {
+            content
+                .foregroundStyle(skin.color(skin.palette.accentPrimary).contrastingText)
+                .padding(.horizontal, skin.spacing.sm)
+                .padding(.vertical, skin.spacing.xs)
+                .background(skin.color(skin.palette.accentPrimary), in: .capsule)
+        } else {
+            content
+                .padding(.horizontal, skin.spacing.sm)
+                .padding(.vertical, skin.spacing.xs)
+                .glassEffect(.regular, in: .capsule)
+        }
+    }
+
+    @ViewBuilder private var kitBody: some View {
         let chip = skin.components.chip
         let swatchTokens = skin.components.swatchChip
         let shape = AinkradSkinShape(token: swatchTokens.shape)
@@ -201,9 +265,23 @@ public struct AinkradBadge: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: the system tag look — a tinted capsule.
+            Text(text)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(color)
+                .padding(.horizontal, skin.spacing.sm)
+                .padding(.vertical, skin.spacing.xs / 2)
+                .background(color.opacity(skin.opacity.o18), in: .capsule)
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let badge = skin.components.badge
         let shape = AinkradSkinShape(token: badge.shape)
-        Text(skin.labelCased(text))
+        return Text(skin.labelCased(text))
             .font(skin.font(badge.font, typography: typo))
             .tracking(badge.font.tracking ?? 0)
             .foregroundStyle(color)
@@ -231,9 +309,25 @@ public struct AinkradKbd: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: a plain keycap, the glyphs as menus show them.
+            Text(key)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, kbd.paddingH)
+                .padding(.vertical, kbd.paddingV)
+                .background(.quaternary, in: .rect(cornerRadius: kbd.paddingH))
+        } else {
+            kitBody
+        }
+    }
+
+    private var kbd: KbdTokens { skin.components.kbd }
+
+    private var kitBody: some View {
         let kbd = skin.components.kbd
         let shape = AinkradSkinShape(token: kbd.shape)
-        Text("[\(key)]")
+        return Text("[\(key)]")
             .font(skin.font(kbd.font, typography: typo))
             .foregroundStyle(skin.color(kbd.color))
             .padding(.horizontal, kbd.paddingH)
