@@ -13,9 +13,21 @@ public struct AinkradToggle: View {
     public init(isOn: Binding<Bool>) { self._isOn = isOn }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's switch, tinted with the accent.
+            Toggle("", isOn: $isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(skin.color(skin.palette.accentPrimary))
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let toggle = skin.components.toggle
         let shape = AinkradSkinShape(token: toggle.shape)
-        Button {
+        return Button {
             isOn.toggle()
         } label: {
             ZStack(alignment: isOn ? .trailing : .leading) {

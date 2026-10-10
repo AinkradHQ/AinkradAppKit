@@ -24,11 +24,23 @@ public struct AinkradSlider: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's slider (its own accessibility and
+            // keyboard handling), tinted with the accent.
+            Slider(value: $value, in: bounds)
+                .tint(skin.color(skin.palette.accentPrimary))
+                .accessibilityValue(Self.spokenValue(value, in: bounds))
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let track = skin.roles.track
         let thumb = skin.roles.thumb
         let container = skin.components.slider
         let containerShape = AinkradSkinShape(token: container.containerShape)
-        GeometryReader { proxy in
+        return GeometryReader { proxy in
             let width = proxy.size.width
             let x = fraction(value) * width
 
