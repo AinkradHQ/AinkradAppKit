@@ -58,6 +58,12 @@ struct NativeGlassSweepTests {
                         AinkradPanel { Text("Glass panel").padding(24) }
                     })),
             SkinParityFixture(
+                name: "panel-overlayChrome",
+                view: AnyView(
+                    busyBackdrop.overlay {
+                        Text("Overlay chrome").padding(32).ainkradOverlayChrome(blending: .withinWindow)
+                    })),
+            SkinParityFixture(
                 name: "panel-select",
                 view: AnyView(
                     SearchableSelectPanelView(
