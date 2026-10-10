@@ -29,9 +29,20 @@ public struct AinkradCheckbox: View {
     }
 
     public var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's checkbox, tinted with the accent.
+            Toggle(isOn: $isOn) { Text(label ?? "") }
+                .toggleStyle(.checkbox)
+                .tint(skin.color(skin.palette.accentPrimary))
+        } else {
+            kitBody
+        }
+    }
+
+    private var kitBody: some View {
         let checkbox = skin.components.checkbox
         let shape = AinkradSkinShape(token: checkbox.shape)
-        Button {
+        return Button {
             isOn = checkboxToggled(isOn)
         } label: {
             HStack(spacing: AinkradSpacing.sm) {
@@ -95,8 +106,18 @@ public struct AinkradRadioGroup<T: Hashable>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
-            ForEach(options, id: \.self) { option in row(option) }
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            // Glass on macOS 26+: Apple's radio group, tinted with the accent.
+            Picker("", selection: $selection) {
+                ForEach(options, id: \.self) { option in Text(label(option)).tag(option) }
+            }
+            .labelsHidden()
+            .pickerStyle(.radioGroup)
+            .tint(skin.color(skin.palette.accentPrimary))
+        } else {
+            VStack(alignment: .leading, spacing: AinkradSpacing.sm) {
+                ForEach(options, id: \.self) { option in row(option) }
+            }
         }
     }
 
