@@ -43,6 +43,13 @@ public struct AinkradMarkdownText: View {
         case .paragraph(let src):
             inline(src).font(AinkradFontResolver.font(size: 13, typography: typography)).foregroundStyle(
                 theme.foreground.opacity(skin.opacity.o90))
+        case .heading(let level, let src) where level >= 3:
+            // Minor headings read as a section label, like a card header.
+            Text(skin.labelCased(src.replacingOccurrences(of: "*", with: "").replacingOccurrences(of: "`", with: "")))
+                .font(AinkradFontResolver.font(size: 12, weight: .semibold, typography: typography))
+                .tracking(skin.components.codeBlock.headerFont.tracking ?? 0)
+                .foregroundStyle(theme.foreground.opacity(skin.opacity.o60))
+                .padding(.top, skin.size.s4)
         case .heading(let level, let src):
             inline(src)
                 .font(AinkradFontResolver.font(size: headingSize(level), weight: .semibold, typography: typography))
@@ -60,8 +67,10 @@ public struct AinkradMarkdownText: View {
         case .orderedList(let items):
             VStack(alignment: .leading, spacing: skin.size.s3) {
                 ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
-                    HStack(alignment: .top, spacing: skin.size.s6) {
-                        Text("\(idx + 1).").foregroundStyle(theme.accentSecondary)
+                    HStack(alignment: .firstTextBaseline, spacing: skin.size.s6) {
+                        Text("\(idx + 1).")
+                            .font(AinkradFontResolver.font(size: 11.5, mono: true, typography: typography))
+                            .foregroundStyle(theme.foreground.opacity(skin.opacity.o55))
                         inline(item).foregroundStyle(theme.foreground.opacity(skin.opacity.o90))
                     }
                     .font(AinkradFontResolver.font(size: 13, typography: typography))
@@ -69,6 +78,16 @@ public struct AinkradMarkdownText: View {
             }
         case .codeBlock(let language, let code):
             AinkradCodeBlock(code, language: language)
+        case .table(let table):
+            AinkradMarkdownTableView(table: table, typography: typography, inline: inline)
+        case .blockQuote(let src):
+            inline(src)
+                .font(AinkradFontResolver.font(size: 13, typography: typography))
+                .foregroundStyle(theme.foreground.opacity(skin.opacity.o65))
+                .padding(.leading, skin.size.s12)
+                .overlay(alignment: .leading) {
+                    Rectangle().fill(theme.accentPrimary).frame(width: skin.size.s2)
+                }
         case .thematicBreak:
             Rectangle()
                 .fill(theme.foreground.opacity(skin.opacity.o12))

@@ -71,4 +71,39 @@ struct AinkradMarkdownBlocksTests {
     @Test func bulletNotMistakenForRule() {
         #expect(AinkradMarkdownBlocks.parse("- a\n- b") == [.bulletList(["a", "b"])])
     }
+
+    // MARK: - GD11: tables and quotes
+
+    @Test func pipeTable() {
+        let src = "| Repo | Tests | Note |\n|---|--:|:-:|\n| Forge | 93 + 13 | ok |\n| Grimoire | 96 |"
+        let table = AinkradMarkdownTable(
+            header: ["Repo", "Tests", "Note"], alignments: [.none, .trailing, .center],
+            rows: [["Forge", "93 + 13", "ok"], ["Grimoire", "96", ""]])
+        #expect(AinkradMarkdownBlocks.parse(src) == [.table(table)])
+        #expect(table.isNumeric(column: 1))
+        #expect(!table.isNumeric(column: 0))
+    }
+
+    @Test func tableWithoutOuterPipesAndEscapedPipe() {
+        let src = "a | b\n--- | ---\nx \\| y | z"
+        #expect(
+            AinkradMarkdownBlocks.parse(src) == [
+                .table(AinkradMarkdownTable(header: ["a", "b"], alignments: [.none, .none], rows: [["x | y", "z"]]))
+            ])
+    }
+
+    @Test func aPipeLineWithoutSeparatorStaysProse() {
+        #expect(AinkradMarkdownBlocks.parse("a | b\nnot a separator") == [.paragraph("a | b\nnot a separator")])
+    }
+
+    @Test func tableEndsAtProse() {
+        let blocks = AinkradMarkdownBlocks.parse("Results:\n| a |\n|---|\n| 1 |\nDone.")
+        #expect(blocks.count == 3)
+        #expect(blocks.first == .paragraph("Results:"))
+        #expect(blocks.last == .paragraph("Done."))
+    }
+
+    @Test func blockQuote() {
+        #expect(AinkradMarkdownBlocks.parse("> one\n>two\n\nafter") == [.blockQuote("one\ntwo"), .paragraph("after")])
+    }
 }
