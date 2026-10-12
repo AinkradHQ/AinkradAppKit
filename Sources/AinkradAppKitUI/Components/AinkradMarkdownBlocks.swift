@@ -10,6 +10,10 @@ public enum AinkradMarkdownBlock: Equatable, Sendable {
     case orderedList([String])
     case codeBlock(language: String?, code: String)
     case thematicBreak
+    /// A GFM pipe table: a header row, a `---` separator row, then body rows.
+    case table(AinkradMarkdownTable)
+    /// Consecutive `>` lines, markers stripped, joined with newlines.
+    case blockQuote(String)
 }
 
 /// Lightweight, single-pass block splitter for assistant transcript text.
@@ -84,6 +88,31 @@ public enum AinkradMarkdownBlocks {
                 continue
             }
 
+            // Table: a row of cells directly over a separator row.
+            if i + 1 < lines.count, let table = AinkradMarkdownTable.header(line, separator: lines[i + 1]) {
+                flushParagraph()
+                var rows: [[String]] = []
+                i += 2
+                while i < lines.count, let row = AinkradMarkdownTable.row(lines[i]) {
+                    rows.append(row)
+                    i += 1
+                }
+                blocks.append(.table(table.with(rows: rows)))
+                continue
+            }
+
+            // Block quote.
+            if trimmed.hasPrefix(">") {
+                flushParagraph()
+                var quoted: [String] = []
+                while i < lines.count, let q = quoteContent(lines[i].trimmingCharacters(in: .whitespaces)) {
+                    quoted.append(q)
+                    i += 1
+                }
+                blocks.append(.blockQuote(quoted.joined(separator: "\n")))
+                continue
+            }
+
             // Thematic break: 3+ of the SAME marker char ('-', '*', '_') and nothing else.
             if isThematicBreak(trimmed) {
                 flushParagraph()
@@ -114,6 +143,12 @@ public enum AinkradMarkdownBlocks {
         let rest = line.dropFirst(level)
         guard rest.first == " " else { return nil }
         return .heading(level: level, text: rest.trimmingCharacters(in: .whitespaces))
+    }
+
+    private static func quoteContent(_ line: String) -> String? {
+        guard line.hasPrefix(">") else { return nil }
+        let rest = line.dropFirst()
+        return String(rest.first == " " ? rest.dropFirst() : rest)
     }
 
     private static func isBullet(_ line: String) -> Bool {
