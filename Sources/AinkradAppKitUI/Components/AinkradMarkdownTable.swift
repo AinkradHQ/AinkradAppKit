@@ -129,7 +129,11 @@ struct AinkradMarkdownTableView: View {
             .frame(minWidth: width, alignment: .leading)
             .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: hoveredRow)
         }
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onGeometryChange(for: CGFloat.self) {
+            $0.size.width
+        } action: {
+            width = $0
+        }
         .background(AinkradSkinShape(token: block.shape).fill(skin.color(block.fill)))
         .clipShape(AinkradSkinShape(token: block.shape))
     }
