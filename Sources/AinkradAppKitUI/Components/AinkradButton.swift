@@ -47,6 +47,8 @@ public struct AinkradButton: View {
     var isBorderless = false
     /// Set by `secondaryAccent()`.
     var usesSecondaryAccent = false
+    /// Set by `fullWidth()`.
+    var fillsWidth = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -101,6 +103,16 @@ public struct AinkradButton: View {
         return copy
     }
 
+    /// Fills the width the parent proposes, label centred — the mockups'
+    /// `flex: 1` halves (Grimoire's review footer: [Revert selected][Send 1
+    /// comment], [Commit][Commit & open PR]). Under Glass the glass capsule
+    /// stretches the same way.
+    public func fullWidth() -> Self {
+        var copy = self
+        copy.fillsWidth = true
+        return copy
+    }
+
     private var accentColor: Color {
         if usesSecondaryAccent, !style.usesAccentFill { return skin.color(skin.palette.accentSecondary) }
         return skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
@@ -126,6 +138,7 @@ public struct AinkradButton: View {
                 nativeLabel.opacity(isLoading ? 0 : 1)
                 ProgressView().controlSize(.small).opacity(isLoading ? 1 : 0)
             }
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
         }
         .disabled(isLoading)
         .controlSize(.large)
@@ -159,6 +172,7 @@ public struct AinkradButton: View {
                 AinkradSpinner(size: btn.spinnerSize, tint: foreground)
                     .opacity(isLoading ? 1 : 0)
             }
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
             .padding(.horizontal, skin.spacing.lg)
             .padding(.vertical, skin.spacing.sm)
             .background(
