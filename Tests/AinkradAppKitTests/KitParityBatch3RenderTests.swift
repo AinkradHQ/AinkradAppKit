@@ -163,6 +163,15 @@ struct KitParityBatch3RenderTests {
                     AinkradBreadcrumb(items: ["Sources", "SidebarRow.swift"]).preservesCase()
                 }
             },
+            fixture("tabs-text", 330, 110) {
+                VStack(alignment: .leading, spacing: 12) {
+                    AinkradTabs(tabs: ["Files", "Changes 2", "Search", "Issues 5"], selection: .constant("Files")) {
+                        $0
+                    }
+                    .textTabs()
+                    AinkradTabs(tabs: ["Files", "Changes"], selection: .constant("Files")) { $0 }
+                }
+            },
         ]
     }
 

@@ -107,4 +107,11 @@ struct KitParityBatch3Tests {
         #expect(forge.segmentColor?(1) != nil)
         #expect(forge.segmentColor?(3) == nil)
     }
+
+    @Test("text tabs are opt-in")
+    func textTabs() {
+        let tabs = AinkradTabs(tabs: ["Files", "Changes 2"], selection: .constant("Files")) { $0 }
+        #expect(!tabs.usesTextTabs)
+        #expect(tabs.textTabs().usesTextTabs)
+    }
 }
