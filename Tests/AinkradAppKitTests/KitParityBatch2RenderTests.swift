@@ -244,4 +244,18 @@ struct KitParityBatch2RenderTests {
             AinkradMarkdownText(text: Self.replyMarkdown)
         }
     }
+
+    @Test func decisionBar() {
+        Self.shoot("decision-bar-label-cased", width: 720, height: 90) {
+            AinkradDecisionBar(
+                icon: "bolt.horizontal", iconTint: .secondary, caption: "Approval required",
+                title: "Run git push -u origin feat/glass-sidebar",
+                actions: [
+                    .init(title: "Deny…", style: .ghost, perform: {}),
+                    .init(title: "Allow once ↵", style: .primary, perform: {}),
+                ]
+            )
+            .labelCasedCaption()
+        }
+    }
 }

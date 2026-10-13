@@ -137,4 +137,12 @@ struct KitParityBatch2Tests {
         let code = "let a = 1\n\nlet b = \"two\""
         #expect(String(ainkradSyntaxAttributed(lines: code, palette: .reply).characters) == code)
     }
+
+    @Test("a label-cased decision caption is opt-in")
+    func decisionCaption() {
+        let bar = AinkradDecisionBar(
+            icon: "terminal", iconTint: .secondary, caption: "Approval required", title: "Run git push", actions: [])
+        #expect(!bar.casesCaption)
+        #expect(bar.labelCasedCaption().casesCaption)
+    }
 }

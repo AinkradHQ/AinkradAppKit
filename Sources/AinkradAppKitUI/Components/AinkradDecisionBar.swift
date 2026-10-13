@@ -32,6 +32,8 @@ public struct AinkradDecisionBar: View {
     private let caption: String
     private let title: String
     private let actions: [Action]
+    /// Set by `labelCasedCaption()`.
+    var casesCaption = false
 
     /// `icon` is an SF Symbol name; `caption` is the small accent line
     /// ("Approval required"), `title` the one-line subject under it.
@@ -43,13 +45,22 @@ public struct AinkradDecisionBar: View {
         self.actions = actions
     }
 
+    /// Draws the caption in the skin's label case — "APPROVAL REQUIRED" under
+    /// Neon, as written under Glass — like every other kit caption and
+    /// Grimoire's approval mockup. Without it the caption is drawn as passed.
+    public func labelCasedCaption() -> Self {
+        var copy = self
+        copy.casesCaption = true
+        return copy
+    }
+
     public var body: some View {
         HStack(spacing: skin.size.s10) {
             Image(systemName: icon)
                 .font(skin.font(AinkradFontToken(sizeKey: "t12", scaled: false)))
                 .foregroundStyle(iconTint == .primary ? theme.accentPrimary : theme.accentSecondary)
             VStack(alignment: .leading, spacing: skin.size.s1) {
-                Text(caption)
+                Text(casesCaption ? skin.labelCased(caption) : caption)
                     .font(AinkradFontResolver.font(size: 10, weight: .semibold, typography: typography))
                     .kerning(0.6)
                     .foregroundStyle(theme.accentPrimary.opacity(skin.opacity.o85))
