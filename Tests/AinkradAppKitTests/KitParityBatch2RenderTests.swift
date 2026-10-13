@@ -51,4 +51,63 @@ struct KitParityBatch2RenderTests {
             }
         }
     }
+
+    struct Hit: Hashable {
+        let name: String
+        let folder: String
+        let section: String?
+        let keys: String?
+        let matched: [Int]
+    }
+
+    @Test func quickOpenPalette() {
+        let hits = [
+            Hit(
+                name: "SidebarRow.swift", folder: "Sources/Ainkrad/Features/Sidebar", section: "Recently opened",
+                keys: nil, matched: [0, 4, 7, 8, 9]),
+            Hit(
+                name: "SidebarRowTests.swift", folder: "Tests/AinkradTests/Sidebar", section: "Files", keys: nil,
+                matched: [0, 4, 7, 8, 9]),
+            Hit(
+                name: "SessionBrowserRow.swift", folder: "Sources/Ainkrad/Features/Sessions", section: "Files",
+                keys: nil, matched: [0, 13, 14, 15, 16]),
+        ]
+        Self.shoot("command-menu-quick-open", width: 560, height: 230) {
+            AinkradCommandMenu(
+                items: hits, selection: .constant(nil), icon: { _ in "swift" }, label: \.name,
+                detail: { $0.folder }, value: { $0.keys }, uppercased: false, highlight: .constant(0)
+            )
+            .paletteRows()
+            .matchedCharacters(\.matched)
+            .sections(\.section)
+        }
+    }
+
+    @Test func commandPalette() {
+        let hits = [
+            Hit(name: "View: Split Editor Right", folder: "", section: nil, keys: "⌘\\", matched: [6, 7, 8, 9, 10]),
+            Hit(name: "View: Split Editor Down", folder: "", section: nil, keys: "⌘K ⌘\\", matched: [6, 7, 8, 9, 10]),
+            Hit(name: "Git: Open in Git Mage", folder: "", section: "Recently used", keys: "⌘⇧G", matched: []),
+            Hit(
+                name: "Run Task…", folder: "make build · make test", section: "Recently used", keys: nil,
+                matched: []),
+        ]
+        Self.shoot("command-menu-palette", width: 560, height: 230) {
+            AinkradCommandMenu(
+                items: hits, selection: .constant(nil), icon: { _ in "" }, label: \.name,
+                detail: { $0.folder }, value: { $0.keys }, uppercased: false, highlight: .constant(0)
+            )
+            .paletteRows()
+            .matchedCharacters(\.matched)
+            .sections(\.section)
+        }
+        // The default rows with only matched letters opted in.
+        Self.shoot("command-menu-legacy-matched", width: 560, height: 200) {
+            AinkradCommandMenu(
+                items: Array(hits.prefix(2)), selection: .constant(nil), icon: { _ in "rectangle.split.2x1" },
+                label: \.name, value: { $0.keys }, uppercased: false
+            )
+            .matchedCharacters(\.matched)
+        }
+    }
 }

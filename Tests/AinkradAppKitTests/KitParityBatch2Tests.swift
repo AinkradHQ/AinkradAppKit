@@ -23,4 +23,31 @@ struct KitParityBatch2Tests {
         #expect(forge.keepsCase)
         #expect(forge.segmentIcon?.index == 1)
     }
+
+    @Test("matched letters split a label into runs")
+    func matchRuns() {
+        let runs = ainkradMatchRuns("SidebarRow", matched: [0, 4, 7, 8, 9, 40])
+        #expect(runs.map(\.text) == ["S", "ide", "b", "ar", "Row"])
+        #expect(runs.map(\.isMatch) == [true, false, true, false, true])
+        #expect(ainkradMatchRuns("abc", matched: []).map(\.text) == ["abc"])
+        #expect(ainkradMatchRuns("", matched: [0]).isEmpty)
+    }
+
+    @Test("command menu palette rows, matches and sections are opt-in")
+    func commandMenuOptions() {
+        let items = ["a.swift", "b.swift", "c.swift"]
+        let plain = AinkradCommandMenu(items: items, selection: .constant(nil), icon: { _ in "" }, label: { $0 })
+        #expect(!plain.usesPaletteRows)
+        #expect(plain.matchedCharacters == nil)
+        #expect(plain.sectionStart(at: 0) == nil)
+        let palette =
+            plain.paletteRows()
+            .matchedCharacters { _ in [0] }
+            .sections { $0 == "a.swift" ? "Recently opened" : "Files" }
+        #expect(palette.usesPaletteRows)
+        #expect(palette.matchedCharacters?("a.swift") == [0])
+        #expect(palette.sectionStart(at: 0) == "Recently opened")
+        #expect(palette.sectionStart(at: 1) == "Files")
+        #expect(palette.sectionStart(at: 2) == nil)
+    }
 }
