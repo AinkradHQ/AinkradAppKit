@@ -60,4 +60,13 @@ struct KitParityBatch5Tests {
         #expect(ainkradCommandFirst("⌘K") == "⌘K")
         #expect(EnvironmentValues().ainkradCommandFirstKeys == false)
     }
+
+    @Test("a palette glyph size is opt-in")
+    func paletteGlyphSize() {
+        let menu = AinkradCommandMenu(
+            items: ["SidebarRow.swift"], selection: .constant(nil), icon: { _ in "◆" }, label: { $0 })
+        #expect(menu.iconGlyphs { _ in .orange }.glyphSize == nil)
+        let sized = menu.iconGlyphs(tint: { _ in .orange }, size: 15)
+        #expect(sized.glyphSize == 15 && sized.glyphTint != nil)
+    }
 }

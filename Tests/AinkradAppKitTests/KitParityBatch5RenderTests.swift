@@ -66,7 +66,22 @@ struct KitParityBatch5RenderTests {
                     palette(shortcut: "⇧⌘P")
                 }
             },
+            fixture("command-menu-glyph-size", 560, 150) {
+                VStack(alignment: .leading, spacing: 8) {
+                    quickOpen.iconGlyphs(tint: { _ in .orange }, size: 15)
+                    quickOpen.iconGlyphs { _ in .orange }
+                }
+            },
         ]
+    }
+
+    /// Mockup 02's quick-open row.
+    static var quickOpen: AinkradCommandMenu<String> {
+        AinkradCommandMenu(
+            items: ["SidebarRow.swift"], selection: .constant(nil), icon: { _ in "◆" }, label: { $0 },
+            detail: { _ in "Sources/Ainkrad/Features/Sidebar" }, uppercased: false
+        )
+        .paletteRows()
     }
 
     /// A command palette row with `shortcut` as its keycaps (mockup 03).
@@ -181,6 +196,29 @@ struct KitParityBatch5RenderTests {
             Self.render(Self.palette(shortcut: "⇧⌘P").ainkradCommandFirstKeys(), width: 560, height: 70))
         #expect(Self.differs(apple, mockup, rows: 0..<70))
         #expect(!Self.differs(swapped, mockup, rows: 0..<70))
+    }
+
+    @Test("a palette glyph size changes only the glyph")
+    func paletteGlyphSize() throws {
+        let plain = try #require(
+            Self.render(Self.quickOpen.iconGlyphs { _ in .orange }.frame(width: 520), width: 560, height: 70))
+        let sized = try #require(
+            Self.render(
+                Self.quickOpen.iconGlyphs(tint: { _ in .orange }, size: 15).frame(width: 520), width: 560, height: 70))
+        #expect(Self.differs(plain, sized, rows: 16..<50))
+        // The row keeps its height and the title its place: nothing differs right of the glyph column.
+        #expect(!Self.differs(plain, sized, rows: 0..<70, fromX: 50))
+    }
+
+    /// Whether any pixel differs in rows `rows`, right of `fromX` (points).
+    static func differs(_ lhs: NSBitmapImageRep, _ rhs: NSBitmapImageRep, rows: Range<Int>, fromX: Int) -> Bool {
+        let scale = lhs.pixelsHigh / Int(lhs.size.height)
+        for y in (rows.lowerBound * scale)..<(rows.upperBound * scale) {
+            for x in (fromX * scale)..<lhs.pixelsWide where lhs.colorAt(x: x, y: y) != rhs.colorAt(x: x, y: y) {
+                return true
+            }
+        }
+        return false
     }
 
     @Test func rendersEveryFixture() {
