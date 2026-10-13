@@ -99,6 +99,10 @@ private struct AinkradTabButton: View {
 public struct AinkradBreadcrumb: View {
     private let items: [String]
     private let onSelect: ((Int) -> Void)?
+    /// Set by `preservesCase()`.
+    var keepsCase = false
+    /// Set by `icon(at:_:)`: one leading glyph before the crumb at `index`.
+    var segmentIcon: (index: Int, view: AnyView)?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -108,11 +112,29 @@ public struct AinkradBreadcrumb: View {
         self.onSelect = onSelect
     }
 
+    /// Crumbs as written, untracked — a path reads `Sources › SidebarRow.swift`,
+    /// not Neon's `SOURCES › SIDEBARROW.SWIFT` (the Forge mockup's editor
+    /// breadcrumb). Without it the crumbs follow the skin's label case.
+    public func preservesCase() -> Self {
+        var copy = self
+        copy.keepsCase = true
+        return copy
+    }
+
+    /// Draws `icon` just before the crumb at `index`, e.g. the file-type glyph
+    /// before the file segment of an editor breadcrumb. One icon per trail.
+    public func icon<Icon: View>(at index: Int, @ViewBuilder _ icon: () -> Icon) -> Self {
+        var copy = self
+        copy.segmentIcon = (index, AnyView(icon()))
+        return copy
+    }
+
     public var body: some View {
         let bread = skin.components.breadcrumb
         HStack(spacing: skin.spacing.xs) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 let isLast = index == items.count - 1
+                if let segmentIcon, segmentIcon.index == index { segmentIcon.view }
                 crumb(item, isLast: isLast, index: index, bread: bread)
                 if !isLast {
                     Image(systemName: "chevron.compact.right")
@@ -126,9 +148,9 @@ public struct AinkradBreadcrumb: View {
     @ViewBuilder
     private func crumb(_ text: String, isLast: Bool, index: Int, bread: BreadcrumbTokens) -> some View {
         let labelFontToken = isLast ? bread.activeFont : bread.font
-        let label = Text(skin.labelCased(text))
+        let label = Text(keepsCase ? text : skin.labelCased(text))
             .font(skin.font(labelFontToken, typography: typo))
-            .tracking(labelFontToken.tracking ?? 0.6)
+            .tracking(keepsCase ? 0 : labelFontToken.tracking ?? 0.6)
             .foregroundStyle(skin.color(isLast ? bread.activeColor : bread.itemColor))
 
         if let onSelect, !isLast {

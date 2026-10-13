@@ -40,4 +40,15 @@ struct KitParityBatch2RenderTests {
             }
         }
     }
+
+    @Test func breadcrumb() {
+        Self.shoot("breadcrumb", width: 520, height: 90) {
+            VStack(alignment: .leading, spacing: 12) {
+                AinkradBreadcrumb(items: ["Sources", "Ainkrad", "Features", "Sidebar", "SidebarRow.swift"])
+                    .preservesCase()
+                    .icon(at: 4) { Image(systemName: "swift").foregroundStyle(.orange).imageScale(.small) }
+                AinkradBreadcrumb(items: ["deploy-scripts", "release.rb"])
+            }
+        }
+    }
 }

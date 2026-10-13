@@ -13,4 +13,14 @@ struct KitParityBatch2Tests {
         #expect(!AinkradKbd("⌘K").isOutlined)
         #expect(AinkradKbd("⌘K").outlined().isOutlined)
     }
+
+    @Test("a breadcrumb keeps its case and takes one segment icon only when asked")
+    func breadcrumbOptions() {
+        let plain = AinkradBreadcrumb(items: ["Sources", "SidebarRow.swift"])
+        #expect(!plain.keepsCase)
+        #expect(plain.segmentIcon == nil)
+        let forge = plain.preservesCase().icon(at: 1) { Image(systemName: "swift") }
+        #expect(forge.keepsCase)
+        #expect(forge.segmentIcon?.index == 1)
+    }
 }
