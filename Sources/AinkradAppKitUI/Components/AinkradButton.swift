@@ -55,6 +55,8 @@ public struct AinkradButton: View {
     var isCompact = false
     /// Set by `tintedFill()`.
     var hasTintedFill = false
+    /// Set by `buttonHeight(_:)`.
+    var height: CGFloat?
     /// A faint mono suffix after the title, as written (`AinkradDecisionBar
     /// .Action.detail(_:)`) — kit-internal.
     var detail: String?
@@ -153,6 +155,21 @@ public struct AinkradButton: View {
         return copy
     }
 
+    /// Draws the button exactly `height` points tall, its label centred,
+    /// instead of padding it — the mockups' 30 pt Replace All inside the
+    /// replace field (08, `.btn`) and the 26 pt sidebar empty-state buttons
+    /// (19). Horizontal padding and the label are unchanged, so it pairs with
+    /// `compact()`. Under Glass the glass capsule grows to the same height.
+    public func buttonHeight(_ height: CGFloat) -> Self {
+        var copy = self
+        copy.height = height
+        return copy
+    }
+
+    /// What Apple's glass button adds round its label, measured on macOS 26:
+    /// 6 pt at the small control size, 12 at the large.
+    private var nativeChrome: CGFloat { isCompact ? 6 : 12 }
+
     /// Whether the solid accent fill is drawn: the style's, unless `outlined()`.
     private var fillsWithAccent: Bool { style.usesAccentFill && !isOutlined }
 
@@ -185,6 +202,7 @@ public struct AinkradButton: View {
                 ProgressView().controlSize(.small).opacity(isLoading ? 1 : 0)
             }
             .frame(maxWidth: fillsWidth ? .infinity : nil)
+            .frame(height: height.map { max(0, $0 - nativeChrome) })
         }
         .disabled(isLoading)
         .controlSize(isCompact ? .small : .large)
@@ -231,7 +249,7 @@ public struct AinkradButton: View {
             }
             .frame(maxWidth: fillsWidth ? .infinity : nil)
             .padding(.horizontal, isCompact ? skin.size.s10 : skin.spacing.lg)
-            .padding(.vertical, isCompact ? skin.size.s3 : skin.spacing.sm)
+            .modifier(FieldHeight(height: height, padding: isCompact ? skin.size.s3 : skin.spacing.sm))
             .background(
                 shape.fill(
                     fillsWithAccent
