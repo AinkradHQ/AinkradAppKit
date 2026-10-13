@@ -26,4 +26,11 @@ struct KitParityBatch5Tests {
         let sized = Self.review().lineMetrics(fontSize: 12.5, rowHeight: 20)
         #expect(sized.lineFontSize == 12.5 && sized.lineRowHeight == 20)
     }
+
+    @Test("a text area's font size is opt-in")
+    func textAreaFontSize() {
+        let area = AinkradTextArea(text: .constant(""), placeholder: "What should the agent do?")
+        #expect(area.fontSize == nil)
+        #expect(area.fontSize(12.5).fontSize == 12.5)
+    }
 }

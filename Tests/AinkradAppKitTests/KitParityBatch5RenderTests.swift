@@ -35,8 +35,18 @@ struct KitParityBatch5RenderTests {
             fixture("diff-line-metrics", 640, 260) {
                 preview(rejected: [1]).bareHunks(untickable: true).lineMetrics(fontSize: 12.5, rowHeight: 20)
             },
+            fixture("text-area-font-size", 480, 170) {
+                VStack(spacing: 12) {
+                    AinkradTextArea(text: .constant(Self.askText), placeholder: "", minHeight: 54).fontSize(12.5)
+                    AinkradTextArea(text: .constant(Self.askText), placeholder: "", minHeight: 54)
+                }
+                .frame(width: 440)
+            },
         ]
     }
+
+    /// Mockup 17's Ask card request.
+    static let askText = "Make the selection capsule animate in with the motion budget"
 
     static func render(_ view: some View, width: CGFloat, height: CGFloat) -> NSBitmapImageRep? {
         KitParityBatch4RenderTests.render(view, width: width, height: height)
@@ -68,6 +78,15 @@ struct KitParityBatch5RenderTests {
         let sized = Self.fittingHeight(Self.preview(rejected: []).bareHunks().lineMetrics(fontSize: 12, rowHeight: 20))
         #expect(abs(sized - 9 * 20) < 0.5)
         #expect(Self.fittingHeight(Self.preview(rejected: []).bareHunks()) < 9 * 20)
+    }
+
+    @Test("a text area's font size changes its text")
+    func textAreaFontSize() throws {
+        func shot(_ area: AinkradTextArea) throws -> NSBitmapImageRep {
+            try #require(Self.render(area.frame(width: 440), width: 480, height: 90))
+        }
+        let area = AinkradTextArea(text: .constant(Self.askText), placeholder: "", minHeight: 54)
+        #expect(Self.differs(try shot(area), try shot(area.fontSize(12.5)), rows: 16..<70))
     }
 
     @Test func rendersEveryFixture() {
