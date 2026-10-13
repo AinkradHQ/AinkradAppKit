@@ -63,6 +63,19 @@ struct KitParityBatch4RenderTests {
                     }
                 }
             },
+            fixture("command-menu-kinds", 560, 170) {
+                AinkradCommandMenu(
+                    items: ["SidebarRow.swift", "SidebarRow", "body", "SessionBrowserRow"], selection: .constant(nil),
+                    icon: { $0.hasSuffix(".swift") ? "◆" : "" }, label: { $0 },
+                    detail: { $0.hasSuffix(".swift") ? "Sources/Ainkrad/Features/Sidebar" : "SidebarRow.swift:5" },
+                    uppercased: false, highlight: .constant(1)
+                )
+                .paletteRows()
+                .iconGlyphs { _ in .orange }
+                .kinds(
+                    { $0.hasSuffix(".swift") ? nil : $0 == "body" ? "var" : "struct" },
+                    tint: { $0 == "body" ? .purple : nil })
+            },
             fixture("empty-state-glyph-size", 640, 280) {
                 HStack(spacing: 0) {
                     AinkradEmptyState(
@@ -130,6 +143,26 @@ struct KitParityBatch4RenderTests {
         #expect(Self.differs(try shot(outlined), try shot(outlined.tintedFill()), rows: 16..<50))
         let solid = AinkradButton(title: "Stop", style: .danger) {}
         #expect(!Self.differs(try shot(solid), try shot(solid.tintedFill()), rows: 0..<70))
+    }
+
+    @Test("a kind replaces the icon slot only on rows that have one")
+    func kindSlot() throws {
+        func shot(kinds: Bool) throws -> NSBitmapImageRep {
+            let menu = AinkradCommandMenu(
+                items: ["SidebarRow.swift", "SidebarRow"], selection: .constant(nil),
+                icon: { $0.hasSuffix(".swift") ? "doc" : "" }, label: { $0 }, uppercased: false
+            )
+            .paletteRows()
+            return try #require(
+                Self.render(
+                    kinds
+                        ? AnyView(menu.kinds({ $0.hasSuffix(".swift") ? nil : "struct" }, tint: { _ in nil }))
+                        : AnyView(menu), width: 400, height: 100))
+        }
+        let plain = try shot(kinds: false)
+        let kinds = try shot(kinds: true)
+        #expect(!Self.differs(plain, kinds, rows: 16..<46))
+        #expect(Self.differs(plain, kinds, rows: 50..<84))
     }
 
     @Test func rendersEveryFixture() {

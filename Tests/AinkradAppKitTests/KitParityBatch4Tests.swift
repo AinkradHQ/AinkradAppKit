@@ -36,4 +36,14 @@ struct KitParityBatch4Tests {
         #expect(!KitParityBatch2Tests.composer().tintsStop)
         #expect(KitParityBatch2Tests.composer().tintedStopButton().tintsStop)
     }
+
+    @Test("palette row kinds are opt-in")
+    func commandMenuKinds() {
+        let menu = AinkradCommandMenu(
+            items: ["SidebarRow"], selection: .constant(nil), icon: { _ in "" }, label: { $0 })
+        #expect(menu.kind == nil)
+        let symbols = menu.paletteRows().kinds({ _ in "struct" }, tint: { _ in nil })
+        #expect(symbols.kind?("SidebarRow") == "struct")
+        #expect(symbols.kindTint?("SidebarRow") == nil)
+    }
 }

@@ -40,6 +40,10 @@ struct AinkradPaletteRow: View {
     /// rather than SF Symbols, each in its own colour.
     var iconIsGlyph = false
     var iconTint: Color?
+    /// Forge's symbol rows lead with the symbol's kind (`struct`, `func`) in
+    /// place of the icon, in the type colour unless `kindTint` is set.
+    var kind: String?
+    var kindTint: Color?
     let action: () -> Void
 
     @Environment(\.ainkradSkin) private var skin
@@ -51,7 +55,15 @@ struct AinkradPaletteRow: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: skin.size.s10) {
-                if !icon.isEmpty {
+                if let kind, !kind.isEmpty {
+                    Text(kind)
+                        .foregroundStyle(
+                            kindTint ?? AinkradSyntaxPalette.forge(glass: skin.usesNativeGlass).type
+                                ?? theme.accentSecondary
+                        )
+                        .lineLimit(1)
+                        .fixedSize()
+                } else if !icon.isEmpty {
                     iconView
                         .foregroundStyle(iconTint ?? theme.accentSecondary)
                         .frame(width: skin.size.s16)
