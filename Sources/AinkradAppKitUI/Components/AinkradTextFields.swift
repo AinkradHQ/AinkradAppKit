@@ -91,6 +91,15 @@ public struct AinkradSecureField: View {
     }
 }
 
+/// The part of a file name a rename should select: everything before the
+/// last `.`, as a UTF-16 range for the field editor. A name with no extension,
+/// or a dotfile (`.gitignore`), selects whole.
+public func ainkradBaseNameRange(_ name: String) -> NSRange {
+    let whole = NSRange(location: 0, length: (name as NSString).length)
+    guard let dot = name.lastIndex(of: "."), dot != name.startIndex else { return whole }
+    return NSRange(location: 0, length: name.utf16.distance(from: name.utf16.startIndex, to: dot))
+}
+
 /// Plain-text entry mirroring `AinkradSecureField`'s chamfer chrome, minus the
 /// reveal toggle and mono font.
 public struct AinkradTextField: View {
@@ -99,17 +108,65 @@ public struct AinkradTextField: View {
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @FocusState private var isFocused: Bool
+    /// Set by `selectsNameWithoutExtension()`.
+    var selectsBaseName = false
+    /// Set by `leadingLabel(_:)`.
+    var label: String?
+    @Environment(\.ainkradTheme) private var theme
 
     public init(text: Binding<String>, placeholder: String) {
         self._text = text
         self.placeholder = placeholder
     }
+
+    /// On focus, selects the name without its extension (`SidebarRow` of
+    /// `SidebarRow.swift`) instead of the whole text, so typing replaces just
+    /// the name — a Finder-style rename (Forge's file tree).
+    public func selectsNameWithoutExtension() -> Self {
+        var copy = self
+        copy.selectsBaseName = true
+        return copy
+    }
+
+    /// A small faint label inside the field, before the text (`include`,
+    /// `exclude`), that stays while the field has text — unlike a placeholder.
+    /// Forge's search globs. Under Glass the field becomes a glass capsule
+    /// holding the label, as Apple's rounded field has no room for one.
+    public func leadingLabel(_ label: String) -> Self {
+        var copy = self
+        copy.label = label
+        return copy
+    }
+
+    @ViewBuilder private var labelView: some View {
+        if let label {
+            Text(label)
+                .font(AinkradFontResolver.font(size: 10, typography: typo))
+                .foregroundStyle(theme.foreground.opacity(skin.opacity.o35))
+                .lineLimit(1)
+                .frame(width: skin.size.s46, alignment: .leading)
+        }
+    }
+
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass {
+        if #available(macOS 26, *), skin.usesNativeGlass, label != nil {
+            HStack(spacing: AinkradSpacing.xs) {
+                labelView
+                TextField(placeholder, text: $text)
+                    .textFieldStyle(.plain)
+                    .focused($isFocused)
+            }
+            .padding(.horizontal, AinkradSpacing.md)
+            .padding(.vertical, AinkradSpacing.sm)
+            .glassEffect(.regular, in: .capsule)
+            .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
+        } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: Apple's rounded text field.
             TextField(placeholder, text: $text)
                 .textFieldStyle(.roundedBorder)
                 .controlSize(.large)
+                .apply { selectsBaseName ? AnyView($0.focused($isFocused)) : AnyView($0) }
+                .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
         } else {
             kitBody
         }
@@ -119,25 +176,61 @@ public struct AinkradTextField: View {
         let field = skin.roles.field
         let tokens = skin.components.textField
         let shape = AinkradSkinShape(token: field.shape)
-        return TextField(placeholder, text: $text)
-            .focused($isFocused)
-            .textFieldStyle(.plain)
-            .font(skin.font(tokens.font, typography: typo))
-            .foregroundStyle(skin.color(skin.text.primary))
-            .tint(skin.color(skin.palette.accentSecondary))
-            .padding(.horizontal, AinkradSpacing.md)
-            .padding(.vertical, AinkradSpacing.sm)
-            .background(shape.fill(skin.color(field.fill)))
-            .overlay(
-                shape.strokeBorder(
-                    skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
-            )
-            .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
-            .animation(AinkradMotion.hover, value: isFocused)
+        return HStack(spacing: AinkradSpacing.xs) {
+            labelView
+            TextField(placeholder, text: $text)
+                .focused($isFocused)
+                .textFieldStyle(.plain)
+                .font(skin.font(tokens.font, typography: typo))
+                .foregroundStyle(skin.color(skin.text.primary))
+                .tint(skin.color(skin.palette.accentSecondary))
+        }
+        .padding(.horizontal, AinkradSpacing.md)
+        .padding(.vertical, AinkradSpacing.sm)
+        .background(shape.fill(skin.color(field.fill)))
+        .overlay(
+            shape.strokeBorder(
+                skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
+        )
+        .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
+        .animation(AinkradMotion.hover, value: isFocused)
+        .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
     }
 
     private var state: AinkradControlState {
         isFocused ? [.focused] : []
+    }
+}
+
+/// `selectsNameWithoutExtension()`: once the field gains focus — and the field
+/// editor has selected everything, a turn later — narrows the selection to the
+/// base name. The field editor is found through the key window, or any window
+/// whose first responder is editing this text.
+private struct BaseNameSelection: ViewModifier {
+    let enabled: Bool
+    let isFocused: Bool
+    let text: String
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.onChange(of: isFocused) { _, focused in
+                guard focused else { return }
+                let text = text
+                DispatchQueue.main.async { Self.select(ainkradBaseNameRange(text), in: text) }
+            }
+        } else {
+            content
+        }
+    }
+
+    @MainActor static func select(_ range: NSRange, in text: String) {
+        let windows = [NSApp.keyWindow].compactMap { $0 } + NSApp.windows
+        for window in windows {
+            if let editor = window.firstResponder as? NSTextView, editor.isFieldEditor, editor.string == text {
+                editor.setSelectedRange(range)
+                return
+            }
+        }
     }
 }
 
@@ -151,6 +244,8 @@ public struct AinkradSearchField: View {
     /// parent view). `nil` (the default) keeps the field's own internal
     /// `@FocusState` — every existing call site is unaffected.
     private let externalFocus: FocusState<Bool>.Binding?
+    /// Set by `keyHint(_:)`.
+    var keyHint: String?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -168,6 +263,21 @@ public struct AinkradSearchField: View {
 
     private var isFocused: Bool { externalFocus?.wrappedValue ?? internalFocus }
 
+    /// An outlined keycap at the field's trailing edge naming the shortcut that
+    /// focuses it (`"⌘K"`), shown while the field is empty — the clear button
+    /// takes its place once there is text. Grimoire's thread search.
+    public func keyHint(_ keys: String) -> Self {
+        var copy = self
+        copy.keyHint = keys
+        return copy
+    }
+
+    @ViewBuilder private var keyHintCap: some View {
+        if let keyHint, text.isEmpty {
+            AinkradKbd(keyHint).outlined()
+        }
+    }
+
     public var body: some View {
         if #available(macOS 26, *), skin.usesNativeGlass {
             nativeBody
@@ -184,6 +294,7 @@ public struct AinkradSearchField: View {
         HStack(spacing: AinkradSpacing.xs) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
             nativeTextField
+            keyHintCap
             if !text.isEmpty {
                 Button {
                     text = ""
@@ -220,6 +331,8 @@ public struct AinkradSearchField: View {
                 .foregroundStyle(skin.color(search.searchGlyphColor, state: state))
 
             textField
+
+            keyHintCap
 
             if !text.isEmpty {
                 Button {

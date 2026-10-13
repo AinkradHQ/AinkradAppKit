@@ -15,6 +15,8 @@ public struct AinkradMarkdownText: View {
     /// `nil` follows the environment's typography (the user's font and scale).
     private let typographyOverride: AinkradTypography?
     private var typography: AinkradTypography { typographyOverride ?? environmentTypography }
+    /// Set by `replyStyle()`.
+    var usesReplyStyle = false
 
     /// Primary path for streaming: blocks are already parsed incrementally by
     /// `AinkradMarkdownStreamParser`, so this does no parsing at all.
@@ -26,6 +28,15 @@ public struct AinkradMarkdownText: View {
     /// Committed transcript messages, which are parsed once and never change.
     public init(text: String, typography: AinkradTypography? = nil) {
         self.init(blocks: AinkradMarkdownBlocks.parse(text), typography: typography)
+    }
+
+    /// Grimoire's reply markdown (mockup 10): inline `code` as a tinted chip —
+    /// mono, the secondary accent, on a quiet fill — and fenced code as a
+    /// quiet block with no rim, a text "Copy" on hover and syntax colours.
+    public func replyStyle() -> Self {
+        var copy = self
+        copy.usesReplyStyle = true
+        return copy
     }
 
     public var body: some View {
@@ -77,7 +88,7 @@ public struct AinkradMarkdownText: View {
                 }
             }
         case .codeBlock(let language, let code):
-            AinkradCodeBlock(code, language: language)
+            codeBlock(code, language: language)
         case .table(let table):
             AinkradMarkdownTableView(table: table, typography: typography, inline: inline)
         case .blockQuote(let src):
@@ -97,11 +108,39 @@ public struct AinkradMarkdownText: View {
         }
     }
 
+    private func codeBlock(_ code: String, language: String?) -> AinkradCodeBlock {
+        var block = AinkradCodeBlock(code, language: language)
+        block.usesReplyStyle = usesReplyStyle
+        return block
+    }
+
     /// Resolves inline markdown (bold/italic/`code`/links) through a shared
     /// bounded cache — see `AinkradInlineMarkdownCache` for why. Never throws into
     /// the view; unparseable source renders as itself.
     private func inline(_ src: String) -> Text {
-        Text(AinkradInlineMarkdownCache.attributed(src))
+        let attributed = AinkradInlineMarkdownCache.attributed(src)
+        return Text(usesReplyStyle ? codeChips(attributed) : attributed)
+    }
+
+    /// Inline code runs as chips. A Text run cannot be padded or rounded, so a
+    /// thin space either side carries the fill past the glyphs (the mockup's
+    /// chip is square under Neon anyway).
+    private func codeChips(_ source: AttributedString) -> AttributedString {
+        let fill =
+            skin.usesNativeGlass
+            ? skin.color(skin.palette.white).opacity(skin.opacity.o06) : theme.surfaceElevated.opacity(skin.opacity.o60)
+        var out = AttributedString()
+        for run in source.runs {
+            var piece = AttributedString(source[run.range])
+            if run.inlinePresentationIntent?.contains(.code) == true {
+                piece = AttributedString("\u{2009}") + piece + AttributedString("\u{2009}")
+                piece.font = AinkradFontResolver.font(size: 11.5, mono: true, typography: typography)
+                piece.foregroundColor = theme.accentSecondary
+                piece.backgroundColor = fill
+            }
+            out += piece
+        }
+        return out
     }
 
     private func headingSize(_ level: Int) -> CGFloat {

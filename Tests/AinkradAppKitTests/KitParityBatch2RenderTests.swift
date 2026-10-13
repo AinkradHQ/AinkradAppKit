@@ -1,0 +1,349 @@
+import AppKit
+import SwiftUI
+import Testing
+
+@testable import AinkradAppKitContract
+@testable import AinkradAppKitUI
+
+/// Off-screen Neon renders of the parity batch 2 styles, for comparing by eye
+/// against `Designs/forge` and `Designs/grimoire`. Each one must render; the
+/// PNGs are written only when AINKRAD_KIT2_SHOTS names a directory. Glass
+/// cannot be drawn off-screen (see `NativeGlassSweepTests`).
+@Suite("Kit parity batch 2 renders")
+@MainActor
+struct KitParityBatch2RenderTests {
+    static func shoot<V: View>(_ name: String, width: CGFloat, height: CGFloat, @ViewBuilder _ view: () -> V) {
+        let skin = AinkradSkin.standard
+        let content = view()
+            .padding(16)
+            .frame(width: width, height: height, alignment: .topLeading)
+            .background(skin.color(skin.palette.background))
+            .ainkradSkin(skin)
+            .environment(\.colorScheme, .dark)
+        let rep = SkinParityRenderer.render(content, width: width, height: height)
+        #expect(rep != nil, "\(name) did not render")
+        guard let dir = ProcessInfo.processInfo.environment["AINKRAD_KIT2_SHOTS"], let rep,
+            let png = rep.representation(using: .png, properties: [:])
+        else { return }
+        try? FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
+        try? png.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))
+    }
+
+    @Test func keycaps() {
+        Self.shoot("kbd-outlined", width: 260, height: 70) {
+            HStack(spacing: 6) {
+                AinkradKbd("⌘P").outlined()
+                AinkradKbd("⌘K").outlined()
+                AinkradKbd("⌘\\").outlined()
+                AinkradKbd("↵").outlined()
+                AinkradKbd("⌘K")
+            }
+        }
+    }
+
+    @Test func breadcrumb() {
+        Self.shoot("breadcrumb", width: 520, height: 90) {
+            VStack(alignment: .leading, spacing: 12) {
+                AinkradBreadcrumb(items: ["Sources", "Ainkrad", "Features", "Sidebar", "SidebarRow.swift"])
+                    .preservesCase()
+                    .icon(at: 4) { Image(systemName: "swift").foregroundStyle(.orange).imageScale(.small) }
+                AinkradBreadcrumb(items: ["deploy-scripts", "release.rb"])
+            }
+        }
+    }
+
+    struct Hit: Hashable {
+        let name: String
+        let folder: String
+        let section: String?
+        let keys: String?
+        let matched: [Int]
+    }
+
+    @Test func quickOpenPalette() {
+        let hits = [
+            Hit(
+                name: "SidebarRow.swift", folder: "Sources/Ainkrad/Features/Sidebar", section: "Recently opened",
+                keys: nil, matched: [0, 4, 7, 8, 9]),
+            Hit(
+                name: "SidebarRowTests.swift", folder: "Tests/AinkradTests/Sidebar", section: "Files", keys: nil,
+                matched: [0, 4, 7, 8, 9]),
+            Hit(
+                name: "SessionBrowserRow.swift", folder: "Sources/Ainkrad/Features/Sessions", section: "Files",
+                keys: nil, matched: [0, 13, 14, 15, 16]),
+        ]
+        Self.shoot("command-menu-quick-open", width: 560, height: 230) {
+            AinkradCommandMenu(
+                items: hits, selection: .constant(nil), icon: { _ in "swift" }, label: \.name,
+                detail: { $0.folder }, value: { $0.keys }, uppercased: false, highlight: .constant(0)
+            )
+            .paletteRows()
+            .matchedCharacters(\.matched)
+            .sections(\.section)
+        }
+    }
+
+    @Test func commandPalette() {
+        let hits = [
+            Hit(name: "View: Split Editor Right", folder: "", section: nil, keys: "⌘\\", matched: [6, 7, 8, 9, 10]),
+            Hit(name: "View: Split Editor Down", folder: "", section: nil, keys: "⌘K ⌘\\", matched: [6, 7, 8, 9, 10]),
+            Hit(name: "Git: Open in Git Mage", folder: "", section: "Recently used", keys: "⌘⇧G", matched: []),
+            Hit(
+                name: "Run Task…", folder: "make build · make test", section: "Recently used", keys: nil,
+                matched: []),
+        ]
+        Self.shoot("command-menu-palette", width: 560, height: 230) {
+            AinkradCommandMenu(
+                items: hits, selection: .constant(nil), icon: { _ in "" }, label: \.name,
+                detail: { $0.folder }, value: { $0.keys }, uppercased: false, highlight: .constant(0)
+            )
+            .paletteRows()
+            .matchedCharacters(\.matched)
+            .sections(\.section)
+        }
+        // The default rows with only matched letters opted in.
+        Self.shoot("command-menu-legacy-matched", width: 560, height: 200) {
+            AinkradCommandMenu(
+                items: Array(hits.prefix(2)), selection: .constant(nil), icon: { _ in "rectangle.split.2x1" },
+                label: \.name, value: { $0.keys }, uppercased: false
+            )
+            .matchedCharacters(\.matched)
+        }
+    }
+
+    @Test func slashPalette() {
+        let rows = [
+            AinkradComposerSuggestion(
+                id: "review", icon: "chevron.forward", title: "/review", subtitle: "Review the current diff",
+                section: "Session", insertText: "/review"),
+            AinkradComposerSuggestion(
+                id: "compact", icon: "chevron.forward", title: "/compact", subtitle: "Summarise to free context",
+                section: "Session", insertText: "/compact"),
+            AinkradComposerSuggestion(
+                id: "pr-sweep", icon: "sparkle", title: "/pr-sweep", subtitle: "Review and merge open PRs",
+                section: "Skills", insertText: "/pr-sweep"),
+        ]
+        Self.shoot("composer-slash-palette", width: 460, height: 230) {
+            AinkradComposerOverlayList(
+                trigger: .command(query: "re"), suggestions: rows, selectedIndex: 0, usesPaletteRows: true,
+                onSelect: { _ in }
+            )
+            .frame(width: 420)
+        }
+    }
+
+    @Test func labelledSend() {
+        Self.shoot("composer-labelled-send", width: 460, height: 170) {
+            AinkradComposer(
+                text: .constant("Make the selection capsule animate in with the motion budget"),
+                placeholder: "Ask", isEditable: true, canSend: true, autoFocus: false,
+                suggestions: { _ in [] }, onPick: { _, _ in }, onDrop: nil, onSend: {},
+                chips: { EmptyView() }, leading: { Text("Grimoire · this workspace").font(.caption) },
+                trailing: { Text("Esc").font(.caption) }
+            )
+            .sendTitle("Ask ⌘↵")
+            .frame(width: 420)
+        }
+    }
+
+    @Test func labelledField() {
+        Self.shoot("text-field-labelled", width: 300, height: 120) {
+            VStack(spacing: 6) {
+                AinkradTextField(text: .constant("Sources/**, Tests/**"), placeholder: "files to include")
+                    .leadingLabel("include")
+                AinkradTextField(text: .constant(""), placeholder: ".build/**").leadingLabel("exclude")
+            }
+            .frame(width: 256)
+        }
+    }
+
+    @Test func searchKeyHint() {
+        Self.shoot("search-field-key-hint", width: 300, height: 120) {
+            VStack(spacing: 8) {
+                AinkradSearchField(text: .constant(""), placeholder: "Search threads").keyHint("⌘K")
+                AinkradSearchField(text: .constant("glass"), placeholder: "Search threads").keyHint("⌘K")
+            }
+            .frame(width: 256)
+        }
+    }
+
+    @Test func rowSelectionStyles() {
+        func row(_ title: String, _ selected: Bool, _ hovered: Bool, _ style: AinkradRowSelectionStyle) -> some View {
+            Text(title)
+                .font(.system(size: 12.5))
+                .foregroundStyle(.white.opacity(selected ? 1 : 0.6))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8).padding(.vertical, style == .card ? 9 : 3)
+                .ainkradRowBackground(isSelected: selected, isHovered: hovered, style: style)
+        }
+        Self.shoot("row-selection-styles", width: 300, height: 230) {
+            VStack(spacing: 2) {
+                row("SidebarModel.swift", false, false, .fill)
+                row("SidebarRow.swift", true, false, .fill)
+                row("SidebarSort.swift (hover)", false, true, .fill)
+                Spacer().frame(height: 12)
+                row("Liquid Glass sidebar polish", true, false, .card)
+                row("Release 0.31 and pin round (hover)", false, true, .card)
+                row("Settings search", false, false, .card)
+            }
+            .frame(width: 268)
+        }
+    }
+
+    static let reviewDiff = AinkradDiffEngine.compute(
+        old: """
+            struct SidebarRow: View {
+                let isSelected: Bool
+                var body: some View {
+                    Text(thread.title)
+                        .background(isSelected ? skin.color(skin.accent).opacity(0.2) : .clear)
+                        .accessibilityLabel(thread.title)
+                }
+            }
+            """,
+        new: """
+            struct SidebarRow: View {
+                let isSelected: Bool
+                var body: some View {
+                    Text(thread.title)
+                        .background {
+                            if isSelected { Capsule().glassEffect(.regular) }
+                        }
+                }
+            }
+            """, path: "Sources/SidebarRow.swift", context: 1)
+
+    @Test func diffEditorLines() {
+        Self.shoot("diff-editor-lines", width: 640, height: 230) {
+            AinkradDiffReview(fileDiff: Self.reviewDiff, rejectedHunkIDs: .constant([]))
+                .hidesHeader().keepUndoHunkControls().editorLines()
+        }
+        Self.shoot("diff-editor-lines-syntax", width: 640, height: 230) {
+            AinkradDiffReview(fileDiff: Self.reviewDiff, rejectedHunkIDs: .constant([]))
+                .hidesHeader().keepUndoHunkControls().editorLines().syntaxColoured()
+        }
+        Self.shoot("diff-default", width: 640, height: 230) {
+            AinkradDiffReview(fileDiff: Self.reviewDiff, rejectedHunkIDs: .constant([]))
+        }
+    }
+
+    static let replyMarkdown = """
+        The caret now lands on the first placeholder (`Snippet.parse`):
+
+        ```swift
+        let call = Snippet.parse("greet(times: ${1:Int})")
+        #expect(call.selection == NSRange(location: 13, length: 3))
+        ```
+        """
+
+    @Test func markdownReply() {
+        Self.shoot("markdown-reply-style", width: 560, height: 170) {
+            AinkradMarkdownText(text: Self.replyMarkdown).replyStyle()
+        }
+        Self.shoot("markdown-default", width: 560, height: 190) {
+            AinkradMarkdownText(text: Self.replyMarkdown)
+        }
+    }
+
+    @Test func decisionBar() {
+        Self.shoot("decision-bar-label-cased", width: 720, height: 90) {
+            AinkradDecisionBar(
+                icon: "bolt.horizontal", iconTint: .secondary, caption: "Approval required",
+                title: "Run git push -u origin feat/glass-sidebar",
+                actions: [
+                    .init(title: "Deny…", style: .ghost, perform: {}),
+                    .init(title: "Allow once ↵", style: .primary, perform: {}),
+                ]
+            )
+            .labelCasedCaption()
+        }
+        Self.shoot("decision-bar-mockup-04", width: 760, height: 90) {
+            AinkradDecisionBar(
+                icon: "bolt.horizontal", iconTint: .secondary, caption: "Approval required",
+                title: "Run git push -u origin feat/glass-sidebar",
+                actions: [
+                    AinkradDecisionBar.Action(title: "Deny…", style: .ghost) {}.borderless().secondaryAccent(),
+                    AinkradDecisionBar.Action(title: "Always allow", style: .secondary) {}.secondaryAccent(),
+                    AinkradDecisionBar.Action(title: "Allow once ↵", style: .primary) {},
+                ]
+            )
+            .labelCasedCaption()
+        }
+    }
+
+    @Test func borderlessGhost() {
+        Self.shoot("button-ghost-borderless", width: 320, height: 70) {
+            HStack(spacing: 8) {
+                AinkradButton(title: "Cancel", style: .ghost) {}.borderless()
+                AinkradButton(title: "Start ⌘↵", style: .primary) {}
+                AinkradButton(title: "Cancel", style: .ghost) {}
+            }
+        }
+    }
+
+    @Test func panelModal() {
+        let sheet = VStack(alignment: .leading, spacing: 6) {
+            Text("New thread").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+            Text("Starts an agent session in a project.").font(.system(size: 13)).foregroundStyle(.gray)
+            HStack {
+                Spacer()
+                AinkradButton(title: "Cancel", style: .ghost) {}.borderless()
+                AinkradButton(title: "Start ⌘↵", style: .primary) {}
+            }
+        }
+        Self.shoot("modal-panel", width: 520, height: 260) {
+            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ainkradPanelModal(isPresented: .constant(true), contentWidth: 360) { sheet }
+        }
+        Self.shoot("modal-default", width: 520, height: 260) {
+            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ainkradModal(isPresented: .constant(true), contentWidth: 360) { sheet }
+        }
+    }
+
+    @Test func menuGroups() {
+        Self.shoot("menu-groups", width: 280, height: 300) {
+            AinkradContextMenuList(
+                items: [
+                    AinkradMenuItem(title: "New File…", systemName: "doc.badge.plus") {},
+                    AinkradMenuItem(title: "Rename", systemName: "pencil") {},
+                    AinkradMenuItem(title: "Copy Path", systemName: "doc.on.clipboard") {}.startingGroup(),
+                    AinkradMenuItem(title: "Reveal in Finder", systemName: "folder") {}.startingGroup(),
+                    AinkradMenuItem(title: "Move to Trash", systemName: "trash", isDestructive: true) {}
+                        .startingGroup(),
+                ], dismiss: {}
+            )
+            .frame(width: 230)
+        }
+    }
+
+    @Test func diffGutterAndFolds() {
+        let old = (1...22).map { "line \($0)" }
+        var new = old
+        new[7] = "    let isActive: Bool"
+        new[18] = "            if isActive { Capsule().glassEffect(.regular) }"
+        let diff = AinkradDiffEngine.compute(
+            old: old.joined(separator: "\n"), new: new.joined(separator: "\n"), path: "f.swift", context: 1)
+        Self.shoot("diff-gutter-folds", width: 640, height: 260) {
+            AinkradDiffReview(fileDiff: diff, rejectedHunkIDs: .constant([]))
+                .hidesHeader().keepUndoHunkControls().editorLines().syntaxColoured()
+                .lineNumberGutter().unchangedLineFolds()
+        }
+    }
+
+    @Test func secondaryAccentButtons() {
+        Self.shoot("button-secondary-accent", width: 480, height: 110) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    AinkradButton(title: "Cancel", style: .ghost) {}.borderless().secondaryAccent()
+                    AinkradButton(title: "Open folder…", style: .secondary) {}.secondaryAccent()
+                    AinkradButton(title: "Start ⌘↵", style: .primary) {}.secondaryAccent()
+                }
+                HStack(spacing: 8) {
+                    AinkradButton(title: "Cancel", style: .ghost) {}.borderless()
+                    AinkradButton(title: "Open folder…", style: .secondary) {}
+                }
+            }
+        }
+    }
+}

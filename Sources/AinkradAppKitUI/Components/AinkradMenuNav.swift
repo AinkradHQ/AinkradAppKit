@@ -57,6 +57,11 @@ public struct AinkradCommandMenu<T: Hashable>: View {
     private let emptyState: (() -> AnyView)?
     private let externalHighlight: Binding<Int?>?
     private let handlesKeyPresses: Bool
+    // Opt-ins set by the modifier methods below (not init params: a defaulted
+    // parameter is not ABI-compatible).
+    var usesPaletteRows = false
+    var matchedCharacters: ((T) -> [Int])?
+    var sectionTitle: ((T) -> String?)?
 
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     /// Starts unset: `emphasized` is `hovering || isHighlighted`, so seeding
@@ -94,27 +99,55 @@ public struct AinkradCommandMenu<T: Hashable>: View {
         self.emptyState = emptyState
     }
 
+    /// Draws the rows as the Forge palettes do (quick open, command palette):
+    /// one flat line each — title, the `detail` inline after it in faint
+    /// mono, the `value` as outlined keycaps (space-separated: `"⌘K ⌘\\"`
+    /// is two caps) — with only the highlighted row filled, and a `↵` cap on
+    /// a highlighted row that has no shortcut. Labels keep their case. An
+    /// empty `icon` string draws no glyph.
+    public func paletteRows() -> Self {
+        var copy = self
+        copy.usesPaletteRows = true
+        return copy
+    }
+
+    /// Character offsets into each item's label to draw bold in the accent —
+    /// the letters a fuzzy query matched.
+    public func matchedCharacters(_ offsets: @escaping (T) -> [Int]) -> Self {
+        var copy = self
+        copy.matchedCharacters = offsets
+        return copy
+    }
+
+    /// A caption above the first item of each run of items sharing a section
+    /// ("Recently opened", "Files"); `nil` starts no section. Items are drawn
+    /// in the order given, so group them before passing them in.
+    public func sections(_ title: @escaping (T) -> String?) -> Self {
+        var copy = self
+        copy.sectionTitle = title
+        return copy
+    }
+
+    /// The section caption to draw above `items[index]`, if it starts one.
+    func sectionStart(at index: Int) -> String? {
+        guard let sectionTitle, let title = sectionTitle(items[index]) else { return nil }
+        return index > 0 && sectionTitle(items[index - 1]) == title ? nil : title
+    }
+
     public var body: some View {
         if items.isEmpty, let emptyState {
             emptyState()
         } else {
-            VStack(spacing: AinkradSpacing.xs) {
+            VStack(spacing: usesPaletteRows ? 0 : AinkradSpacing.xs) {
                 // Keyed by the ITEM, not its position: with positional ids a
                 // re-ranked result list makes every row reuse the state of
                 // whatever used to sit at its index, so a reorder animates as
                 // a set of edits.
                 ForEach(Array(items.enumerated()), id: \.element) { index, item in
-                    AinkradCommandMenuRow(
-                        icon: icon(item),
-                        label: label(item),
-                        detail: detail.flatMap { $0(item) },
-                        value: value.flatMap { $0(item) },
-                        uppercased: uppercased,
-                        isSelected: item == selection,
-                        isHighlighted: index == highlightedIndex
-                    ) {
-                        activate(item)
+                    if let section = sectionStart(at: index) {
+                        AinkradPaletteSectionHeader(title: section)
                     }
+                    row(item, index: index)
                 }
             }
             .modifier(
@@ -132,6 +165,29 @@ public struct AinkradCommandMenu<T: Hashable>: View {
             .onChange(of: items.count) { _, newCount in
                 guard let index = highlightedIndex else { return }
                 setHighlight(newCount == 0 ? nil : min(index, newCount - 1))
+            }
+        }
+    }
+
+    @ViewBuilder private func row(_ item: T, index: Int) -> some View {
+        if usesPaletteRows {
+            AinkradPaletteRow(
+                icon: icon(item), label: label(item), matched: Set(matchedCharacters?(item) ?? []),
+                detail: detail.flatMap { $0(item) }, value: value.flatMap { $0(item) },
+                isHighlighted: index == highlightedIndex, showsReturnKey: true
+            ) { activate(item) }
+        } else {
+            AinkradCommandMenuRow(
+                icon: icon(item),
+                label: label(item),
+                detail: detail.flatMap { $0(item) },
+                value: value.flatMap { $0(item) },
+                uppercased: uppercased,
+                isSelected: item == selection,
+                isHighlighted: index == highlightedIndex,
+                matched: Set(matchedCharacters?(item) ?? [])
+            ) {
+                activate(item)
             }
         }
     }
@@ -183,6 +239,7 @@ private struct AinkradCommandMenuRow: View {
     let uppercased: Bool
     let isSelected: Bool
     let isHighlighted: Bool
+    let matched: Set<Int>
     let action: () -> Void
 
     @Environment(\.ainkradSkin) private var skin
@@ -191,6 +248,21 @@ private struct AinkradCommandMenuRow: View {
     @State private var hovering = false
 
     private var emphasized: Bool { hovering || isHighlighted }
+
+    /// The label, its matched letters bold in the secondary accent.
+    private var title: AttributedString {
+        let text = uppercased ? skin.labelCased(label) : label
+        var out = AttributedString()
+        for run in ainkradMatchRuns(text, matched: matched) {
+            var piece = AttributedString(run.text)
+            if run.isMatch {
+                piece.foregroundColor = skin.color(skin.palette.accentSecondary)
+                piece.inlinePresentationIntent = .stronglyEmphasized
+            }
+            out += piece
+        }
+        return out
+    }
 
     var body: some View {
         let cmd = skin.components.commandMenuRow
@@ -205,7 +277,7 @@ private struct AinkradCommandMenuRow: View {
                     .font(skin.font(cmd.glyphFont, typography: typo))
                     .frame(width: cmd.glyphWidth)
                 VStack(alignment: .leading, spacing: skin.spacing.xs / 2) {
-                    Text(uppercased ? skin.labelCased(label) : label)
+                    Text(title)
                         .font(skin.font(cmd.titleFont, typography: typo))
                         .tracking(uppercased ? cmd.uppercasedTracking : 0)
                     if let detail {

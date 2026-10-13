@@ -18,6 +18,8 @@ public struct AinkradMenuItem: Identifiable {
     public let shortcut: String?
     public let isDestructive: Bool
     public let action: () -> Void
+    /// Set by `startingGroup()`.
+    var startsGroup = false
 
     public init(
         title: String, systemName: String? = nil, shortcut: String? = nil,
@@ -29,6 +31,22 @@ public struct AinkradMenuItem: Identifiable {
         self.isDestructive = isDestructive
         self.action = action
     }
+
+    /// Starts a new group at this item: the kit menu leaves a small gap above
+    /// it (never a line), as the Forge tree menu mockup groups new/rename ·
+    /// copy · reveal · trash. Apple's menu under Glass has no gaps and the
+    /// design bar forbids separator lines, so grouping does not show there.
+    /// No effect on the first item.
+    public func startingGroup() -> Self {
+        var copy = self
+        copy.startsGroup = true
+        return copy
+    }
+}
+
+/// Whether `items[index]` gets the group gap (or native separator) above it.
+func ainkradMenuItemStartsGroup(_ items: [AinkradMenuItem], at index: Int) -> Bool {
+    index > 0 && items[index].startsGroup
 }
 
 /// Zero-footprint `NSView` that reports right mouse-down events (in SCREEN
@@ -104,7 +122,7 @@ private struct AinkradContextMenuCatcher: NSViewRepresentable {
 /// scan per row, optional leading icons, destructive rows tinted with
 /// `ainkradStatusColors.danger`. Selecting a row runs its action then
 /// dismisses.
-private struct AinkradContextMenuList: View {
+struct AinkradContextMenuList: View {
     let items: [AinkradMenuItem]
     let dismiss: () -> Void
 
@@ -112,11 +130,12 @@ private struct AinkradContextMenuList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: skin.components.contextMenu.rowGap) {
-            ForEach(items) { item in
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                 AinkradContextMenuRow(item: item) {
                     item.action()
                     dismiss()
                 }
+                .padding(.top, ainkradMenuItemStartsGroup(items, at: index) ? skin.size.s6 : 0)
             }
         }
         .padding(AinkradSpacing.xs)
@@ -362,6 +381,8 @@ private struct NativeMenuItems: View {
     let items: [AinkradMenuItem]
 
     var body: some View {
+        // No group separators: the design bar forbids lines, and Apple's menu
+        // has no gaps, so `startingGroup()` simply doesn't show here.
         ForEach(items) { item in
             let button = Button(role: item.isDestructive ? .destructive : nil, action: item.action) {
                 if let systemName = item.systemName {

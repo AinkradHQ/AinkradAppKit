@@ -34,6 +34,9 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
     /// historical layout applies: pad first, then cap the padded result at
     /// `AinkradModalMetrics.maxWidth`.
     var contentWidth: CGFloat?
+    /// `ainkradPanelModal`: the mockups' plain chamfered sheet instead of the
+    /// bracketed, glowing HUD panel.
+    var plainPanel = false
     @ViewBuilder var modalContent: () -> ModalContent
 
     @Environment(\.ainkradSkin) private var skin
@@ -54,7 +57,7 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
                         .onTapGesture { isPresented = false }
 
                     sizedContent
-                        .ainkradPanel(showsBrackets: true)
+                        .modifier(ModalChrome(plain: plainPanel))
                         .transition(
                             reduceMotion
                                 ? .opacity
@@ -74,7 +77,12 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
     /// cap-then-pad gives content the width that was asked for; pad-then-cap
     /// spends part of it on the modifier's own chrome.
     @ViewBuilder private var sizedContent: some View {
-        if let contentWidth {
+        if plainPanel, let contentWidth {
+            modalContent()
+                .frame(maxWidth: contentWidth)
+                .padding(.horizontal, skin.size.s24)
+                .padding(.vertical, skin.size.s22)
+        } else if let contentWidth {
             modalContent()
                 .frame(maxWidth: contentWidth)
                 .padding(skin.spacing.lg)
@@ -94,6 +102,33 @@ private struct AinkradModalModifier<ModalContent: View>: ViewModifier {
             .opacity(0)
             .frame(width: 0, height: 0)
             .accessibilityHidden(true)
+    }
+}
+
+/// The modal's surface: the HUD panel with corner brackets and glow, or under
+/// `plain` the mockups' sheet (`.sheet.cut`) — a 12 pt chamfer filled with the
+/// elevated surface at 97 %, a 1 pt soft accent rim and a dark drop shadow,
+/// no brackets or glow. Glass draws its own glass panel either way.
+private struct ModalChrome: ViewModifier {
+    let plain: Bool
+
+    @Environment(\.ainkradSkin) private var skin
+    @Environment(\.ainkradTheme) private var theme
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if !plain {
+            content.ainkradPanel(showsBrackets: true)
+        } else if skin.usesNativeGlass {
+            content.ainkradPanel()
+        } else {
+            let shape = skin.shape(cut: skin.size.s12)
+            content
+                .background(shape.fill(theme.surfaceElevated.opacity(skin.opacity.o97)))
+                .overlay(shape.strokeBorder(theme.accentSecondary.opacity(skin.opacity.o45), lineWidth: 1))
+                .shadow(
+                    color: skin.color(skin.palette.black).opacity(skin.opacity.o60), radius: skin.size.s30,
+                    y: skin.size.s20)
+        }
     }
 }
 
@@ -199,6 +234,23 @@ extension View {
         modifier(
             AinkradModalModifier(
                 isPresented: isPresented, contentWidth: contentWidth,
+                modalContent: content))
+    }
+
+    /// Presents a centered modal drawn as the mockups' plain sheet — a
+    /// chamfered panel with a soft rim and a dark drop shadow, no corner
+    /// brackets or glow, padded 24 × 22 — with its CONTENT capped at
+    /// `contentWidth`. Scrim, Esc, tap-to-dismiss and motion are those of
+    /// `ainkradModal(isPresented:contentWidth:content:)`. Grimoire's
+    /// new-thread sheet.
+    public func ainkradPanelModal<ModalContent: View>(
+        isPresented: Binding<Bool>,
+        contentWidth: CGFloat,
+        @ViewBuilder content: @escaping () -> ModalContent
+    ) -> some View {
+        modifier(
+            AinkradModalModifier(
+                isPresented: isPresented, contentWidth: contentWidth, plainPanel: true,
                 modalContent: content))
     }
 

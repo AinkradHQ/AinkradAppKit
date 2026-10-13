@@ -33,6 +33,11 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     private let leading: Leading
     private let trailing: Trailing
 
+    // Opt-ins set by the modifier methods below (not init params: a defaulted
+    // parameter is not ABI-compatible).
+    var usesPaletteSuggestionRows = false
+    var sendTitle: String?
+
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
     @State private var selectedIndex = 0
@@ -75,6 +80,25 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         self.trailing = trailing()
     }
 
+    /// Draws the `/` and `@` overlay's rows as Grimoire's slash panel does:
+    /// one flat line each — accent glyph, title, the subtitle pushed to the
+    /// row's end in faint mono — only the highlighted row filled. Sections and
+    /// the key-hint footer are unchanged (give suggestions a `section`).
+    public func paletteSuggestionRows() -> Self {
+        var copy = self
+        copy.usesPaletteSuggestionRows = true
+        return copy
+    }
+
+    /// Send as a labelled primary button (`"Ask ⌘↵"`) instead of the round ↑
+    /// icon, as Forge's ask-an-agent popover draws it. The label follows the
+    /// skin's label case; the shortcut itself stays the caller's.
+    public func sendTitle(_ title: String) -> Self {
+        var copy = self
+        copy.sendTitle = title
+        return copy
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.spacing.sm) {
             chips
@@ -91,7 +115,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 leading
                 Spacer(minLength: 8)
                 trailing
-                AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") { onSend() }
+                sendButton
                     .disabled(!canSend)
                     .opacity(canSend ? 1 : skin.opacity.o40)
             }
@@ -106,10 +130,19 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
             if let trigger {
                 AinkradComposerOverlayList(
                     trigger: trigger, suggestions: suggestions(trigger),
-                    selectedIndex: selectedIndex, onSelect: { pick($0, for: trigger) })
+                    selectedIndex: selectedIndex, usesPaletteRows: usesPaletteSuggestionRows,
+                    onSelect: { pick($0, for: trigger) })
             }
         }
         .onChange(of: text) { _, newValue in updateTrigger(newValue) }
+    }
+
+    @ViewBuilder private var sendButton: some View {
+        if let sendTitle {
+            AinkradButton(title: sendTitle, style: .primary) { onSend() }
+        } else {
+            AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") { onSend() }
+        }
     }
 
     /// Re-derives the overlay from the draft. The highlight resets only when

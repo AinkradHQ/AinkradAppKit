@@ -43,6 +43,10 @@ public struct AinkradButton: View {
     /// `init(title:style:icon:action:)` stays byte-unchanged — see the
     /// `isLoading:`-carrying overload below.
     private var isLoading: Bool = false
+    /// Set by `borderless()`.
+    var isBorderless = false
+    /// Set by `secondaryAccent()`.
+    var usesSecondaryAccent = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -75,8 +79,31 @@ public struct AinkradButton: View {
         self.action = action
     }
 
+    /// No rim and no glow: under Neon a `.ghost` button becomes bare accent
+    /// text on a chamfered hit area, as the mockups draw `.btn.ghost` (Cancel
+    /// beside a primary). Glass's ghost is already Apple's borderless button,
+    /// so this changes nothing there.
+    public func borderless() -> Self {
+        var copy = self
+        copy.isBorderless = true
+        return copy
+    }
+
+    /// The mockups' `.btn`: a `.ghost` or `.secondary` button's text (and,
+    /// under Neon, its rim and glow) in the secondary accent — cyan — instead
+    /// of the primary blue. Under Glass a ghost's text takes the secondary
+    /// accent; a secondary stays Apple's untinted glass button, whose
+    /// foreground text the mockup's Glass `.btn` matches. No effect on
+    /// `.primary` or `.danger`.
+    public func secondaryAccent() -> Self {
+        var copy = self
+        copy.usesSecondaryAccent = true
+        return copy
+    }
+
     private var accentColor: Color {
-        skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
+        if usesSecondaryAccent, !style.usesAccentFill { return skin.color(skin.palette.accentSecondary) }
+        return skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
     }
     private var foreground: Color { style.usesAccentFill ? accentColor.contrastingText : accentColor }
 
@@ -139,12 +166,12 @@ public struct AinkradButton: View {
             )
             .overlay(
                 shape.strokeBorder(
-                    skin.color(btn.stroke.color, tint: accentColor, state: state),
+                    isBorderless ? .clear : skin.color(btn.stroke.color, tint: accentColor, state: state),
                     lineWidth: btn.stroke.width.resolve(state)
                 )
             )
             .shadow(
-                color: skin.color(btn.glow.color, tint: accentColor, state: state),
+                color: isBorderless ? .clear : skin.color(btn.glow.color, tint: accentColor, state: state),
                 radius: btn.glow.radius.resolve(state)
             )
             .contentShape(shape)
