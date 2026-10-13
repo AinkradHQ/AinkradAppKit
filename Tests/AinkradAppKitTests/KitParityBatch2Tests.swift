@@ -152,4 +152,17 @@ struct KitParityBatch2Tests {
         #expect(AinkradButton(title: "Cancel", style: .ghost) {}.borderless().isBorderless)
         #expect(AinkradButton(title: "Cancel", style: .ghost, isLoading: false) {}.borderless().isBorderless)
     }
+
+    @Test("menu groups are opt-in and never gap the first item")
+    func menuGroups() {
+        let items = [
+            AinkradMenuItem(title: "New File…") {}.startingGroup(),
+            AinkradMenuItem(title: "Rename") {},
+            AinkradMenuItem(title: "Copy Path") {}.startingGroup(),
+        ]
+        #expect(!AinkradMenuItem(title: "x") {}.startsGroup)
+        #expect(!ainkradMenuItemStartsGroup(items, at: 0))
+        #expect(!ainkradMenuItemStartsGroup(items, at: 1))
+        #expect(ainkradMenuItemStartsGroup(items, at: 2))
+    }
 }

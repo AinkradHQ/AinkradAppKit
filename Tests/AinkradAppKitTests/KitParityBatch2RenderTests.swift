@@ -288,4 +288,20 @@ struct KitParityBatch2RenderTests {
                 .ainkradModal(isPresented: .constant(true), contentWidth: 360) { sheet }
         }
     }
+
+    @Test func menuGroups() {
+        Self.shoot("menu-groups", width: 280, height: 300) {
+            AinkradContextMenuList(
+                items: [
+                    AinkradMenuItem(title: "New File…", systemName: "doc.badge.plus") {},
+                    AinkradMenuItem(title: "Rename", systemName: "pencil") {},
+                    AinkradMenuItem(title: "Copy Path", systemName: "doc.on.clipboard") {}.startingGroup(),
+                    AinkradMenuItem(title: "Reveal in Finder", systemName: "folder") {}.startingGroup(),
+                    AinkradMenuItem(title: "Move to Trash", systemName: "trash", isDestructive: true) {}
+                        .startingGroup(),
+                ], dismiss: {}
+            )
+            .frame(width: 230)
+        }
+    }
 }
