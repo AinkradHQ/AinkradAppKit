@@ -107,7 +107,9 @@ public struct AinkradTextField: View {
     private let placeholder: String
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
-    @FocusState private var isFocused: Bool
+    @FocusState private var internalFocus: Bool
+    /// Set by `init(text:placeholder:focus:)`; `nil` keeps `internalFocus`.
+    var externalFocus: FocusState<Bool>.Binding?
     /// Set by `selectsNameWithoutExtension()`.
     var selectsBaseName = false
     /// Set by `leadingLabel(_:)`.
@@ -119,6 +121,22 @@ public struct AinkradTextField: View {
     public init(text: Binding<String>, placeholder: String) {
         self._text = text
         self.placeholder = placeholder
+    }
+
+    /// Focus driven by the caller — e.g. set `focus` to `true` when a sheet
+    /// or popover opens so the field takes typing at once (Forge's rename,
+    /// new-file and go-to-line fields), as `AinkradSearchField(focus:)` does.
+    /// A separate overload: the two-argument init is unchanged.
+    public init(text: Binding<String>, placeholder: String, focus: FocusState<Bool>.Binding) {
+        self.init(text: text, placeholder: placeholder)
+        self.externalFocus = focus
+    }
+
+    private var isFocused: Bool { externalFocus?.wrappedValue ?? internalFocus }
+
+    /// Binds the inner `TextField` to the caller's focus, or the field's own.
+    @ViewBuilder private func focusBound(_ field: some View) -> some View {
+        if let externalFocus { field.focused(externalFocus) } else { field.focused($internalFocus) }
     }
 
     /// On focus, selects the name without its extension (`SidebarRow` of
@@ -166,12 +184,12 @@ public struct AinkradTextField: View {
         if #available(macOS 26, *), skin.usesNativeGlass, label != nil || isCompact {
             HStack(spacing: AinkradSpacing.xs) {
                 labelView
-                TextField(placeholder, text: $text)
-                    .textFieldStyle(.plain)
-                    .apply { field in
-                        if isCompact { field.font(compactFont) } else { field }
-                    }
-                    .focused($isFocused)
+                focusBound(
+                    TextField(placeholder, text: $text)
+                        .textFieldStyle(.plain)
+                        .apply { field in
+                            if isCompact { field.font(compactFont) } else { field }
+                        })
             }
             .padding(.horizontal, isCompact ? skin.size.s10 : AinkradSpacing.md)
             .padding(.vertical, isCompact ? skin.size.s4 : AinkradSpacing.sm)
@@ -182,7 +200,9 @@ public struct AinkradTextField: View {
             TextField(placeholder, text: $text)
                 .textFieldStyle(.roundedBorder)
                 .controlSize(.large)
-                .apply { selectsBaseName ? AnyView($0.focused($isFocused)) : AnyView($0) }
+                .apply {
+                    selectsBaseName || externalFocus != nil ? AnyView(focusBound($0)) : AnyView($0)
+                }
                 .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
         } else {
             kitBody
@@ -195,8 +215,7 @@ public struct AinkradTextField: View {
         let shape = AinkradSkinShape(token: field.shape)
         return HStack(spacing: AinkradSpacing.xs) {
             labelView
-            TextField(placeholder, text: $text)
-                .focused($isFocused)
+            focusBound(TextField(placeholder, text: $text))
                 .textFieldStyle(.plain)
                 .font(isCompact ? compactFont : skin.font(tokens.font, typography: typo))
                 .foregroundStyle(skin.color(skin.text.primary))

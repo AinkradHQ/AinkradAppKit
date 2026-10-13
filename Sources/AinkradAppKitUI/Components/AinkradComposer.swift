@@ -40,6 +40,9 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     var sendGlyph: String?
     var stopTitle: String?
     var onStop: (() -> Void)?
+    var dimsTextField = false
+    var keepsSendLit = false
+    var tintsStop = false
 
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
@@ -111,6 +114,16 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         return copy
     }
 
+    /// Send drawn at full strength even while `canSend` is `false` — with an
+    /// empty draft a click does nothing, but the button does not read as
+    /// disabled. For the busy composer's queue button (`sendGlyph("↵")`),
+    /// which the mockup draws lit (Grimoire mockup 01).
+    public func sendStaysLit() -> Self {
+        var copy = self
+        copy.keepsSendLit = true
+        return copy
+    }
+
     /// A Stop button just before Send while `action` is non-nil — the
     /// mockups' red outline `"■ Stop"` (`AinkradButton(style: .danger)
     /// .outlined()`), e.g. while the agent works. It stays live when sending
@@ -119,6 +132,25 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         var copy = self
         copy.stopTitle = title
         copy.onStop = action
+        return copy
+    }
+
+    /// While `dimmed`, only the text area fades to 60 % — the chips, the
+    /// strip and Send stay at full strength — as Grimoire's usage-limit
+    /// composer holds its queued message (mockup 12 D, `.composer.off
+    /// .field`). Pair with `isEditable: false` to also lock the text.
+    public func textFieldDimmed(_ dimmed: Bool) -> Self {
+        var copy = self
+        copy.dimsTextField = dimmed
+        return copy
+    }
+
+    /// The Stop button of `stopButton(_:action:)` with its faint dark-red
+    /// body (`AinkradButton.tintedFill()`), as the mockups' busy composer
+    /// draws `.btn.danger` under Neon (Grimoire mockup 01).
+    public func tintedStopButton() -> Self {
+        var copy = self
+        copy.tintsStop = true
         return copy
     }
 
@@ -132,6 +164,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 onSubmit: { if canSend { onSend() } }
             )
             .disabled(!isEditable)
+            .opacity(dimsTextField ? skin.opacity.o60 : 1)
             .onDrop(of: [.image, .fileURL], isTargeted: nil) { providers in onDrop?(providers) ?? false }
 
             HStack(spacing: skin.spacing.sm) {
@@ -139,11 +172,14 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 Spacer(minLength: 8)
                 trailing
                 if let stopTitle, let onStop {
-                    AinkradButton(title: stopTitle, style: .danger, action: onStop).outlined().fixedSize()
+                    let stop = AinkradButton(title: stopTitle, style: .danger, action: onStop).outlined()
+                    (tintsStop ? stop.tintedFill() : stop).fixedSize()
                 }
+                // Lit but not sendable: left enabled so Glass does not grey
+                // the glyph; the action checks `canSend` instead.
                 sendButton
-                    .disabled(!canSend)
-                    .opacity(canSend ? 1 : skin.opacity.o40)
+                    .disabled(!canSend && !keepsSendLit)
+                    .opacity(canSend || keepsSendLit ? 1 : skin.opacity.o40)
             }
             .frame(height: Self.controlHeight)
         }
@@ -165,10 +201,12 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
 
     @ViewBuilder private var sendButton: some View {
         if let sendTitle {
-            AinkradButton(title: sendTitle, style: .primary) { onSend() }
+            AinkradButton(title: sendTitle, style: .primary) { if canSend { onSend() } }
         } else {
-            AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") { onSend() }
-                .textGlyph(sendGlyph)
+            AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") {
+                if canSend { onSend() }
+            }
+            .textGlyph(sendGlyph)
         }
     }
 

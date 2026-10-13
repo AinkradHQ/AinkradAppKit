@@ -63,6 +63,8 @@ public struct AinkradCommandMenu<T: Hashable>: View {
     var matchedCharacters: ((T) -> [Int])?
     var sectionTitle: ((T) -> String?)?
     var glyphTint: ((T) -> Color?)?
+    var kind: ((T) -> String?)?
+    var kindTint: ((T) -> Color?)?
 
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     /// Starts unset: `emphasized` is `hovering || isHighlighted`, so seeding
@@ -139,6 +141,17 @@ public struct AinkradCommandMenu<T: Hashable>: View {
         return copy
     }
 
+    /// Under `paletteRows()`, leads a row with `kind(item)` — the symbol's
+    /// kind, `"struct"` or `"func"` — in place of its icon, drawn in
+    /// `tint(item)`, or the editor's type colour when `nil`, as Forge's quick
+    /// open lists symbols (mockup 02). Items whose kind is `nil` keep their icon.
+    public func kinds(_ kind: @escaping (T) -> String?, tint: @escaping (T) -> Color?) -> Self {
+        var copy = self
+        copy.kind = kind
+        copy.kindTint = tint
+        return copy
+    }
+
     /// The section caption to draw above `items[index]`, if it starts one.
     func sectionStart(at index: Int) -> String? {
         guard let sectionTitle, let title = sectionTitle(items[index]) else { return nil }
@@ -186,7 +199,8 @@ public struct AinkradCommandMenu<T: Hashable>: View {
                 icon: icon(item), label: label(item), matched: Set(matchedCharacters?(item) ?? []),
                 detail: detail.flatMap { $0(item) }, value: value.flatMap { $0(item) },
                 isHighlighted: index == highlightedIndex, showsReturnKey: true,
-                iconIsGlyph: glyphTint != nil, iconTint: glyphTint?(item)
+                iconIsGlyph: glyphTint != nil, iconTint: glyphTint?(item),
+                kind: kind?(item), kindTint: kindTint?(item)
             ) { activate(item) }
         } else {
             AinkradCommandMenuRow(
