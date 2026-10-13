@@ -40,6 +40,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     var sendGlyph: String?
     var stopTitle: String?
     var onStop: (() -> Void)?
+    var dimsTextField = false
 
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
@@ -122,6 +123,16 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         return copy
     }
 
+    /// While `dimmed`, only the text area fades to 60 % — the chips, the
+    /// strip and Send stay at full strength — as Grimoire's usage-limit
+    /// composer holds its queued message (mockup 12 D, `.composer.off
+    /// .field`). Pair with `isEditable: false` to also lock the text.
+    public func textFieldDimmed(_ dimmed: Bool) -> Self {
+        var copy = self
+        copy.dimsTextField = dimmed
+        return copy
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.spacing.sm) {
             chips
@@ -132,6 +143,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 onSubmit: { if canSend { onSend() } }
             )
             .disabled(!isEditable)
+            .opacity(dimsTextField ? skin.opacity.o60 : 1)
             .onDrop(of: [.image, .fileURL], isTargeted: nil) { providers in onDrop?(providers) ?? false }
 
             HStack(spacing: skin.spacing.sm) {
