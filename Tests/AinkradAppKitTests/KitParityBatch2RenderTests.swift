@@ -268,4 +268,24 @@ struct KitParityBatch2RenderTests {
             }
         }
     }
+
+    @Test func panelModal() {
+        let sheet = VStack(alignment: .leading, spacing: 6) {
+            Text("New thread").font(.system(size: 16, weight: .semibold)).foregroundStyle(.white)
+            Text("Starts an agent session in a project.").font(.system(size: 13)).foregroundStyle(.gray)
+            HStack {
+                Spacer()
+                AinkradButton(title: "Cancel", style: .ghost) {}.borderless()
+                AinkradButton(title: "Start ⌘↵", style: .primary) {}
+            }
+        }
+        Self.shoot("modal-panel", width: 520, height: 260) {
+            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ainkradPanelModal(isPresented: .constant(true), contentWidth: 360) { sheet }
+        }
+        Self.shoot("modal-default", width: 520, height: 260) {
+            Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ainkradModal(isPresented: .constant(true), contentWidth: 360) { sheet }
+        }
+    }
 }
