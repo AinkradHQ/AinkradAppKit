@@ -16,6 +16,8 @@ public struct AinkradTabs<T: Hashable>: View {
     private let tabs: [T]
     @Binding private var selection: T
     private let label: (T) -> String
+    /// Set by `textTabs()`.
+    var usesTextTabs = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
@@ -26,19 +28,101 @@ public struct AinkradTabs<T: Hashable>: View {
         self.label = label
     }
 
+    /// Plain text tabs, as Forge's sidebar draws "Files  Changes 2  Search
+    /// Issues 5" (mockup 01): under Neon 11 pt muted text with the selected
+    /// tab in the foreground on a faint pill; under Glass one glass capsule
+    /// whose tabs share its width, the selected one a light pill. Labels keep
+    /// their case; put a count in the label.
+    public func textTabs() -> Self {
+        var copy = self
+        copy.usesTextTabs = true
+        return copy
+    }
+
+    private func select(_ tab: T) {
+        if reduceMotion {
+            selection = tab
+        } else {
+            withAnimation(AinkradMotion.materialize) { selection = tab }
+        }
+    }
+
     public var body: some View {
-        HStack(spacing: skin.spacing.xs) {
-            ForEach(tabs, id: \.self) { tab in
-                AinkradTabButton(title: label(tab), isSelected: tab == selection) {
-                    if reduceMotion {
-                        selection = tab
-                    } else {
-                        withAnimation(AinkradMotion.materialize) { selection = tab }
-                    }
+        if usesTextTabs {
+            AinkradTextTabRow(titles: tabs.map(label), selected: tabs.firstIndex(of: selection)) { select(tabs[$0]) }
+        } else {
+            HStack(spacing: skin.spacing.xs) {
+                ForEach(tabs, id: \.self) { tab in
+                    AinkradTabButton(title: label(tab), isSelected: tab == selection) { select(tab) }
                 }
             }
+            .padding(skin.spacing.xs / 2)
         }
-        .padding(skin.spacing.xs / 2)
+    }
+}
+
+/// `AinkradTabs.textTabs()`: the mockup's `.side-tabs`.
+private struct AinkradTextTabRow: View {
+    let titles: [String]
+    let selected: Int?
+    let onSelect: (Int) -> Void
+
+    @Environment(\.ainkradSkin) private var skin
+    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradTypography) private var typo
+    @Environment(\.ainkradReduceMotion) private var reduceMotion
+    @State private var hovered: Int?
+
+    private var isGlass: Bool {
+        if #available(macOS 26, *) { return skin.usesNativeGlass }
+        return false
+    }
+
+    var body: some View {
+        if #available(macOS 26, *), skin.usesNativeGlass {
+            row.padding(skin.size.s3).glassEffect(.regular, in: .capsule)
+        } else {
+            row
+        }
+    }
+
+    private var row: some View {
+        HStack(spacing: isGlass ? skin.size.s2 : skin.size.s4) {
+            ForEach(titles.indices, id: \.self) { index in tab(index) }
+        }
+    }
+
+    private func tab(_ index: Int) -> some View {
+        let isSelected = index == selected
+        return Button {
+            onSelect(index)
+        } label: {
+            Text(titles[index])
+                .font(AinkradFontResolver.font(size: 11, typography: typo))
+                .lineLimit(1)
+                .fixedSize()
+                .foregroundStyle(
+                    isSelected || hovered == index ? theme.foreground : theme.foreground.opacity(skin.opacity.o55)
+                )
+                .padding(.horizontal, skin.size.s8).padding(.vertical, skin.size.s4)
+                .frame(maxWidth: isGlass ? .infinity : nil)
+                .background { pill(isSelected) }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovered = $0 ? index : (hovered == index ? nil : hovered) }
+        .animation(reduceMotion ? nil : AinkradMotion.hover, value: hovered)
+        .animation(reduceMotion ? nil : AinkradMotion.hover, value: selected)
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    @ViewBuilder private func pill(_ isSelected: Bool) -> some View {
+        if isGlass {
+            Capsule().fill(theme.foreground.opacity(isSelected ? skin.opacity.o20 : 0))
+        } else {
+            RoundedRectangle(cornerRadius: skin.size.s6)
+                .fill(isSelected ? theme.surfaceElevated.opacity(skin.opacity.o60) : .clear)
+        }
     }
 }
 
@@ -103,6 +187,10 @@ public struct AinkradBreadcrumb: View {
     var keepsCase = false
     /// Set by `icon(at:_:)`: one leading glyph before the crumb at `index`.
     var segmentIcon: (index: Int, view: AnyView)?
+    /// Set by `segmentColors(_:)`.
+    var segmentColor: ((Int) -> Color?)?
+    /// Set by `textSeparators()`.
+    var usesTextSeparators = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -129,14 +217,35 @@ public struct AinkradBreadcrumb: View {
         return copy
     }
 
+    /// Colours each crumb by index — `nil` keeps the plain crumb colour — and
+    /// stops the trailing crumb being drawn as the accent "current" one: the
+    /// editor breadcrumb's file name in the foreground and its type symbol in
+    /// the syntax colour, the member after it plain (Forge mockup 01).
+    public func segmentColors(_ color: @escaping (Int) -> Color?) -> Self {
+        var copy = self
+        copy.segmentColor = color
+        return copy
+    }
+
+    /// A faint `›` between crumbs instead of the glowing chevron glyph, at the
+    /// crumbs' own size and 6 pt apart — Forge's editor breadcrumb (mockup
+    /// 01's `.crumb .s`).
+    public func textSeparators() -> Self {
+        var copy = self
+        copy.usesTextSeparators = true
+        return copy
+    }
+
     public var body: some View {
         let bread = skin.components.breadcrumb
-        HStack(spacing: skin.spacing.xs) {
+        HStack(spacing: usesTextSeparators ? skin.size.s6 : skin.spacing.xs) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 let isLast = index == items.count - 1
                 if let segmentIcon, segmentIcon.index == index { segmentIcon.view }
                 crumb(item, isLast: isLast, index: index, bread: bread)
-                if !isLast {
+                if !isLast, usesTextSeparators {
+                    Text("›").font(skin.font(bread.font, typography: typo)).foregroundStyle(skin.color(skin.text.faint))
+                } else if !isLast {
                     Image(systemName: "chevron.compact.right")
                         .font(skin.font(bread.chevronFont, typography: typo))
                         .foregroundStyle(skin.color(bread.chevronColor))
@@ -147,11 +256,13 @@ public struct AinkradBreadcrumb: View {
 
     @ViewBuilder
     private func crumb(_ text: String, isLast: Bool, index: Int, bread: BreadcrumbTokens) -> some View {
-        let labelFontToken = isLast ? bread.activeFont : bread.font
+        let isCurrent = isLast && segmentColor == nil
+        let labelFontToken = isCurrent ? bread.activeFont : bread.font
         let label = Text(keepsCase ? text : skin.labelCased(text))
             .font(skin.font(labelFontToken, typography: typo))
             .tracking(keepsCase ? 0 : labelFontToken.tracking ?? 0.6)
-            .foregroundStyle(skin.color(isLast ? bread.activeColor : bread.itemColor))
+            .foregroundStyle(
+                segmentColor?(index) ?? skin.color(isCurrent ? bread.activeColor : bread.itemColor))
 
         if let onSelect, !isLast {
             Button {

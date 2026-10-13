@@ -11,6 +11,9 @@ public struct AinkradIconButton: View {
     private let size: CGFloat
     /// Self-managed hover tooltip; `nil` = no tooltip (original behavior).
     private let tooltip: String?
+    /// A text glyph ("↵") drawn in place of the SF Symbol — set by the kit
+    /// (`AinkradComposer.sendGlyph(_:)`), not public.
+    var textGlyph: String?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradReduceMotion) private var reduceMotion
@@ -68,7 +71,7 @@ public struct AinkradIconButton: View {
     @available(macOS 26, *)
     @ViewBuilder private var nativeBody: some View {
         let button = Button(action: action) {
-            Image(systemName: systemName)
+            glyph
                 .font(.system(size: glyphSize, weight: .medium))  // design-lint: allow font-size caller-sized glyph
                 .frame(width: size, height: size)
                 .contentShape(.circle)
@@ -86,7 +89,7 @@ public struct AinkradIconButton: View {
         let btn = skin.components.iconButton
         let shape = AinkradSkinShape(token: btn.shape)
         let button = Button(action: action) {
-            Image(systemName: systemName)
+            glyph
                 .font(
                     .system(size: glyphSize, weight: .semibold)  // design-lint: allow font-size caller-sized glyph
                 )
@@ -109,6 +112,21 @@ public struct AinkradIconButton: View {
             button.ainkradTooltip(tooltip)
         } else {
             button
+        }
+    }
+
+    /// Draws `glyph` in place of the symbol; `nil` keeps the symbol.
+    func textGlyph(_ glyph: String?) -> Self {
+        var copy = self
+        copy.textGlyph = glyph
+        return copy
+    }
+
+    @ViewBuilder private var glyph: some View {
+        if let textGlyph {
+            Text(textGlyph)
+        } else {
+            Image(systemName: systemName)
         }
     }
 

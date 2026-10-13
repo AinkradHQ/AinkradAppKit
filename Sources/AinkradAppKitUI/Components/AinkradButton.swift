@@ -47,6 +47,15 @@ public struct AinkradButton: View {
     var isBorderless = false
     /// Set by `secondaryAccent()`.
     var usesSecondaryAccent = false
+    /// Set by `fullWidth()`.
+    var fillsWidth = false
+    /// Set by `outlined()`.
+    var isOutlined = false
+    /// Set by `compact()`.
+    var isCompact = false
+    /// A faint mono suffix after the title, as written (`AinkradDecisionBar
+    /// .Action.detail(_:)`) — kit-internal.
+    var detail: String?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -101,11 +110,44 @@ public struct AinkradButton: View {
         return copy
     }
 
+    /// Fills the width the parent proposes, label centred — the mockups'
+    /// `flex: 1` halves (Grimoire's review footer: [Revert selected][Send 1
+    /// comment], [Commit][Commit & open PR]). Under Glass the glass capsule
+    /// stretches the same way.
+    public func fullWidth() -> Self {
+        var copy = self
+        copy.fillsWidth = true
+        return copy
+    }
+
+    /// A `.danger` (or `.primary`) button drawn as an outline instead of a
+    /// solid fill — the mockups' `.btn.danger` "■ Stop": under Neon the text
+    /// and rim in the danger colour on no fill; under Glass Apple's untinted
+    /// glass capsule with a danger rim, as the Glass `.btn.danger` draws it.
+    /// No effect on `.secondary` or `.ghost`, which are already unfilled.
+    public func outlined() -> Self {
+        var copy = self
+        copy.isOutlined = true
+        return copy
+    }
+
+    /// The mockups' small button (`padding: 3px 10px` — Replace All, the
+    /// peek and commit-card buttons): tighter padding, same label. Under Glass
+    /// Apple's small control size instead of large.
+    public func compact() -> Self {
+        var copy = self
+        copy.isCompact = true
+        return copy
+    }
+
+    /// Whether the solid accent fill is drawn: the style's, unless `outlined()`.
+    private var fillsWithAccent: Bool { style.usesAccentFill && !isOutlined }
+
     private var accentColor: Color {
         if usesSecondaryAccent, !style.usesAccentFill { return skin.color(skin.palette.accentSecondary) }
         return skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
     }
-    private var foreground: Color { style.usesAccentFill ? accentColor.contrastingText : accentColor }
+    private var foreground: Color { fillsWithAccent ? accentColor.contrastingText : accentColor }
 
     public var body: some View {
         if #available(macOS 26, *), skin.usesNativeGlass {
@@ -126,12 +168,19 @@ public struct AinkradButton: View {
                 nativeLabel.opacity(isLoading ? 0 : 1)
                 ProgressView().controlSize(.small).opacity(isLoading ? 1 : 0)
             }
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
         }
         .disabled(isLoading)
-        .controlSize(.large)
+        .controlSize(isCompact ? .small : .large)
+        // Apple's small glass button is a rounded rectangle; the mockup's stays a capsule.
+        .buttonBorderShape(isCompact ? .capsule : .automatic)
         // Only the prominent styles take the tint: on `.glass` a tint fills the
         // whole capsule, which would make secondary read as primary.
         switch style {
+        case .primary where isOutlined, .danger where isOutlined:
+            button.buttonStyle(.glass).overlay {
+                Capsule().strokeBorder(accentColor.opacity(skin.opacity.o50), lineWidth: 1).allowsHitTesting(false)
+            }
         case .primary, .danger: button.buttonStyle(.glassProminent).tint(accentColor)
         case .secondary: button.buttonStyle(.glass)
         case .ghost: button.buttonStyle(.borderless).tint(accentColor)
@@ -139,7 +188,12 @@ public struct AinkradButton: View {
     }
 
     @ViewBuilder private var nativeLabel: some View {
-        if let icon {
+        if let detail {
+            Text(title)
+                + Text(" " + detail)
+                .font(AinkradFontResolver.font(size: 11, mono: true, typography: typo))
+                .foregroundStyle(skin.color(skin.text.faint))
+        } else if let icon {
             Label(title, systemImage: icon)
         } else {
             Text(title)
@@ -159,10 +213,11 @@ public struct AinkradButton: View {
                 AinkradSpinner(size: btn.spinnerSize, tint: foreground)
                     .opacity(isLoading ? 1 : 0)
             }
-            .padding(.horizontal, skin.spacing.lg)
-            .padding(.vertical, skin.spacing.sm)
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
+            .padding(.horizontal, isCompact ? skin.size.s10 : skin.spacing.lg)
+            .padding(.vertical, isCompact ? skin.size.s3 : skin.spacing.sm)
             .background(
-                shape.fill(style.usesAccentFill ? accentColor.opacity(style.fillOpacity) : .clear)
+                shape.fill(fillsWithAccent ? accentColor.opacity(style.fillOpacity) : .clear)
             )
             .overlay(
                 shape.strokeBorder(
@@ -199,6 +254,11 @@ public struct AinkradButton: View {
             Text(skin.labelCased(title))
                 .font(skin.font(btn.labelFont, typography: typo))
                 .tracking(btn.labelFont.tracking ?? 0)
+            if let detail {
+                Text(detail)
+                    .font(AinkradFontResolver.font(size: 11, mono: true, typography: typo))
+                    .foregroundStyle(skin.color(skin.text.faint))
+            }
         }
     }
     private var state: AinkradControlState {

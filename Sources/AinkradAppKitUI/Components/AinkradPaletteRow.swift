@@ -36,6 +36,10 @@ struct AinkradPaletteRow: View {
     /// Forge's quick open shows a `↵` cap on the highlighted row that has no
     /// shortcut of its own.
     var showsReturnKey = false
+    /// Forge's quick open draws file types as text glyphs (`◆`, `≡`, `#`)
+    /// rather than SF Symbols, each in its own colour.
+    var iconIsGlyph = false
+    var iconTint: Color?
     let action: () -> Void
 
     @Environment(\.ainkradSkin) private var skin
@@ -48,9 +52,8 @@ struct AinkradPaletteRow: View {
         Button(action: action) {
             HStack(spacing: skin.size.s10) {
                 if !icon.isEmpty {
-                    Image(systemName: icon)
-                        .font(AinkradFontResolver.font(size: 11, typography: typo))
-                        .foregroundStyle(theme.accentSecondary)
+                    iconView
+                        .foregroundStyle(iconTint ?? theme.accentSecondary)
                         .frame(width: skin.size.s16)
                 }
                 Text(title).lineLimit(1).layoutPriority(1)
@@ -74,6 +77,15 @@ struct AinkradPaletteRow: View {
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .animation(reduceMotion ? nil : AinkradMotion.hover, value: hovering)
+    }
+
+    /// A glyph sits at the row's 13 pt, as the mockup's `.ic` inherits it.
+    @ViewBuilder private var iconView: some View {
+        if iconIsGlyph {
+            Text(icon).font(AinkradFontResolver.font(size: 13, typography: typo))
+        } else {
+            Image(systemName: icon).font(AinkradFontResolver.font(size: 11, typography: typo))
+        }
     }
 
     private var fill: Color {

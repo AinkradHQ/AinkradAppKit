@@ -112,6 +112,8 @@ public struct AinkradTextField: View {
     var selectsBaseName = false
     /// Set by `leadingLabel(_:)`.
     var label: String?
+    /// Set by `compact()`.
+    var isCompact = false
     @Environment(\.ainkradTheme) private var theme
 
     public init(text: Binding<String>, placeholder: String) {
@@ -138,6 +140,18 @@ public struct AinkradTextField: View {
         return copy
     }
 
+    /// The mockup's small field (`.sfield.small`, Forge's include / exclude
+    /// globs, FP56): tighter padding and 12 pt mono text. Under Glass a slim
+    /// glass capsule.
+    public func compact() -> Self {
+        var copy = self
+        copy.isCompact = true
+        return copy
+    }
+
+    /// The text font under `compact()`: 12 pt mono.
+    private var compactFont: Font { AinkradFontResolver.font(size: 12, mono: true, typography: typo) }
+
     @ViewBuilder private var labelView: some View {
         if let label {
             Text(label)
@@ -149,15 +163,18 @@ public struct AinkradTextField: View {
     }
 
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass, label != nil {
+        if #available(macOS 26, *), skin.usesNativeGlass, label != nil || isCompact {
             HStack(spacing: AinkradSpacing.xs) {
                 labelView
                 TextField(placeholder, text: $text)
                     .textFieldStyle(.plain)
+                    .apply { field in
+                        if isCompact { field.font(compactFont) } else { field }
+                    }
                     .focused($isFocused)
             }
-            .padding(.horizontal, AinkradSpacing.md)
-            .padding(.vertical, AinkradSpacing.sm)
+            .padding(.horizontal, isCompact ? skin.size.s10 : AinkradSpacing.md)
+            .padding(.vertical, isCompact ? skin.size.s4 : AinkradSpacing.sm)
             .glassEffect(.regular, in: .capsule)
             .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
         } else if #available(macOS 26, *), skin.usesNativeGlass {
@@ -181,12 +198,12 @@ public struct AinkradTextField: View {
             TextField(placeholder, text: $text)
                 .focused($isFocused)
                 .textFieldStyle(.plain)
-                .font(skin.font(tokens.font, typography: typo))
+                .font(isCompact ? compactFont : skin.font(tokens.font, typography: typo))
                 .foregroundStyle(skin.color(skin.text.primary))
                 .tint(skin.color(skin.palette.accentSecondary))
         }
-        .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
+        .padding(.horizontal, isCompact ? skin.size.s8 : AinkradSpacing.md)
+        .padding(.vertical, isCompact ? skin.size.s4 : AinkradSpacing.sm)
         .background(shape.fill(skin.color(field.fill)))
         .overlay(
             shape.strokeBorder(
@@ -246,6 +263,10 @@ public struct AinkradSearchField: View {
     private let externalFocus: FocusState<Bool>.Binding?
     /// Set by `keyHint(_:)`.
     var keyHint: String?
+    /// Set by `trailingAccessory(_:)`.
+    var accessory: AnyView?
+    /// Set by `codeQuery()`.
+    var isCodeQuery = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -272,6 +293,26 @@ public struct AinkradSearchField: View {
         return copy
     }
 
+    /// Controls inside the field at its trailing edge — Forge's `Aa` / `⌶` /
+    /// `✱` search toggles, or `AB` and Replace All on the replace field
+    /// (FP54, FP62).
+    public func trailingAccessory<Accessory: View>(@ViewBuilder _ accessory: () -> Accessory) -> Self {
+        var copy = self
+        copy.accessory = AnyView(accessory())
+        return copy
+    }
+
+    /// A code query, as Forge's sidebar search field (`.sfield`): mono text,
+    /// no magnifier and no clear button.
+    public func codeQuery() -> Self {
+        var copy = self
+        copy.isCodeQuery = true
+        return copy
+    }
+
+    /// The query font under `codeQuery()`: 12 pt mono.
+    private var codeFont: Font { AinkradFontResolver.font(size: 12, mono: true, typography: typo) }
+
     @ViewBuilder private var keyHintCap: some View {
         if let keyHint, text.isEmpty {
             AinkradKbd(keyHint).outlined()
@@ -292,10 +333,10 @@ public struct AinkradSearchField: View {
     @available(macOS 26, *)
     private var nativeBody: some View {
         HStack(spacing: AinkradSpacing.xs) {
-            Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            if !isCodeQuery { Image(systemName: "magnifyingglass").foregroundStyle(.secondary) }
             nativeTextField
             keyHintCap
-            if !text.isEmpty {
+            if !text.isEmpty, !isCodeQuery {
                 Button {
                     text = ""
                 } label: {
@@ -304,6 +345,7 @@ public struct AinkradSearchField: View {
                 .buttonStyle(.borderless)
                 .help("Clear")
             }
+            accessory
         }
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
@@ -313,6 +355,9 @@ public struct AinkradSearchField: View {
     @ViewBuilder private var nativeTextField: some View {
         let base = TextField(placeholder, text: $text)
             .textFieldStyle(.plain)
+            .apply { field in
+                if isCodeQuery { field.font(codeFont) } else { field }
+            }
             .onSubmit { onSubmit?() }
         if let externalFocus {
             base.focused(externalFocus)
@@ -326,15 +371,17 @@ public struct AinkradSearchField: View {
         let search = skin.components.searchField
         let shape = AinkradSkinShape(token: field.shape)
         return HStack(spacing: AinkradSpacing.sm) {
-            Image(systemName: "magnifyingglass")
-                .font(skin.font(search.searchGlyphFont, typography: typo))
-                .foregroundStyle(skin.color(search.searchGlyphColor, state: state))
+            if !isCodeQuery {
+                Image(systemName: "magnifyingglass")
+                    .font(skin.font(search.searchGlyphFont, typography: typo))
+                    .foregroundStyle(skin.color(search.searchGlyphColor, state: state))
+            }
 
             textField
 
             keyHintCap
 
-            if !text.isEmpty {
+            if !text.isEmpty, !isCodeQuery {
                 Button {
                     text = ""
                 } label: {
@@ -344,6 +391,8 @@ public struct AinkradSearchField: View {
                 }
                 .buttonStyle(.plain)
             }
+
+            accessory
         }
         .padding(.horizontal, AinkradSpacing.md)
         .padding(.vertical, AinkradSpacing.sm)
@@ -364,7 +413,7 @@ public struct AinkradSearchField: View {
     private var textField: some View {
         let base = TextField(placeholder, text: $text)
             .textFieldStyle(.plain)
-            .font(skin.font(skin.components.searchField.font, typography: typo))
+            .font(isCodeQuery ? codeFont : skin.font(skin.components.searchField.font, typography: typo))
             .foregroundStyle(skin.color(skin.text.primary))
             .tint(skin.color(skin.palette.accentSecondary))
             .onSubmit { onSubmit?() }

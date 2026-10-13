@@ -13,6 +13,8 @@ public struct AinkradSegmentedPicker<T: Hashable>: View {
     private let items: [T]
     @Binding private var selection: T
     private let label: (T) -> String
+    /// Set by `disabledOptions(_:)`.
+    var isOptionDisabled: ((T) -> Bool)?
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @State private var hoveredItem: T?
@@ -22,12 +24,25 @@ public struct AinkradSegmentedPicker<T: Hashable>: View {
         self._selection = selection
         self.label = label
     }
+
+    /// Greys out and stops selecting each option `isDisabled` returns `true`
+    /// for — an agent that is not installed yet (Grimoire's settings). Under
+    /// Glass the system segmented control disables that segment.
+    public func disabledOptions(_ isDisabled: @escaping (T) -> Bool) -> Self {
+        var copy = self
+        copy.isOptionDisabled = isDisabled
+        return copy
+    }
+
+    private func isDisabled(_ item: T) -> Bool { isOptionDisabled?(item) ?? false }
     public var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             if #available(macOS 26, *), skin.usesNativeGlass {
                 // Glass on macOS 26+: Apple's segmented control.
                 Picker("", selection: $selection) {
-                    ForEach(items, id: \.self) { item in Text(label(item)).tag(item) }
+                    ForEach(items, id: \.self) { item in
+                        Text(label(item)).tag(item).selectionDisabled(isDisabled(item))
+                    }
                 }
                 .labelsHidden()
                 .pickerStyle(.segmented)
@@ -68,6 +83,8 @@ public struct AinkradSegmentedPicker<T: Hashable>: View {
                 .contentShape(shape)
         }
         .buttonStyle(.plain)
+        .disabled(isDisabled(item))
+        .opacity(isDisabled(item) ? skin.opacity.o40 : 1)
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
         .animation(AinkradMotion.hover, value: hovered)
         .onHover { hovering in hoveredItem = hovering ? item : (hoveredItem == item ? nil : hoveredItem) }

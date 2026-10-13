@@ -4,6 +4,17 @@ import SwiftUI
 /// Centered empty-state placeholder: icon, title, message, and an optional
 /// call-to-action button. Consolidates the various "nothing here yet" views.
 public struct AinkradEmptyState: View {
+    /// One shortcut of a key-hint empty state: a keycap and what it does.
+    public struct KeyHint: Equatable, Sendable {
+        public let keys: String
+        public let label: String
+
+        public init(keys: String, label: String) {
+            self.keys = keys
+            self.label = label
+        }
+    }
+
     private let icon: String
     private let title: String
     private let message: String
@@ -13,6 +24,13 @@ public struct AinkradEmptyState: View {
     // because a defaulted parameter is not ABI-compatible.
     var secondaryTitle: String?
     var secondary: (() -> Void)?
+    /// Set by `glyph(_:)` and `iconTint(_:)`.
+    var textGlyph: String?
+    var tint: Color?
+    /// Set by `secondaryAccent()`.
+    var usesSecondaryAccent = false
+    /// Set by `init(icon:keyHints:)`.
+    var keyHints: [KeyHint] = []
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
@@ -26,6 +44,17 @@ public struct AinkradEmptyState: View {
         self.actionTitle = actionTitle
         self.action = action
     }
+    /// No title and no message: the icon over one line of shortcuts, each an
+    /// outlined keycap and its action, joined by `·` — Forge's empty editor
+    /// (mockup 19 A, FP108: `⌘P open a file · ⌘⇧P commands · ⌃⌘O switch
+    /// workspace`). Under Glass the same layout, since Apple's
+    /// content-unavailable view needs a title. Pair with `glyph(_:)` and
+    /// `iconTint(_:)` for the faint ⚒.
+    public init(icon: String, keyHints: [KeyHint]) {
+        self.init(icon: icon, title: "", message: "")
+        self.keyHints = keyHints
+    }
+
     /// Whether a call-to-action button is present.
     public var hasAction: Bool { action != nil && actionTitle != nil }
     /// Whether a secondary button is present.
@@ -40,10 +69,49 @@ public struct AinkradEmptyState: View {
         return copy
     }
 
+    /// Draws a text glyph (`"❖"`, `"⚒"`) in place of the SF Symbol `icon`,
+    /// as the mockups' `.empty .glyph` (Grimoire's no-threads state, Forge's
+    /// empty editor).
+    public func glyph(_ glyph: String) -> Self {
+        var copy = self
+        copy.textGlyph = glyph
+        return copy
+    }
+
+    /// Colours the icon or glyph — e.g. the secondary accent at 80 %, the
+    /// mockups' cyan glyph — instead of the skin's faint foreground.
+    public func iconTint(_ color: Color) -> Self {
+        var copy = self
+        copy.tint = color
+        return copy
+    }
+
+    /// Draws the buttons with `AinkradButton.secondaryAccent()`: the
+    /// secondary button's text and rim in the cyan secondary accent, as
+    /// Grimoire's no-threads "Open folder…" (GP44). The primary is unchanged.
+    public func secondaryAccent() -> Self {
+        var copy = self
+        copy.usesSecondaryAccent = true
+        return copy
+    }
+
+    @ViewBuilder private var iconView: some View {
+        if let textGlyph {
+            // A text glyph takes no symbol sizing (Glass): give it the display font.
+            Text(textGlyph).font(skin.font(skin.components.emptyState.glyphFont, typography: typo))
+        } else {
+            Image(systemName: icon)
+        }
+    }
+
     /// The secondary + primary buttons, in that order.
     @ViewBuilder private var actionButtons: some View {
         if hasSecondaryAction, let secondaryTitle, let secondary {
-            AinkradButton(title: secondaryTitle, style: .secondary, action: secondary)
+            if usesSecondaryAccent {
+                AinkradButton(title: secondaryTitle, style: .secondary, action: secondary).secondaryAccent()
+            } else {
+                AinkradButton(title: secondaryTitle, style: .secondary, action: secondary)
+            }
         }
         if hasAction, let actionTitle, let action {
             AinkradButton(title: actionTitle, style: .primary, action: action)
@@ -51,10 +119,20 @@ public struct AinkradEmptyState: View {
     }
 
     @ViewBuilder public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass {
+        if !keyHints.isEmpty {
+            keyHintBody
+        } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: Apple's content-unavailable view.
             ContentUnavailableView {
-                Label(title, systemImage: icon)
+                if textGlyph == nil, tint == nil {
+                    Label(title, systemImage: icon)
+                } else {
+                    Label {
+                        Text(title)
+                    } icon: {
+                        iconView.foregroundStyle(tint ?? .secondary)
+                    }
+                }
             } description: {
                 Text(message)
             } actions: {
@@ -65,12 +143,33 @@ public struct AinkradEmptyState: View {
         }
     }
 
+    private var keyHintBody: some View {
+        let empty = skin.components.emptyState
+        return VStack(spacing: skin.spacing.sm) {
+            iconView
+                .font(skin.font(empty.glyphFont, typography: typo))
+                .foregroundStyle(tint ?? skin.color(empty.glyphColor))
+            HStack(spacing: skin.size.s4) {
+                ForEach(Array(keyHints.enumerated()), id: \.offset) { index, hint in
+                    if index > 0 { Text("·").padding(.horizontal, skin.size.s2) }
+                    AinkradKbd(hint.keys).outlined()
+                    Text(hint.label)
+                }
+            }
+            .font(AinkradFontResolver.font(size: 12, typography: typo))
+            .foregroundStyle(skin.color(empty.messageColor))
+            .lineLimit(1)
+        }
+        .padding(skin.spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var kitBody: some View {
         let empty = skin.components.emptyState
         return VStack(spacing: skin.spacing.md) {
-            Image(systemName: icon)
+            iconView
                 .font(skin.font(empty.glyphFont, typography: typo))
-                .foregroundStyle(skin.color(empty.glyphColor))
+                .foregroundStyle(tint ?? skin.color(empty.glyphColor))
             VStack(spacing: skin.spacing.xs) {
                 Text(title)
                     .font(skin.font(empty.titleFont, typography: typo))

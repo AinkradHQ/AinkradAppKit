@@ -20,6 +20,8 @@ public struct AinkradMenuItem: Identifiable {
     public let action: () -> Void
     /// Set by `startingGroup()`.
     var startsGroup = false
+    /// Set by `tint(_:)`.
+    var tintColor: Color?
 
     public init(
         title: String, systemName: String? = nil, shortcut: String? = nil,
@@ -40,6 +42,17 @@ public struct AinkradMenuItem: Identifiable {
     public func startingGroup() -> Self {
         var copy = self
         copy.startsGroup = true
+        return copy
+    }
+
+    /// Draws this item's title, icon and shortcut in `color` in the kit menu
+    /// (including under Glass with `kitMenuUnderGlass()`) — Forge's amber
+    /// "not installed" language-server rows (mockup 09, FP74). Apple's own
+    /// menu under Glass draws every item in the system colour, so the tint
+    /// does not show there.
+    public func tint(_ color: Color) -> Self {
+        var copy = self
+        copy.tintColor = color
         return copy
     }
 }
@@ -157,7 +170,8 @@ private struct AinkradContextMenuRow: View {
     @State private var hovering = false
 
     private var tint: Color {
-        item.isDestructive ? statusColors.danger : skin.color(skin.components.contextMenu.tint)
+        if let tintColor = item.tintColor { return tintColor }
+        return item.isDestructive ? statusColors.danger : skin.color(skin.components.contextMenu.tint)
     }
 
     var body: some View {

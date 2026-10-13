@@ -37,6 +37,9 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     // parameter is not ABI-compatible).
     var usesPaletteSuggestionRows = false
     var sendTitle: String?
+    var sendGlyph: String?
+    var stopTitle: String?
+    var onStop: (() -> Void)?
 
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
@@ -99,6 +102,26 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         return copy
     }
 
+    /// Send as the round icon button holding a text glyph — `"↵"`, as
+    /// Grimoire's busy composer queues the next message (mockup 01) — instead
+    /// of the ↑ symbol. `sendTitle(_:)` wins when both are set.
+    public func sendGlyph(_ glyph: String) -> Self {
+        var copy = self
+        copy.sendGlyph = glyph
+        return copy
+    }
+
+    /// A Stop button just before Send while `action` is non-nil — the
+    /// mockups' red outline `"■ Stop"` (`AinkradButton(style: .danger)
+    /// .outlined()`), e.g. while the agent works. It stays live when sending
+    /// is not allowed; pass `nil` to hide it.
+    public func stopButton(_ title: String, action: (() -> Void)?) -> Self {
+        var copy = self
+        copy.stopTitle = title
+        copy.onStop = action
+        return copy
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.spacing.sm) {
             chips
@@ -115,6 +138,9 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 leading
                 Spacer(minLength: 8)
                 trailing
+                if let stopTitle, let onStop {
+                    AinkradButton(title: stopTitle, style: .danger, action: onStop).outlined().fixedSize()
+                }
                 sendButton
                     .disabled(!canSend)
                     .opacity(canSend ? 1 : skin.opacity.o40)
@@ -142,6 +168,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
             AinkradButton(title: sendTitle, style: .primary) { onSend() }
         } else {
             AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") { onSend() }
+                .textGlyph(sendGlyph)
         }
     }
 
