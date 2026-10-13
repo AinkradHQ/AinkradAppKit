@@ -25,4 +25,17 @@ struct KitParityBatch3Tests {
         #expect(!AinkradButton(title: "Replace All") {}.isCompact)
         #expect(AinkradButton(title: "Replace All") {}.compact().isCompact)
     }
+
+    @Test("a glyph Send and a Stop button are opt-in")
+    func composerGlyphAndStop() {
+        let plain = KitParityBatch2Tests.composer()
+        #expect(plain.sendGlyph == nil)
+        #expect(plain.onStop == nil)
+        let busy = plain.sendGlyph("↵").stopButton("■ Stop") {}
+        #expect(busy.sendGlyph == "↵")
+        #expect(busy.stopTitle == "■ Stop")
+        #expect(busy.onStop != nil)
+        #expect(plain.stopButton("■ Stop", action: nil).onStop == nil)
+        #expect(AinkradIconButton(systemName: "arrow.up") {}.textGlyph("↵").textGlyph == "↵")
+    }
 }

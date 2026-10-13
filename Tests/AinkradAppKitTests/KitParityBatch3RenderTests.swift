@@ -54,7 +54,21 @@ struct KitParityBatch3RenderTests {
                     AinkradButton(title: "Replace All", style: .primary) {}
                 }
             },
+            fixture("composer-busy-stop-queue", 480, 250) {
+                VStack(spacing: 12) {
+                    composer(text: "Run the ABI check again on Xcode beta").sendGlyph("↵").stopButton("■ Stop") {}
+                    composer(text: "").stopButton("■ Stop", action: nil)
+                }
+                .frame(width: 440)
+            },
         ]
+    }
+
+    static func composer(text: String) -> AinkradComposer<EmptyView, Text, Text> {
+        AinkradComposer(
+            text: .constant(text), placeholder: "Message Claude… (/ for commands, @ for files)", isEditable: true,
+            canSend: true, autoFocus: false, suggestions: { _ in [] }, onPick: { _, _ in }, onDrop: nil,
+            onSend: {}, chips: { EmptyView() }, leading: { Text("MODE Ask") }, trailing: { Text("📎") })
     }
 
     /// The fixture on the Neon background, as both the off-screen and the
