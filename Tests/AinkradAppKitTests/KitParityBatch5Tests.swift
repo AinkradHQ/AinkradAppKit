@@ -33,4 +33,14 @@ struct KitParityBatch5Tests {
         #expect(area.fontSize == nil)
         #expect(area.fontSize(12.5).fontSize == 12.5)
     }
+
+    @Test("a field's height and chamfer are opt-in")
+    func fieldHeightAndChamfer() {
+        let text = AinkradTextField(text: .constant(""), placeholder: "")
+        #expect(text.fieldHeight == nil && !text.isChamfered)
+        #expect(text.fieldHeight(28).fieldHeight == 28 && text.chamfered().isChamfered)
+        let search = AinkradSearchField(text: .constant(""), placeholder: "")
+        #expect(search.fieldHeight == nil && !search.isChamfered)
+        #expect(search.fieldHeight(28).fieldHeight == 28 && search.chamfered().isChamfered)
+    }
 }

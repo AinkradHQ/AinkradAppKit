@@ -42,7 +42,29 @@ struct KitParityBatch5RenderTests {
                 }
                 .frame(width: 440)
             },
+            fixture("fields-height-chamfer", 300, 230) {
+                VStack(spacing: 8) {
+                    sidebarFields.chamfered()
+                    AinkradSearchField(text: .constant("isActive"), placeholder: "Replace").codeQuery()
+                        .fieldHeight(28).chamfered()
+                    AinkradTextField(text: .constant("Sources/**, Tests/**"), placeholder: "")
+                        .leadingLabel("include").compact().fieldHeight(24).chamfered()
+                    AinkradTextField(text: .constant("isActive"), placeholder: "").fieldHeight(28).chamfered()
+                    sidebarFields
+                }
+                .frame(width: 260)
+            },
         ]
+    }
+
+    /// Mockup 07's search field with its toggles, 28 pt tall.
+    static var sidebarFields: AinkradSearchField {
+        AinkradSearchField(text: .constant("isSelected"), placeholder: "Search").codeQuery().fieldHeight(28)
+            .trailingAccessory {
+                AinkradFieldToggle("Aa", isOn: .constant(true), help: "Match case")
+                AinkradFieldToggle("⌶", isOn: .constant(false), help: "Whole word")
+                AinkradFieldToggle("✱", isOn: .constant(false), help: "Regular expression")
+            }
     }
 
     /// Mockup 17's Ask card request.
@@ -87,6 +109,24 @@ struct KitParityBatch5RenderTests {
         }
         let area = AinkradTextArea(text: .constant(Self.askText), placeholder: "", minHeight: 54)
         #expect(Self.differs(try shot(area), try shot(area.fontSize(12.5)), rows: 16..<70))
+    }
+
+    @Test("a field height replaces the padding; the default stays 33")
+    func fieldHeights() {
+        let text = AinkradTextField(text: .constant("isActive"), placeholder: "")
+        #expect(Self.fittingHeight(text) == 33)
+        #expect(Self.fittingHeight(text.fieldHeight(28)) == 28)
+        #expect(Self.fittingHeight(Self.sidebarFields) == 28)
+    }
+
+    @Test("a chamfered field changes only its chrome")
+    func chamferedField() throws {
+        func shot(_ field: AinkradTextField) throws -> NSBitmapImageRep {
+            try #require(Self.render(field.frame(width: 260), width: 300, height: 70))
+        }
+        let field = AinkradTextField(text: .constant("isActive"), placeholder: "")
+        #expect(Self.differs(try shot(field), try shot(field.chamfered()), rows: 16..<49))
+        #expect(!Self.differs(try shot(field), try shot(field.chamfered()), rows: 52..<70))
     }
 
     @Test func rendersEveryFixture() {

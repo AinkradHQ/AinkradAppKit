@@ -116,6 +116,10 @@ public struct AinkradTextField: View {
     var label: String?
     /// Set by `compact()`.
     var isCompact = false
+    /// Set by `fieldHeight(_:)`.
+    var fieldHeight: CGFloat?
+    /// Set by `chamfered()`.
+    var isChamfered = false
     @Environment(\.ainkradTheme) private var theme
 
     public init(text: Binding<String>, placeholder: String) {
@@ -167,6 +171,26 @@ public struct AinkradTextField: View {
         return copy
     }
 
+    /// Draws the field exactly `height` points tall, its text centred,
+    /// instead of padding it — Forge's rename and go-to-line fields at the
+    /// mockups' 28 (`.sfield`, mockups 07 and 11; the default is 33). Under
+    /// Glass the field becomes a glass capsule of that height.
+    public func fieldHeight(_ height: CGFloat) -> Self {
+        var copy = self
+        copy.fieldHeight = height
+        return copy
+    }
+
+    /// The mockups' `.sfield.cut` under Neon: an 8 pt chamfer on the top-left
+    /// and bottom-right corners, a 1 pt cyan rim (secondary accent, 45 %) and
+    /// the strong elevated fill, with the usual focus ring once focused.
+    /// Glass keeps its rounded field.
+    public func chamfered() -> Self {
+        var copy = self
+        copy.isChamfered = true
+        return copy
+    }
+
     /// The text font under `compact()`: 12 pt mono.
     private var compactFont: Font { AinkradFontResolver.font(size: 12, mono: true, typography: typo) }
 
@@ -181,7 +205,7 @@ public struct AinkradTextField: View {
     }
 
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass, label != nil || isCompact {
+        if #available(macOS 26, *), skin.usesNativeGlass, label != nil || isCompact || fieldHeight != nil {
             HStack(spacing: AinkradSpacing.xs) {
                 labelView
                 focusBound(
@@ -192,7 +216,7 @@ public struct AinkradTextField: View {
                         })
             }
             .padding(.horizontal, isCompact ? skin.size.s10 : AinkradSpacing.md)
-            .padding(.vertical, isCompact ? skin.size.s4 : AinkradSpacing.sm)
+            .modifier(FieldHeight(height: fieldHeight, padding: isCompact ? skin.size.s4 : AinkradSpacing.sm))
             .glassEffect(.regular, in: .capsule)
             .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
         } else if #available(macOS 26, *), skin.usesNativeGlass {
@@ -210,9 +234,8 @@ public struct AinkradTextField: View {
     }
 
     private var kitBody: some View {
-        let field = skin.roles.field
         let tokens = skin.components.textField
-        let shape = AinkradSkinShape(token: field.shape)
+        let chrome = FieldChrome(skin: skin, chamfered: isChamfered, state: state)
         return HStack(spacing: AinkradSpacing.xs) {
             labelView
             focusBound(TextField(placeholder, text: $text))
@@ -222,13 +245,8 @@ public struct AinkradTextField: View {
                 .tint(skin.color(skin.palette.accentSecondary))
         }
         .padding(.horizontal, isCompact ? skin.size.s8 : AinkradSpacing.md)
-        .padding(.vertical, isCompact ? skin.size.s4 : AinkradSpacing.sm)
-        .background(shape.fill(skin.color(field.fill)))
-        .overlay(
-            shape.strokeBorder(
-                skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
-        )
-        .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
+        .modifier(FieldHeight(height: fieldHeight, padding: isCompact ? skin.size.s4 : AinkradSpacing.sm))
+        .modifier(chrome)
         .animation(AinkradMotion.hover, value: isFocused)
         .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
     }
@@ -286,6 +304,10 @@ public struct AinkradSearchField: View {
     var accessory: AnyView?
     /// Set by `codeQuery()`.
     var isCodeQuery = false
+    /// Set by `fieldHeight(_:)`.
+    var fieldHeight: CGFloat?
+    /// Set by `chamfered()`.
+    var isChamfered = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -329,6 +351,26 @@ public struct AinkradSearchField: View {
         return copy
     }
 
+    /// Draws the field exactly `height` points tall, its content centred,
+    /// instead of padding it — Forge's sidebar search and replace fields at
+    /// the mockups' 28 (`.sfield`, mockup 07; the default is 33). Neon and
+    /// Glass.
+    public func fieldHeight(_ height: CGFloat) -> Self {
+        var copy = self
+        copy.fieldHeight = height
+        return copy
+    }
+
+    /// The mockups' `.sfield.cut` under Neon: an 8 pt chamfer on the top-left
+    /// and bottom-right corners, a 1 pt cyan rim (secondary accent, 45 %) and
+    /// the strong elevated fill, with the usual focus ring once focused.
+    /// Glass keeps its capsule.
+    public func chamfered() -> Self {
+        var copy = self
+        copy.isChamfered = true
+        return copy
+    }
+
     /// The query font under `codeQuery()`: 12 pt mono.
     private var codeFont: Font { AinkradFontResolver.font(size: 12, mono: true, typography: typo) }
 
@@ -367,7 +409,7 @@ public struct AinkradSearchField: View {
             accessory
         }
         .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
+        .modifier(FieldHeight(height: fieldHeight, padding: AinkradSpacing.sm))
         .glassEffect(.regular, in: .capsule)
     }
 
@@ -386,9 +428,7 @@ public struct AinkradSearchField: View {
     }
 
     private var kitBody: some View {
-        let field = skin.roles.field
         let search = skin.components.searchField
-        let shape = AinkradSkinShape(token: field.shape)
         return HStack(spacing: AinkradSpacing.sm) {
             if !isCodeQuery {
                 Image(systemName: "magnifyingglass")
@@ -414,13 +454,8 @@ public struct AinkradSearchField: View {
             accessory
         }
         .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
-        .background(shape.fill(skin.color(field.fill)))
-        .overlay(
-            shape.strokeBorder(
-                skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
-        )
-        .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
+        .modifier(FieldHeight(height: fieldHeight, padding: AinkradSpacing.sm))
+        .modifier(FieldChrome(skin: skin, chamfered: isChamfered, state: state))
         .animation(AinkradMotion.hover, value: isFocused)
     }
 
