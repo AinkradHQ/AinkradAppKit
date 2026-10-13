@@ -187,4 +187,10 @@ struct KitParityBatch2Tests {
         #expect(AinkradDiffReviewPresentation.gutterNumber(added) == "9")
         #expect(AinkradDiffReviewPresentation.gutterNumber(nil) == "")
     }
+
+    @Test("a secondary-accent button is opt-in")
+    func buttonSecondaryAccent() {
+        #expect(!AinkradButton(title: "Peek", style: .secondary) {}.usesSecondaryAccent)
+        #expect(AinkradButton(title: "Peek", style: .secondary) {}.secondaryAccent().usesSecondaryAccent)
+    }
 }

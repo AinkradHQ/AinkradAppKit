@@ -45,6 +45,8 @@ public struct AinkradButton: View {
     private var isLoading: Bool = false
     /// Set by `borderless()`.
     var isBorderless = false
+    /// Set by `secondaryAccent()`.
+    var usesSecondaryAccent = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -87,8 +89,21 @@ public struct AinkradButton: View {
         return copy
     }
 
+    /// The mockups' `.btn`: a `.ghost` or `.secondary` button's text (and,
+    /// under Neon, its rim and glow) in the secondary accent — cyan — instead
+    /// of the primary blue. Under Glass a ghost's text takes the secondary
+    /// accent; a secondary stays Apple's untinted glass button, whose
+    /// foreground text the mockup's Glass `.btn` matches. No effect on
+    /// `.primary` or `.danger`.
+    public func secondaryAccent() -> Self {
+        var copy = self
+        copy.usesSecondaryAccent = true
+        return copy
+    }
+
     private var accentColor: Color {
-        skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
+        if usesSecondaryAccent, !style.usesAccentFill { return skin.color(skin.palette.accentSecondary) }
+        return skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
     }
     private var foreground: Color { style.usesAccentFill ? accentColor.contrastingText : accentColor }
 

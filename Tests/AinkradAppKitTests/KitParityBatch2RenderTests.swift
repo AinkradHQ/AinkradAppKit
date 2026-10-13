@@ -318,4 +318,20 @@ struct KitParityBatch2RenderTests {
                 .lineNumberGutter().unchangedLineFolds()
         }
     }
+
+    @Test func secondaryAccentButtons() {
+        Self.shoot("button-secondary-accent", width: 480, height: 110) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    AinkradButton(title: "Cancel", style: .ghost) {}.borderless().secondaryAccent()
+                    AinkradButton(title: "Open folder…", style: .secondary) {}.secondaryAccent()
+                    AinkradButton(title: "Start ⌘↵", style: .primary) {}.secondaryAccent()
+                }
+                HStack(spacing: 8) {
+                    AinkradButton(title: "Cancel", style: .ghost) {}.borderless()
+                    AinkradButton(title: "Open folder…", style: .secondary) {}
+                }
+            }
+        }
+    }
 }
