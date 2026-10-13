@@ -304,4 +304,18 @@ struct KitParityBatch2RenderTests {
             .frame(width: 230)
         }
     }
+
+    @Test func diffGutterAndFolds() {
+        let old = (1...22).map { "line \($0)" }
+        var new = old
+        new[7] = "    let isActive: Bool"
+        new[18] = "            if isActive { Capsule().glassEffect(.regular) }"
+        let diff = AinkradDiffEngine.compute(
+            old: old.joined(separator: "\n"), new: new.joined(separator: "\n"), path: "f.swift", context: 1)
+        Self.shoot("diff-gutter-folds", width: 640, height: 260) {
+            AinkradDiffReview(fileDiff: diff, rejectedHunkIDs: .constant([]))
+                .hidesHeader().keepUndoHunkControls().editorLines().syntaxColoured()
+                .lineNumberGutter().unchangedLineFolds()
+        }
+    }
 }

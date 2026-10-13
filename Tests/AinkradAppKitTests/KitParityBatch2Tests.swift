@@ -165,4 +165,26 @@ struct KitParityBatch2Tests {
         #expect(!ainkradMenuItemStartsGroup(items, at: 1))
         #expect(ainkradMenuItemStartsGroup(items, at: 2))
     }
+
+    @Test("diff gutter and unchanged folds are opt-in and count the original file")
+    func diffGutterAndFolds() {
+        let diff = AinkradDiffEngine.compute(old: "a", new: "b", path: "/f", context: 2)
+        let plain = AinkradDiffReview(fileDiff: diff, rejectedHunkIDs: .constant([]))
+        #expect(!plain.usesLineGutter && !plain.usesUnchangedFolds)
+        let editor = plain.lineNumberGutter().unchangedLineFolds()
+        #expect(editor.usesLineGutter && editor.usesUnchangedFolds)
+
+        let hunks = [
+            AinkradDiffHunk(id: 0, oldStart: 6, oldCount: 4, newStart: 6, newCount: 4, lines: []),
+            AinkradDiffHunk(id: 1, oldStart: 19, oldCount: 3, newStart: 19, newCount: 3, lines: []),
+        ]
+        #expect(AinkradDiffReviewPresentation.unchangedLinesBefore(hunks, at: 0) == 0)
+        #expect(AinkradDiffReviewPresentation.unchangedLinesBefore(hunks, at: 1) == 9)
+        #expect(AinkradDiffReviewPresentation.unchangedLinesBefore(hunks, at: 2) == 0)
+        let removed = AinkradDiffLine(kind: .deletion, oldNumber: 8, newNumber: nil, text: "x")
+        let added = AinkradDiffLine(kind: .insertion, oldNumber: nil, newNumber: 9, text: "y")
+        #expect(AinkradDiffReviewPresentation.gutterNumber(removed) == "8")
+        #expect(AinkradDiffReviewPresentation.gutterNumber(added) == "9")
+        #expect(AinkradDiffReviewPresentation.gutterNumber(nil) == "")
+    }
 }
