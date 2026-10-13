@@ -193,4 +193,13 @@ struct KitParityBatch2Tests {
         #expect(!AinkradButton(title: "Peek", style: .secondary) {}.usesSecondaryAccent)
         #expect(AinkradButton(title: "Peek", style: .secondary) {}.secondaryAccent().usesSecondaryAccent)
     }
+
+    @Test("decision-bar action styling is opt-in and reaches its button")
+    func decisionActionOptions() {
+        let plain = AinkradDecisionBar.Action(title: "Deny…", style: .ghost) {}
+        #expect(!plain.isBorderless && !plain.usesSecondaryAccent)
+        #expect(!plain.button.isBorderless && !plain.button.usesSecondaryAccent)
+        let deny = plain.borderless().secondaryAccent()
+        #expect(deny.button.isBorderless && deny.button.usesSecondaryAccent)
+    }
 }

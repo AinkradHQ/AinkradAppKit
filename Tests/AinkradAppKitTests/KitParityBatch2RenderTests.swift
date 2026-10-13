@@ -257,6 +257,18 @@ struct KitParityBatch2RenderTests {
             )
             .labelCasedCaption()
         }
+        Self.shoot("decision-bar-mockup-04", width: 760, height: 90) {
+            AinkradDecisionBar(
+                icon: "bolt.horizontal", iconTint: .secondary, caption: "Approval required",
+                title: "Run git push -u origin feat/glass-sidebar",
+                actions: [
+                    AinkradDecisionBar.Action(title: "Deny…", style: .ghost) {}.borderless().secondaryAccent(),
+                    AinkradDecisionBar.Action(title: "Always allow", style: .secondary) {}.secondaryAccent(),
+                    AinkradDecisionBar.Action(title: "Allow once ↵", style: .primary) {},
+                ]
+            )
+            .labelCasedCaption()
+        }
     }
 
     @Test func borderlessGhost() {
