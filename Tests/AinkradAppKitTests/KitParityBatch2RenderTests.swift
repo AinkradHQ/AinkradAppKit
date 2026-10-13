@@ -166,4 +166,27 @@ struct KitParityBatch2RenderTests {
             .frame(width: 256)
         }
     }
+
+    @Test func rowSelectionStyles() {
+        func row(_ title: String, _ selected: Bool, _ hovered: Bool, _ style: AinkradRowSelectionStyle) -> some View {
+            Text(title)
+                .font(.system(size: 12.5))
+                .foregroundStyle(.white.opacity(selected ? 1 : 0.6))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8).padding(.vertical, style == .card ? 9 : 3)
+                .ainkradRowBackground(isSelected: selected, isHovered: hovered, style: style)
+        }
+        Self.shoot("row-selection-styles", width: 300, height: 230) {
+            VStack(spacing: 2) {
+                row("SidebarModel.swift", false, false, .fill)
+                row("SidebarRow.swift", true, false, .fill)
+                row("SidebarSort.swift (hover)", false, true, .fill)
+                Spacer().frame(height: 12)
+                row("Liquid Glass sidebar polish", true, false, .card)
+                row("Release 0.31 and pin round (hover)", false, true, .card)
+                row("Settings search", false, false, .card)
+            }
+            .frame(width: 268)
+        }
+    }
 }

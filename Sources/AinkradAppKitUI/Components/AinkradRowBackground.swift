@@ -68,3 +68,66 @@ extension View {
         modifier(AinkradRowBackground(rowState: ainkradRowState(isSelected: isSelected, isHovered: isHovered)))
     }
 }
+
+/// How a row draws its selection in `ainkradRowBackground(isSelected:isHovered:style:)`.
+public enum AinkradRowSelectionStyle: Sendable, Equatable {
+    /// Forge's file tree (`.f.sel`): a 6 pt rounded wash in the primary accent
+    /// at 22 % when selected, a faint white wash on hover. The same in Neon
+    /// and Glass; no accent bar.
+    case fill
+    /// Grimoire's thread list (`.thread.sel`): under Neon a chamfered card
+    /// (8 pt cut) filled with the primary accent at 22 %; under Glass a 12 pt
+    /// rounded card with the same fill and a white 12 % hairline. Hover is the
+    /// faint 6 pt wash.
+    case card
+}
+
+private struct AinkradStyledRowBackground: ViewModifier {
+    let rowState: AinkradRowState
+    let style: AinkradRowSelectionStyle
+
+    @Environment(\.ainkradSkin) private var skin
+    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .background { background }
+            .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: rowState)
+    }
+
+    @ViewBuilder private var background: some View {
+        let selectedFill = theme.accentPrimary.opacity(skin.opacity.o22)
+        switch (rowState, style) {
+        case (.rest, _):
+            Color.clear
+        case (.hovered, _):
+            RoundedRectangle(cornerRadius: skin.size.s6, style: .continuous)
+                .fill(skin.color(skin.palette.white).opacity(skin.opacity.o05))
+        case (.selected, .fill):
+            RoundedRectangle(cornerRadius: skin.size.s6, style: .continuous).fill(selectedFill)
+        case (.selected, .card) where skin.usesNativeGlass:
+            RoundedRectangle(cornerRadius: skin.size.s12, style: .continuous)
+                .fill(selectedFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: skin.size.s12, style: .continuous)
+                        .strokeBorder(skin.color(skin.palette.white).opacity(skin.opacity.o12), lineWidth: 1))
+        case (.selected, .card):
+            skin.shape(cut: skin.cut.c8).fill(selectedFill)
+        }
+    }
+}
+
+extension View {
+    /// A row's hover and selected background in one of the mockups'
+    /// selection styles (see `AinkradRowSelectionStyle`). Unlike the plain
+    /// `ainkradRowBackground(isSelected:isHovered:)` it leaves the row's text
+    /// colour to the caller and draws no accent bar.
+    public func ainkradRowBackground(
+        isSelected: Bool, isHovered: Bool, style: AinkradRowSelectionStyle
+    ) -> some View {
+        modifier(
+            AinkradStyledRowBackground(
+                rowState: ainkradRowState(isSelected: isSelected, isHovered: isHovered), style: style))
+    }
+}
