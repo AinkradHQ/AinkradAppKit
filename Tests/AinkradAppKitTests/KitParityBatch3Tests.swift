@@ -114,4 +114,10 @@ struct KitParityBatch3Tests {
         #expect(!tabs.usesTextTabs)
         #expect(tabs.textTabs().usesTextTabs)
     }
+
+    @Test("a menu item tint is opt-in")
+    func menuItemTint() {
+        #expect(AinkradMenuItem(title: "sourcekit-lsp — ready") {}.tintColor == nil)
+        #expect(AinkradMenuItem(title: "ruby-lsp — not installed") {}.tint(.orange).tintColor != nil)
+    }
 }

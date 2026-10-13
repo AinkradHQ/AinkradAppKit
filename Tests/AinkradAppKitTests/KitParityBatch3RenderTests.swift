@@ -172,6 +172,18 @@ struct KitParityBatch3RenderTests {
                     AinkradTabs(tabs: ["Files", "Changes"], selection: .constant("Files")) { $0 }
                 }
             },
+            fixture("menu-item-tint", 320, 190) {
+                AinkradContextMenuList(
+                    items: [
+                        AinkradMenuItem(title: "● sourcekit-lsp — ready") {},
+                        AinkradMenuItem(title: "● ruby-lsp — not installed") {}
+                            .tint(AinkradSkin.standard.color(AinkradSkin.standard.palette.warning)),
+                        AinkradMenuItem(title: "Language servers settings…") {}.startingGroup(),
+                        AinkradMenuItem(title: "Restart", isDestructive: true) {},
+                    ], dismiss: {}
+                )
+                .frame(width: 260)
+            },
         ]
     }
 
