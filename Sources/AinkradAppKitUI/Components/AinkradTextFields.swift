@@ -120,6 +120,10 @@ public struct AinkradTextField: View {
     var fieldHeight: CGFloat?
     /// Set by `chamfered()`.
     var isChamfered = false
+    /// Set by `monospaced()`.
+    var isMonospaced = false
+    /// Set by `onReturn(_:)`.
+    var returnAction: ((EventModifiers) -> Void)?
     @Environment(\.ainkradTheme) private var theme
 
     public init(text: Binding<String>, placeholder: String) {
@@ -191,7 +195,29 @@ public struct AinkradTextField: View {
         return copy
     }
 
-    /// The text font under `compact()`: 12 pt mono.
+    /// The text in 12 pt mono, as the mockups' `.sfield .q` — Forge's rename
+    /// field (mockup 11). Neon and Glass; the field keeps its size and padding
+    /// (`compact()` already implies it).
+    public func monospaced() -> Self {
+        var copy = self
+        copy.isMonospaced = true
+        return copy
+    }
+
+    /// Calls `action` with the held modifiers when Return is pressed in the
+    /// field, and takes the key — so a caller can tell ↵ from ⇧↵ (Forge's
+    /// rename: ↵ previews, ⇧↵ renames now). Without it Return still ends
+    /// editing and fires the caller's `onSubmit`. Neon and Glass.
+    public func onReturn(_ action: @escaping (EventModifiers) -> Void) -> Self {
+        var copy = self
+        copy.returnAction = action
+        return copy
+    }
+
+    /// Whether the text is in `compactFont`: `compact()` or `monospaced()`.
+    private var usesMonoFont: Bool { isCompact || isMonospaced }
+
+    /// The text font under `compact()` or `monospaced()`: 12 pt mono.
     private var compactFont: Font { AinkradFontResolver.font(size: 12, mono: true, typography: typo) }
 
     @ViewBuilder private var labelView: some View {
@@ -212,8 +238,9 @@ public struct AinkradTextField: View {
                     TextField(placeholder, text: $text)
                         .textFieldStyle(.plain)
                         .apply { field in
-                            if isCompact { field.font(compactFont) } else { field }
-                        })
+                            if usesMonoFont { field.font(compactFont) } else { field }
+                        }
+                        .modifier(ReturnKey(action: returnAction)))
             }
             .padding(.horizontal, isCompact ? skin.size.s10 : AinkradSpacing.md)
             .modifier(FieldHeight(height: fieldHeight, padding: isCompact ? skin.size.s4 : AinkradSpacing.sm))
@@ -224,6 +251,10 @@ public struct AinkradTextField: View {
             TextField(placeholder, text: $text)
                 .textFieldStyle(.roundedBorder)
                 .controlSize(.large)
+                .apply { field in
+                    if isMonospaced { field.font(compactFont) } else { field }
+                }
+                .modifier(ReturnKey(action: returnAction))
                 .apply {
                     selectsBaseName || externalFocus != nil ? AnyView(focusBound($0)) : AnyView($0)
                 }
@@ -238,9 +269,9 @@ public struct AinkradTextField: View {
         let chrome = FieldChrome(skin: skin, chamfered: isChamfered, state: state)
         return HStack(spacing: AinkradSpacing.xs) {
             labelView
-            focusBound(TextField(placeholder, text: $text))
+            focusBound(TextField(placeholder, text: $text).modifier(ReturnKey(action: returnAction)))
                 .textFieldStyle(.plain)
-                .font(isCompact ? compactFont : skin.font(tokens.font, typography: typo))
+                .font(usesMonoFont ? compactFont : skin.font(tokens.font, typography: typo))
                 .foregroundStyle(skin.color(skin.text.primary))
                 .tint(skin.color(skin.palette.accentSecondary))
         }
@@ -253,38 +284,6 @@ public struct AinkradTextField: View {
 
     private var state: AinkradControlState {
         isFocused ? [.focused] : []
-    }
-}
-
-/// `selectsNameWithoutExtension()`: once the field gains focus — and the field
-/// editor has selected everything, a turn later — narrows the selection to the
-/// base name. The field editor is found through the key window, or any window
-/// whose first responder is editing this text.
-private struct BaseNameSelection: ViewModifier {
-    let enabled: Bool
-    let isFocused: Bool
-    let text: String
-
-    func body(content: Content) -> some View {
-        if enabled {
-            content.onChange(of: isFocused) { _, focused in
-                guard focused else { return }
-                let text = text
-                DispatchQueue.main.async { Self.select(ainkradBaseNameRange(text), in: text) }
-            }
-        } else {
-            content
-        }
-    }
-
-    @MainActor static func select(_ range: NSRange, in text: String) {
-        let windows = [NSApp.keyWindow].compactMap { $0 } + NSApp.windows
-        for window in windows {
-            if let editor = window.firstResponder as? NSTextView, editor.isFieldEditor, editor.string == text {
-                editor.setSelectedRange(range)
-                return
-            }
-        }
     }
 }
 

@@ -35,6 +35,10 @@ public struct AinkradEmptyState: View {
     var keyHints: [KeyHint] = []
     /// Set by `compact()`.
     var isCompact = false
+    /// Set by `buttonHeight(_:)`.
+    var buttonHeight: CGFloat?
+    /// Set by `plainPrimary()`.
+    var usesPlainPrimary = false
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
@@ -118,6 +122,39 @@ public struct AinkradEmptyState: View {
         return copy
     }
 
+    /// Draws the buttons exactly `height` points tall
+    /// (`AinkradButton.buttonHeight(_:)`) — mockup 19's 26 pt sidebar
+    /// empty-state buttons, with `compact()`. Neon and Glass.
+    public func buttonHeight(_ height: CGFloat) -> Self {
+        var copy = self
+        copy.buttonHeight = height
+        return copy
+    }
+
+    /// Draws the call-to-action unfilled, as the mockups' plain `.btn`: a
+    /// `.secondary` button in the secondary accent (cyan text and rim under
+    /// Neon, Apple's untinted glass button under Glass) — mockup 19's sidebar
+    /// empty states, where no button is filled. The secondary is unchanged.
+    public func plainPrimary() -> Self {
+        var copy = self
+        copy.usesPlainPrimary = true
+        return copy
+    }
+
+    /// The call-to-action button: `plainPrimary()`'s, else a `.primary`.
+    private func primaryButton(_ title: String, action: @escaping () -> Void) -> AinkradButton {
+        usesPlainPrimary
+            ? sized(AinkradButton(title: title, style: .secondary, action: action).secondaryAccent())
+            : sized(AinkradButton(title: title, style: .primary, action: action))
+    }
+
+    /// `button` at `buttonHeight(_:)`, if one is set.
+    private func sized(_ button: AinkradButton) -> AinkradButton {
+        var copy = button
+        copy.height = buttonHeight
+        return copy
+    }
+
     @ViewBuilder private var iconView: some View {
         if let textGlyph {
             // A text glyph takes no symbol sizing (Glass): give it the display font.
@@ -140,13 +177,13 @@ public struct AinkradEmptyState: View {
     @ViewBuilder private var actionButtons: some View {
         if hasSecondaryAction, let secondaryTitle, let secondary {
             if usesSecondaryAccent {
-                AinkradButton(title: secondaryTitle, style: .secondary, action: secondary).secondaryAccent()
+                sized(AinkradButton(title: secondaryTitle, style: .secondary, action: secondary).secondaryAccent())
             } else {
-                AinkradButton(title: secondaryTitle, style: .secondary, action: secondary)
+                sized(AinkradButton(title: secondaryTitle, style: .secondary, action: secondary))
             }
         }
         if hasAction, let actionTitle, let action {
-            AinkradButton(title: actionTitle, style: .primary, action: action)
+            primaryButton(actionTitle, action: action)
         }
     }
 
@@ -229,11 +266,11 @@ public struct AinkradEmptyState: View {
     /// `actionButtons` as the mockups' small buttons.
     @ViewBuilder private var compactButtons: some View {
         if hasSecondaryAction, let secondaryTitle, let secondary {
-            let button = AinkradButton(title: secondaryTitle, style: .secondary, action: secondary).compact()
+            let button = sized(AinkradButton(title: secondaryTitle, style: .secondary, action: secondary).compact())
             usesSecondaryAccent ? button.secondaryAccent() : button
         }
         if hasAction, let actionTitle, let action {
-            AinkradButton(title: actionTitle, style: .primary, action: action).compact()
+            primaryButton(actionTitle, action: action).compact()
         }
     }
 

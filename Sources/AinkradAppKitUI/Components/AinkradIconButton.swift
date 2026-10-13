@@ -18,6 +18,8 @@ public struct AinkradIconButton: View {
     var textGlyphSize: CGFloat?
     /// Set by `bare()`.
     var isBare = false
+    /// Set by `outlineBox()`.
+    var isOutlineBox = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -93,6 +95,22 @@ public struct AinkradIconButton: View {
         return copy
     }
 
+    /// The mockups' `.icon-btn.cut` in Forge's drawer (12, 14) under Neon: at
+    /// rest the glyph at full foreground, a 1 pt rim of the secondary accent
+    /// at 45 % and no fill of its own, so the surface behind shows through;
+    /// hover as usual. A `textGlyph(_:size:)` glyph is set in the mono face,
+    /// whose ✕ is the small heavy cross the mockups' browser falls back to
+    /// (the UI face's is large and thin); ⤢ falls back to the same symbol
+    /// face either way. Glass keeps its glass circle, the glyph in mono too.
+    public func outlineBox() -> Self {
+        var copy = self
+        copy.isOutlineBox = true
+        return copy
+    }
+
+    /// Whether `outlineBox()`'s resting look is drawn.
+    private var outlineAtRest: Bool { isOutlineBox && !hovering }
+
     private var bareBody: some View {
         let button = Button(action: action) {
             glyph
@@ -112,6 +130,8 @@ public struct AinkradIconButton: View {
     /// `textGlyph(_:size:)`'s font, else the symbol font scaled off the frame.
     private func glyphFont(weight: Font.Weight) -> Font {
         if textGlyph != nil, let textGlyphSize {
+            // The mono face's ✕ is the browser's (Menlo's heavy 7 pt cross); ⤢ falls back alike.
+            if isOutlineBox { return AinkradFontResolver.font(size: textGlyphSize, mono: true, typography: typo) }
             return AinkradFontResolver.font(size: textGlyphSize, typography: typo)
         }
         return .system(size: glyphSize, weight: weight)  // design-lint: allow font-size caller-sized glyph
@@ -143,12 +163,15 @@ public struct AinkradIconButton: View {
         let button = Button(action: action) {
             glyph
                 .font(glyphFont(weight: .semibold))
-                .foregroundStyle(skin.color(btn.fg, state: state))
+                .foregroundStyle(outlineAtRest ? theme.foreground : skin.color(btn.fg, state: state))
                 .frame(width: size, height: size)
-                .background(shape.fill(skin.color(btn.fill, state: state)))
+                .background(shape.fill(outlineAtRest ? .clear : skin.color(btn.fill, state: state)))
                 .overlay(
                     shape.strokeBorder(
-                        skin.color(btn.stroke.color, state: state), lineWidth: btn.stroke.width.resolve(state))
+                        outlineAtRest
+                            ? skin.color(skin.palette.accentSecondary).opacity(skin.opacity.o45)
+                            : skin.color(btn.stroke.color, state: state),
+                        lineWidth: btn.stroke.width.resolve(state))
                 )
                 .shadow(color: skin.color(btn.glow.color, state: state), radius: btn.glow.radius.resolve(state))
                 .contentShape(shape)
