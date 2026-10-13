@@ -33,6 +33,13 @@ enum AinkradDiffReviewPresentation {
         flush()
         return rows
     }
+
+    /// The hunk control's text: the latch's "Accepted"/"Rejected", or the
+    /// review mockups' "✓ Keep" / "↶ Undo" under `keepUndoHunkControls()`.
+    static func hunkControlTitle(accepted: Bool, keepUndo: Bool) -> String {
+        if keepUndo { return accepted ? "✓ Keep" : "↶ Undo" }
+        return accepted ? "Accepted" : "Rejected"
+    }
 }
 
 /// Rich approval-card diff: a kit latch toggling unified/side-by-side (NO
@@ -47,15 +54,47 @@ public struct AinkradDiffReview: View {
     @Environment(\.ainkradStatusColors) private var statusColors
     @State private var sideBySide = false
     @Environment(\.ainkradReduceMotion) private var reduceMotion
+    // Opt-ins set by the modifier methods below (not init params: a defaulted
+    // parameter is not ABI-compatible).
+    var showsHeader = true
+    var callerSideBySide: Binding<Bool>?
+    var keepUndo = false
 
     public init(fileDiff: AinkradFileDiff, rejectedHunkIDs: Binding<Set<Int>>) {
         self.fileDiff = fileDiff
         self._rejectedHunkIDs = rejectedHunkIDs
     }
 
+    /// Drops the file-path + Split header so the caller can show the file in
+    /// its own row. Pair with `sideBySide(_:)` to keep Split reachable there,
+    /// e.g. `AinkradToggleButton(isOn: $split, title: "Split")`.
+    public func hidesHeader() -> Self {
+        var copy = self
+        copy.showsHeader = false
+        return copy
+    }
+
+    /// Lets the caller own the unified/side-by-side state (the header's Split
+    /// latch, when shown, drives the same binding).
+    public func sideBySide(_ isOn: Binding<Bool>) -> Self {
+        var copy = self
+        copy.callerSideBySide = isOn
+        return copy
+    }
+
+    /// Per-hunk control as the review mockups' text tick — "✓ Keep" in the
+    /// success colour, "↶ Undo" faint — instead of the Accepted/Rejected latch.
+    public func keepUndoHunkControls() -> Self {
+        var copy = self
+        copy.keepUndo = true
+        return copy
+    }
+
+    private var splitBinding: Binding<Bool> { callerSideBySide ?? $sideBySide }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.spacing.sm) {
-            header
+            if showsHeader { header }
             ForEach(fileDiff.hunks) { hunk in hunkBlock(hunk) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -68,7 +107,7 @@ public struct AinkradDiffReview: View {
                 .lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 8)
             AinkradToggleButton(
-                isOn: $sideBySide.animation(reduceMotion ? nil : AinkradMotion.present), title: "Split")
+                isOn: splitBinding.animation(reduceMotion ? nil : AinkradMotion.present), title: "Split")
         }
     }
 
@@ -81,9 +120,15 @@ public struct AinkradDiffReview: View {
                     .font(AinkradFontResolver.font(size: 9, mono: true, typography: typography)).foregroundStyle(
                         theme.foreground.opacity(skin.opacity.o40))
                 Spacer(minLength: 6)
-                AinkradToggleButton(isOn: acceptedBinding(hunk.id), title: rejected ? "Rejected" : "Accepted")
+                if keepUndo {
+                    DiffKeepUndoTick(accepted: acceptedBinding(hunk.id))
+                } else {
+                    AinkradToggleButton(
+                        isOn: acceptedBinding(hunk.id),
+                        title: AinkradDiffReviewPresentation.hunkControlTitle(accepted: !rejected, keepUndo: false))
+                }
             }
-            if sideBySide { splitRows(hunk) } else { unifiedRows(hunk) }
+            if splitBinding.wrappedValue { splitRows(hunk) } else { unifiedRows(hunk) }
         }
         .opacity(rejected ? skin.opacity.o50 : 1)
         .padding(.horizontal, skin.spacing.sm).padding(.vertical, skin.size.s6)
@@ -136,5 +181,37 @@ public struct AinkradDiffReview: View {
         case .deletion: return statusColors.danger
         case .context: return theme.foreground.opacity(skin.opacity.o60)
         }
+    }
+}
+
+/// The mockups' hunk tick: plain text, no capsule. Success-coloured while kept,
+/// faint (brightening on hover) once the change is marked for undo.
+private struct DiffKeepUndoTick: View {
+    @Binding var accepted: Bool
+    @Environment(\.ainkradSkin) private var skin
+    @Environment(\.ainkradTypography) private var typography
+    @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradStatusColors) private var statusColors
+    @Environment(\.ainkradReduceMotion) private var reduceMotion
+    @State private var hovering = false
+
+    var body: some View {
+        Button {
+            accepted.toggle()
+        } label: {
+            Text(AinkradDiffReviewPresentation.hunkControlTitle(accepted: accepted, keepUndo: true))
+                .font(AinkradFontResolver.font(size: 11, mono: false, typography: typography))
+                .foregroundStyle(
+                    accepted
+                        ? statusColors.success.opacity(hovering ? skin.opacity.o80 : 1)
+                        : theme.foreground.opacity(hovering ? skin.opacity.o70 : skin.opacity.o40)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(reduceMotion ? nil : AinkradMotion.hover, value: hovering)
+        .accessibilityLabel(accepted ? "Keep change" : "Undo change")
+        .accessibilityAddTraits(accepted ? .isSelected : [])
     }
 }
