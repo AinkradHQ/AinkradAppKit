@@ -267,6 +267,8 @@ public struct AinkradMenuButton<Label: View>: View {
     private let items: [AinkradMenuItem]
     private let maxHeight: CGFloat
     private var placement: AinkradPanelPlacement = .below
+    /// Set by `kitMenuUnderGlass()`.
+    var keepsKitMenuUnderGlass = false
     private let label: Label
 
     @State private var isPresented = false
@@ -303,8 +305,20 @@ public struct AinkradMenuButton<Label: View>: View {
         self.label = label()
     }
 
+    /// Keeps the kit's own floating menu under Liquid Glass instead of Apple's
+    /// pull-down. Apple's menu material is so clear that text behind it (a tab
+    /// strip, a list) reads through the items (FD20); the kit's menu is the
+    /// kit's panel surface (`AinkradPanel`), which a user can also turn solid
+    /// with Appearance → Overlays blur off. Opt in where the menu opens over
+    /// busy content. No effect outside Glass, which always uses the kit menu.
+    public func kitMenuUnderGlass() -> Self {
+        var copy = self
+        copy.keepsKitMenuUnderGlass = true
+        return copy
+    }
+
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass {
+        if #available(macOS 26, *), skin.usesNativeGlass, !keepsKitMenuUnderGlass {
             // Glass on macOS 26+: Apple's pull-down menu behind the caller's label.
             Menu {
                 NativeMenuItems(items: items)
