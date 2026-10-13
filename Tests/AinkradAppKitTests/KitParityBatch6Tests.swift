@@ -94,4 +94,38 @@ struct KitParityBatch6Tests {
         #expect(!KitParityBatch5RenderTests.differs(plain, outlined, rows: 0..<14))
         #expect(Self.fittingSize(Self.drawerButton("✕").outlineBox()) == CGSize(width: 30, height: 30))
     }
+
+    /// Mockup 19 A's empty Files tab, compact.
+    static var folderEmpty: AinkradEmptyState { KitParityBatch5RenderTests.folderEmpty.compact().secondaryAccent() }
+
+    static func height(_ state: AinkradEmptyState, skin: AinkradSkin = .standard) -> CGFloat {
+        fittingSize(state.fixedSize(horizontal: false, vertical: true).frame(width: 280), skin: skin).height
+    }
+
+    @Test("an empty state's button height and plain primary are opt-in")
+    func emptyStateOptIn() {
+        let state = Self.folderEmpty
+        #expect(state.buttonHeight == nil && !state.usesPlainPrimary)
+        #expect(state.buttonHeight(26).buttonHeight == 26 && state.plainPrimary().usesPlainPrimary)
+    }
+
+    @Test("an empty state's button height sets its buttons' height")
+    func emptyStateButtonHeight() {
+        let compactButton = Self.fittingSize(AinkradButton(title: "New Folder", style: .secondary) {}.compact()).height
+        #expect(compactButton < 26)
+        #expect(Self.height(Self.folderEmpty.buttonHeight(26)) == Self.height(Self.folderEmpty) + 26 - compactButton)
+    }
+
+    @Test("a plain primary unfills the call-to-action only")
+    func plainPrimary() throws {
+        func shot(_ state: AinkradEmptyState) throws -> NSBitmapImageRep {
+            try #require(KitParityBatch5RenderTests.render(state.frame(width: 280, height: 260), width: 312, height: 292))
+        }
+        let filled = try shot(Self.folderEmpty)
+        let plain = try shot(Self.folderEmpty.plainPrimary())
+        #expect(KitParityBatch5RenderTests.differs(filled, plain, rows: 0..<292))
+        // The glyph, title and message above the buttons are untouched.
+        #expect(!KitParityBatch5RenderTests.differs(filled, plain, rows: 0..<150))
+        #expect(Self.height(Self.folderEmpty.plainPrimary()) == Self.height(Self.folderEmpty))
+    }
 }

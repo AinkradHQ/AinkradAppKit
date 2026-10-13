@@ -52,6 +52,12 @@ struct KitParityBatch6RenderTests {
                 .padding(8)
                 .background(Color(red: 0.04, green: 0.055, blue: 0.09))
             },
+            fixture("empty-state-buttons", 600, 300) {
+                HStack(spacing: 0) {
+                    KitParityBatch6Tests.folderEmpty.buttonHeight(26).plainPrimary().frame(width: 280)
+                    KitParityBatch6Tests.folderEmpty.frame(width: 280)
+                }
+            },
         ]
     }
 
