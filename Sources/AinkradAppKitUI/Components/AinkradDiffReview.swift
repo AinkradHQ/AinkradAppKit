@@ -90,6 +90,7 @@ public struct AinkradDiffReview: View {
     var usesLineGutter = false
     var usesUnchangedFolds = false
     var usesBareHunks = false
+    var bareHunksUntickable = false
 
     public init(fileDiff: AinkradFileDiff, rejectedHunkIDs: Binding<Set<Int>>) {
         self.fileDiff = fileDiff
@@ -164,6 +165,16 @@ public struct AinkradDiffReview: View {
     public func bareHunks() -> Self {
         var copy = self
         copy.usesBareHunks = true
+        return copy
+    }
+
+    /// `bareHunks()`, keeping each hunk's ✓ Keep / ↶ Undo tick when
+    /// `untickable`: the small text tick at the end of the hunk's first row,
+    /// no box, as Forge's replace and rename previews let a change be
+    /// unticked (mockups 08 and 11). An unticked hunk dims to 55 %.
+    public func bareHunks(untickable: Bool) -> Self {
+        var copy = bareHunks()
+        copy.bareHunksUntickable = untickable
         return copy
     }
 
@@ -313,42 +324,58 @@ public struct AinkradDiffReview: View {
 
     @ViewBuilder private func unifiedRows(_ hunk: AinkradDiffHunk) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(hunk.lines.enumerated()), id: \.offset) { _, line in
-                if usesEditorLines {
-                    editorLine(line, sign: true)
-                } else {
-                    let sign = line.kind == .insertion ? "+" : (line.kind == .deletion ? "-" : " ")
-                    lineText(sign + line.text)
-                        .font(AinkradFontResolver.font(size: 11, mono: true, typography: typography))
-                        .foregroundStyle(color(line)).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            ForEach(Array(hunk.lines.enumerated()), id: \.offset) { index, line in
+                Group {
+                    if usesEditorLines {
+                        editorLine(line, sign: true)
+                    } else {
+                        let sign = line.kind == .insertion ? "+" : (line.kind == .deletion ? "-" : " ")
+                        lineText(sign + line.text)
+                            .font(AinkradFontResolver.font(size: 11, mono: true, typography: typography))
+                            .foregroundStyle(color(line)).textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
+                .overlay(alignment: .trailing) { bareTick(hunk, row: index) }
             }
         }
     }
 
     @ViewBuilder private func splitRows(_ hunk: AinkradDiffHunk) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(AinkradDiffReviewPresentation.sideBySideRows(hunk).enumerated()), id: \.offset) { _, pair in
-                if usesEditorLines {
-                    HStack(alignment: .top, spacing: 0) {
-                        editorLine(pair.left, sign: false)
-                        editorLine(pair.right, sign: false)
-                    }
-                } else {
-                    HStack(alignment: .top, spacing: skin.spacing.sm) {
-                        lineText(pair.left?.text ?? "").font(
-                            AinkradFontResolver.font(size: 11, mono: true, typography: typography)
-                        )
-                        .foregroundStyle(pair.left.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        lineText(pair.right?.text ?? "").font(
-                            AinkradFontResolver.font(size: 11, mono: true, typography: typography)
-                        )
-                        .foregroundStyle(pair.right.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
+            ForEach(Array(AinkradDiffReviewPresentation.sideBySideRows(hunk).enumerated()), id: \.offset) {
+                index, pair in
+                splitRow(pair).overlay(alignment: .trailing) { bareTick(hunk, row: index) }
+            }
+        }
+    }
+
+    /// Under `bareHunks(untickable: true)`, the hunk's tick at the end of its
+    /// first row.
+    @ViewBuilder private func bareTick(_ hunk: AinkradDiffHunk, row: Int) -> some View {
+        if usesBareHunks, bareHunksUntickable, row == 0 {
+            DiffKeepUndoTick(accepted: acceptedBinding(hunk.id)).padding(.trailing, skin.size.s10)
+        }
+    }
+
+    @ViewBuilder private func splitRow(_ pair: (left: AinkradDiffLine?, right: AinkradDiffLine?)) -> some View {
+        if usesEditorLines {
+            HStack(alignment: .top, spacing: 0) {
+                editorLine(pair.left, sign: false)
+                editorLine(pair.right, sign: false)
+            }
+        } else {
+            HStack(alignment: .top, spacing: skin.spacing.sm) {
+                lineText(pair.left?.text ?? "").font(
+                    AinkradFontResolver.font(size: 11, mono: true, typography: typography)
+                )
+                .foregroundStyle(pair.left.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                lineText(pair.right?.text ?? "").font(
+                    AinkradFontResolver.font(size: 11, mono: true, typography: typography)
+                )
+                .foregroundStyle(pair.right.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
