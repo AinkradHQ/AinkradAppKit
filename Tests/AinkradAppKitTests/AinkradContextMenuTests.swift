@@ -55,3 +55,22 @@ struct AinkradMenuItemTests {
         #expect(a.id != b.id)
     }
 }
+
+/// FD20: under Glass, `AinkradMenuButton` uses Apple's pull-down unless the
+/// call site keeps the kit's own menu.
+@Suite("AinkradMenuButton.kitMenuUnderGlass")
+@MainActor
+struct AinkradMenuButtonGlassTests {
+    @Test("Apple's pull-down stays the Glass default")
+    func defaultIsNative() {
+        #expect(!AinkradMenuButton(items: []) { Text("Menu") }.keepsKitMenuUnderGlass)
+    }
+
+    @Test("the option keeps the kit menu, on either initializer")
+    func optionKeepsKitMenu() {
+        #expect(AinkradMenuButton(items: []) { Text("Menu") }.kitMenuUnderGlass().keepsKitMenuUnderGlass)
+        #expect(
+            AinkradMenuButton(items: [], placement: .trailing) { Text("Menu") }
+                .kitMenuUnderGlass().keepsKitMenuUnderGlass)
+    }
+}
