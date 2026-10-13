@@ -13,29 +13,24 @@ struct AinkradComposerOverlayList: View {
     let trigger: AinkradComposerTrigger
     let suggestions: [AinkradComposerSuggestion]
     let selectedIndex: Int
+    /// `AinkradComposer.paletteSuggestionRows()`.
+    var usesPaletteRows = false
     let onSelect: (AinkradComposerSuggestion) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: skin.spacing.xs) {
+        VStack(alignment: .leading, spacing: usesPaletteRows ? 0 : skin.spacing.xs) {
             if suggestions.isEmpty {
                 emptyState
             } else {
                 ForEach(Array(suggestions.enumerated()), id: \.element.id) { index, suggestion in
                     if let section = suggestion.section, section != suggestions[safe: index - 1]?.section {
-                        sectionHeader(section)
+                        if usesPaletteRows {
+                            AinkradPaletteSectionHeader(title: section)
+                        } else {
+                            sectionHeader(section)
+                        }
                     }
-                    AinkradListRow(
-                        isSelected: index == selectedIndex,
-                        onTap: { onSelect(suggestion) },
-                        leading: {
-                            Image(systemName: suggestion.icon)
-                                .font(skin.font(AinkradFontToken(sizeKey: "t12", weight: "semibold", scaled: false)))
-                                .foregroundStyle(theme.accentSecondary)
-                        },
-                        title: suggestion.title,
-                        subtitle: suggestion.subtitle,
-                        trailing: { EmptyView() }
-                    )
+                    row(suggestion, index: index)
                 }
                 hintFooter
             }
@@ -47,6 +42,28 @@ struct AinkradComposerOverlayList: View {
         )
         .shadow(color: theme.accentSecondary.opacity(skin.opacity.o35), radius: skin.size.s10, y: 4)
         .frame(minWidth: skin.size.s280)
+    }
+
+    @ViewBuilder private func row(_ suggestion: AinkradComposerSuggestion, index: Int) -> some View {
+        if usesPaletteRows {
+            AinkradPaletteRow(
+                icon: suggestion.icon, label: suggestion.title, matched: [], detail: suggestion.subtitle, value: nil,
+                isHighlighted: index == selectedIndex, detailTrailing: true, cornerRadius: skin.size.s4
+            ) { onSelect(suggestion) }
+        } else {
+            AinkradListRow(
+                isSelected: index == selectedIndex,
+                onTap: { onSelect(suggestion) },
+                leading: {
+                    Image(systemName: suggestion.icon)
+                        .font(skin.font(AinkradFontToken(sizeKey: "t12", weight: "semibold", scaled: false)))
+                        .foregroundStyle(theme.accentSecondary)
+                },
+                title: suggestion.title,
+                subtitle: suggestion.subtitle,
+                trailing: { EmptyView() }
+            )
+        }
     }
 
     private func sectionHeader(_ title: String) -> some View {

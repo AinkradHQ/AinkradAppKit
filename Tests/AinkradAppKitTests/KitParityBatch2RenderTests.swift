@@ -110,4 +110,25 @@ struct KitParityBatch2RenderTests {
             .matchedCharacters(\.matched)
         }
     }
+
+    @Test func slashPalette() {
+        let rows = [
+            AinkradComposerSuggestion(
+                id: "review", icon: "chevron.forward", title: "/review", subtitle: "Review the current diff",
+                section: "Session", insertText: "/review"),
+            AinkradComposerSuggestion(
+                id: "compact", icon: "chevron.forward", title: "/compact", subtitle: "Summarise to free context",
+                section: "Session", insertText: "/compact"),
+            AinkradComposerSuggestion(
+                id: "pr-sweep", icon: "sparkle", title: "/pr-sweep", subtitle: "Review and merge open PRs",
+                section: "Skills", insertText: "/pr-sweep"),
+        ]
+        Self.shoot("composer-slash-palette", width: 460, height: 230) {
+            AinkradComposerOverlayList(
+                trigger: .command(query: "re"), suggestions: rows, selectedIndex: 0, usesPaletteRows: true,
+                onSelect: { _ in }
+            )
+            .frame(width: 420)
+        }
+    }
 }

@@ -33,6 +33,10 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     private let leading: Leading
     private let trailing: Trailing
 
+    // Opt-ins set by the modifier methods below (not init params: a defaulted
+    // parameter is not ABI-compatible).
+    var usesPaletteSuggestionRows = false
+
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
     @State private var selectedIndex = 0
@@ -75,6 +79,16 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         self.trailing = trailing()
     }
 
+    /// Draws the `/` and `@` overlay's rows as Grimoire's slash panel does:
+    /// one flat line each — accent glyph, title, the subtitle pushed to the
+    /// row's end in faint mono — only the highlighted row filled. Sections and
+    /// the key-hint footer are unchanged (give suggestions a `section`).
+    public func paletteSuggestionRows() -> Self {
+        var copy = self
+        copy.usesPaletteSuggestionRows = true
+        return copy
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.spacing.sm) {
             chips
@@ -106,7 +120,8 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
             if let trigger {
                 AinkradComposerOverlayList(
                     trigger: trigger, suggestions: suggestions(trigger),
-                    selectedIndex: selectedIndex, onSelect: { pick($0, for: trigger) })
+                    selectedIndex: selectedIndex, usesPaletteRows: usesPaletteSuggestionRows,
+                    onSelect: { pick($0, for: trigger) })
             }
         }
         .onChange(of: text) { _, newValue in updateTrigger(newValue) }

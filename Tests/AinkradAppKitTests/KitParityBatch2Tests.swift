@@ -50,4 +50,17 @@ struct KitParityBatch2Tests {
         #expect(palette.sectionStart(at: 1) == "Files")
         #expect(palette.sectionStart(at: 2) == nil)
     }
+
+    static func composer() -> AinkradComposer<EmptyView, EmptyView, EmptyView> {
+        AinkradComposer(
+            text: .constant(""), placeholder: "Ask", isEditable: true, canSend: true, autoFocus: false,
+            suggestions: { _ in [] }, onPick: { _, _ in }, onDrop: nil, onSend: {},
+            chips: { EmptyView() }, leading: { EmptyView() }, trailing: { EmptyView() })
+    }
+
+    @Test("composer palette suggestion rows are opt-in")
+    func composerPaletteRows() {
+        #expect(!Self.composer().usesPaletteSuggestionRows)
+        #expect(Self.composer().paletteSuggestionRows().usesPaletteSuggestionRows)
+    }
 }
