@@ -103,6 +103,8 @@ public struct AinkradBreadcrumb: View {
     var keepsCase = false
     /// Set by `icon(at:_:)`: one leading glyph before the crumb at `index`.
     var segmentIcon: (index: Int, view: AnyView)?
+    /// Set by `segmentColors(_:)`.
+    var segmentColor: ((Int) -> Color?)?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -129,6 +131,16 @@ public struct AinkradBreadcrumb: View {
         return copy
     }
 
+    /// Colours each crumb by index — `nil` keeps the plain crumb colour — and
+    /// stops the trailing crumb being drawn as the accent "current" one: the
+    /// editor breadcrumb's file name in the foreground and its type symbol in
+    /// the syntax colour, the member after it plain (Forge mockup 01).
+    public func segmentColors(_ color: @escaping (Int) -> Color?) -> Self {
+        var copy = self
+        copy.segmentColor = color
+        return copy
+    }
+
     public var body: some View {
         let bread = skin.components.breadcrumb
         HStack(spacing: skin.spacing.xs) {
@@ -147,11 +159,13 @@ public struct AinkradBreadcrumb: View {
 
     @ViewBuilder
     private func crumb(_ text: String, isLast: Bool, index: Int, bread: BreadcrumbTokens) -> some View {
-        let labelFontToken = isLast ? bread.activeFont : bread.font
+        let isCurrent = isLast && segmentColor == nil
+        let labelFontToken = isCurrent ? bread.activeFont : bread.font
         let label = Text(keepsCase ? text : skin.labelCased(text))
             .font(skin.font(labelFontToken, typography: typo))
             .tracking(keepsCase ? 0 : labelFontToken.tracking ?? 0.6)
-            .foregroundStyle(skin.color(isLast ? bread.activeColor : bread.itemColor))
+            .foregroundStyle(
+                segmentColor?(index) ?? skin.color(isCurrent ? bread.activeColor : bread.itemColor))
 
         if let onSelect, !isLast {
             Button {

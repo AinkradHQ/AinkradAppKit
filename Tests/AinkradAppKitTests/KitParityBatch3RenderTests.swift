@@ -146,6 +146,23 @@ struct KitParityBatch3RenderTests {
                         ? .orange : name.hasSuffix(".yml") ? .pink : name.hasSuffix(".md") ? .blue : nil
                 }
             },
+            fixture("breadcrumb-segment-colors", 620, 90) {
+                VStack(alignment: .leading, spacing: 12) {
+                    AinkradBreadcrumb(items: [
+                        "Sources", "Ainkrad", "Features", "Sidebar", "SidebarRow.swift", "SidebarRow", "body",
+                    ])
+                    .preservesCase()
+                    .icon(at: 4) { Text("◆").foregroundStyle(.orange) }
+                    .segmentColors { index in
+                        switch index {
+                        case 4: AinkradSkin.standard.color(AinkradSkin.standard.palette.foreground)
+                        case 5: .cyan
+                        default: nil
+                        }
+                    }
+                    AinkradBreadcrumb(items: ["Sources", "SidebarRow.swift"]).preservesCase()
+                }
+            },
         ]
     }
 

@@ -98,4 +98,13 @@ struct KitParityBatch3Tests {
         #expect(menu.glyphTint == nil)
         #expect(menu.iconGlyphs { _ in .orange }.glyphTint?("a") != nil)
     }
+
+    @Test("per-segment breadcrumb colours are opt-in")
+    func breadcrumbSegmentColors() {
+        let crumb = AinkradBreadcrumb(items: ["Sources", "SidebarRow.swift", "SidebarRow", "body"])
+        #expect(crumb.segmentColor == nil)
+        let forge = crumb.segmentColors { $0 == 1 ? .white : nil }
+        #expect(forge.segmentColor?(1) != nil)
+        #expect(forge.segmentColor?(3) == nil)
+    }
 }
