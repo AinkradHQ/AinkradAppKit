@@ -28,4 +28,12 @@ struct KitParityBatch4Tests {
         #expect(!KitParityBatch2Tests.composer().keepsSendLit)
         #expect(KitParityBatch2Tests.composer().sendGlyph("↵").sendStaysLit().keepsSendLit)
     }
+
+    @Test("a tinted outline fill is opt-in")
+    func buttonTintedFill() {
+        #expect(!AinkradButton(title: "Stop", style: .danger) {}.outlined().hasTintedFill)
+        #expect(AinkradButton(title: "Stop", style: .danger) {}.outlined().tintedFill().hasTintedFill)
+        #expect(!KitParityBatch2Tests.composer().tintsStop)
+        #expect(KitParityBatch2Tests.composer().tintedStopButton().tintsStop)
+    }
 }

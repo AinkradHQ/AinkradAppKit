@@ -53,6 +53,8 @@ public struct AinkradButton: View {
     var isOutlined = false
     /// Set by `compact()`.
     var isCompact = false
+    /// Set by `tintedFill()`.
+    var hasTintedFill = false
     /// A faint mono suffix after the title, as written (`AinkradDecisionBar
     /// .Action.detail(_:)`) — kit-internal.
     var detail: String?
@@ -131,6 +133,17 @@ public struct AinkradButton: View {
         return copy
     }
 
+    /// Under `outlined()`, a faint wash of the button's colour inside the rim
+    /// instead of no fill — the dark-red body of the mockups' `.btn.danger`
+    /// "■ Stop" under Neon (the danger colour at 30 %). Glass draws that button
+    /// as an untinted glass capsule with a danger rim, so nothing changes
+    /// there. No effect without `outlined()`.
+    public func tintedFill() -> Self {
+        var copy = self
+        copy.hasTintedFill = true
+        return copy
+    }
+
     /// The mockups' small button (`padding: 3px 10px` — Replace All, the
     /// peek and commit-card buttons): tighter padding, same label. Under Glass
     /// Apple's small control size instead of large.
@@ -142,6 +155,9 @@ public struct AinkradButton: View {
 
     /// Whether the solid accent fill is drawn: the style's, unless `outlined()`.
     private var fillsWithAccent: Bool { style.usesAccentFill && !isOutlined }
+
+    /// Whether `tintedFill()` washes the inside of an `outlined()` button.
+    private var outlineWash: Bool { hasTintedFill && isOutlined && style.usesAccentFill }
 
     private var accentColor: Color {
         if usesSecondaryAccent, !style.usesAccentFill { return skin.color(skin.palette.accentSecondary) }
@@ -217,7 +233,10 @@ public struct AinkradButton: View {
             .padding(.horizontal, isCompact ? skin.size.s10 : skin.spacing.lg)
             .padding(.vertical, isCompact ? skin.size.s3 : skin.spacing.sm)
             .background(
-                shape.fill(fillsWithAccent ? accentColor.opacity(style.fillOpacity) : .clear)
+                shape.fill(
+                    fillsWithAccent
+                        ? accentColor.opacity(style.fillOpacity)
+                        : outlineWash ? accentColor.opacity(skin.opacity.o30) : .clear)
             )
             .overlay(
                 shape.strokeBorder(

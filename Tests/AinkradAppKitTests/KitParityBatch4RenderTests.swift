@@ -52,6 +52,17 @@ struct KitParityBatch4RenderTests {
                 }
                 .frame(width: 440)
             },
+            fixture("button-outlined-tinted-fill", 420, 170) {
+                VStack(alignment: .leading, spacing: 12) {
+                    busyComposer(canSend: false).stopButton("■ Stop") {}.tintedStopButton().sendStaysLit()
+                        .frame(width: 380)
+                    HStack(spacing: 8) {
+                        AinkradButton(title: "■ Stop", style: .danger) {}.outlined().tintedFill()
+                        AinkradButton(title: "■ Stop", style: .danger) {}.outlined()
+                        AinkradButton(title: "Stop", style: .danger) {}.tintedFill()
+                    }
+                }
+            },
             fixture("empty-state-glyph-size", 640, 280) {
                 HStack(spacing: 0) {
                     AinkradEmptyState(
@@ -108,6 +119,17 @@ struct KitParityBatch4RenderTests {
         let sendable = try strip(Self.busyComposer(canSend: true))
         #expect(!Self.differs(sendable, try strip(Self.busyComposer(canSend: false).sendStaysLit()), rows: 70..<96))
         #expect(Self.differs(sendable, try strip(Self.busyComposer(canSend: false)), rows: 70..<96))
+    }
+
+    @Test("a tinted fill washes only an outlined button")
+    func tintedFill() throws {
+        func shot(_ button: AinkradButton) throws -> NSBitmapImageRep {
+            try #require(Self.render(button, width: 200, height: 70))
+        }
+        let outlined = AinkradButton(title: "■ Stop", style: .danger) {}.outlined()
+        #expect(Self.differs(try shot(outlined), try shot(outlined.tintedFill()), rows: 16..<50))
+        let solid = AinkradButton(title: "Stop", style: .danger) {}
+        #expect(!Self.differs(try shot(solid), try shot(solid.tintedFill()), rows: 0..<70))
     }
 
     @Test func rendersEveryFixture() {

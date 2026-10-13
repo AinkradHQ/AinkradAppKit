@@ -42,6 +42,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     var onStop: (() -> Void)?
     var dimsTextField = false
     var keepsSendLit = false
+    var tintsStop = false
 
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
@@ -144,6 +145,15 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         return copy
     }
 
+    /// The Stop button of `stopButton(_:action:)` with its faint dark-red
+    /// body (`AinkradButton.tintedFill()`), as the mockups' busy composer
+    /// draws `.btn.danger` under Neon (Grimoire mockup 01).
+    public func tintedStopButton() -> Self {
+        var copy = self
+        copy.tintsStop = true
+        return copy
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.spacing.sm) {
             chips
@@ -162,7 +172,8 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 Spacer(minLength: 8)
                 trailing
                 if let stopTitle, let onStop {
-                    AinkradButton(title: stopTitle, style: .danger, action: onStop).outlined().fixedSize()
+                    let stop = AinkradButton(title: stopTitle, style: .danger, action: onStop).outlined()
+                    (tintsStop ? stop.tintedFill() : stop).fixedSize()
                 }
                 // Lit but not sendable: left enabled so Glass does not grey
                 // the glyph; the action checks `canSend` instead.
