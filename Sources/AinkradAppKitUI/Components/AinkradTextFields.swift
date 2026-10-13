@@ -287,55 +287,6 @@ public struct AinkradTextField: View {
     }
 }
 
-/// `onReturn(_:)`: Return, with its modifiers, goes to `action`; without
-/// one the field is left as it was.
-private struct ReturnKey: ViewModifier {
-    let action: ((EventModifiers) -> Void)?
-
-    func body(content: Content) -> some View {
-        if let action {
-            content.onKeyPress(.return, phases: .down) { press in
-                action(press.modifiers)
-                return .handled
-            }
-        } else {
-            content
-        }
-    }
-}
-
-/// `selectsNameWithoutExtension()`: once the field gains focus — and the field
-/// editor has selected everything, a turn later — narrows the selection to the
-/// base name. The field editor is found through the key window, or any window
-/// whose first responder is editing this text.
-private struct BaseNameSelection: ViewModifier {
-    let enabled: Bool
-    let isFocused: Bool
-    let text: String
-
-    func body(content: Content) -> some View {
-        if enabled {
-            content.onChange(of: isFocused) { _, focused in
-                guard focused else { return }
-                let text = text
-                DispatchQueue.main.async { Self.select(ainkradBaseNameRange(text), in: text) }
-            }
-        } else {
-            content
-        }
-    }
-
-    @MainActor static func select(_ range: NSRange, in text: String) {
-        let windows = [NSApp.keyWindow].compactMap { $0 } + NSApp.windows
-        for window in windows {
-            if let editor = window.firstResponder as? NSTextView, editor.isFieldEditor, editor.string == text {
-                editor.setSelectedRange(range)
-                return
-            }
-        }
-    }
-}
-
 /// Chamfer field with a leading magnifier glyph and a custom clear (✕)
 /// affordance — never a native search field.
 public struct AinkradSearchField: View {

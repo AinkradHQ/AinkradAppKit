@@ -119,7 +119,8 @@ struct KitParityBatch6Tests {
     @Test("a plain primary unfills the call-to-action only")
     func plainPrimary() throws {
         func shot(_ state: AinkradEmptyState) throws -> NSBitmapImageRep {
-            try #require(KitParityBatch5RenderTests.render(state.frame(width: 280, height: 260), width: 312, height: 292))
+            try #require(
+                KitParityBatch5RenderTests.render(state.frame(width: 280, height: 260), width: 312, height: 292))
         }
         let filled = try shot(Self.folderEmpty)
         let plain = try shot(Self.folderEmpty.plainPrimary())
