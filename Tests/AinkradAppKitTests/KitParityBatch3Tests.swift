@@ -59,4 +59,13 @@ struct KitParityBatch3Tests {
         #expect(bar.textGlyph == nil)
         #expect(bar.iconGlyph("⌁").textGlyph == "⌁")
     }
+
+    @Test("disabled segmented options are opt-in")
+    func segmentedDisabledOptions() {
+        let picker = AinkradSegmentedPicker(items: ["Claude", "Codex"], selection: .constant("Claude")) { $0 }
+        #expect(picker.isOptionDisabled == nil)
+        let gated = picker.disabledOptions { $0 == "Codex" }
+        #expect(gated.isOptionDisabled?("Codex") == true)
+        #expect(gated.isOptionDisabled?("Claude") == false)
+    }
 }

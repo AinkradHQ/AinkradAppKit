@@ -88,6 +88,15 @@ struct KitParityBatch3RenderTests {
                 .labelCasedCaption()
                 .iconGlyph("⌁")
             },
+            fixture("segmented-disabled-options", 460, 110) {
+                VStack(alignment: .leading, spacing: 12) {
+                    AinkradSegmentedPicker(
+                        items: ["Claude Code", "Codex", "OpenCode", "agy"], selection: .constant("Claude Code")
+                    ) { $0 }
+                    .disabledOptions { $0 != "Claude Code" }
+                    AinkradSegmentedPicker(items: ["Ask", "Accept edits", "Plan"], selection: .constant("Ask")) { $0 }
+                }
+            },
         ]
     }
 
