@@ -184,6 +184,23 @@ struct KitParityBatch3RenderTests {
                 )
                 .frame(width: 260)
             },
+            fixture("field-toggle", 320, 110) {
+                VStack(spacing: 8) {
+                    AinkradSearchField(text: .constant("isSelected"), placeholder: "Search")
+                        .codeQuery()
+                        .trailingAccessory {
+                            AinkradFieldToggle("Aa", isOn: .constant(true), help: "Match case")
+                            AinkradFieldToggle("⌶", isOn: .constant(false), help: "Whole word")
+                            AinkradFieldToggle("✱", isOn: .constant(false), help: "Regular expression")
+                        }
+                    AinkradSearchField(text: .constant("isActive"), placeholder: "Replace")
+                        .codeQuery()
+                        .trailingAccessory {
+                            AinkradFieldToggle("AB", isOn: .constant(false), help: "Preserve case")
+                            AinkradButton(title: "Replace All", style: .primary) {}.compact().fixedSize()
+                        }
+                }
+            },
         ]
     }
 

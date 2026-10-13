@@ -120,4 +120,13 @@ struct KitParityBatch3Tests {
         #expect(AinkradMenuItem(title: "sourcekit-lsp — ready") {}.tintColor == nil)
         #expect(AinkradMenuItem(title: "ruby-lsp — not installed") {}.tint(.orange).tintColor != nil)
     }
+
+    @Test("a field toggle flips its binding")
+    func fieldToggle() {
+        var isOn = false
+        let binding = Binding(get: { isOn }, set: { isOn = $0 })
+        _ = AinkradFieldToggle("Aa", isOn: binding, help: "Match case")
+        binding.wrappedValue.toggle()
+        #expect(isOn)
+    }
 }
