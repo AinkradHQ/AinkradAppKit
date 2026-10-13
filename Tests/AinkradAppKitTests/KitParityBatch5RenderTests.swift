@@ -60,7 +60,23 @@ struct KitParityBatch5RenderTests {
                     folderEmpty.frame(width: 280)
                 }
             },
+            fixture("kbd-command-first", 560, 150) {
+                VStack(alignment: .leading, spacing: 8) {
+                    palette(shortcut: "⇧⌘P").ainkradCommandFirstKeys()
+                    palette(shortcut: "⇧⌘P")
+                }
+            },
         ]
+    }
+
+    /// A command palette row with `shortcut` as its keycaps (mockup 03).
+    static func palette(shortcut: String) -> some View {
+        AinkradCommandMenu(
+            items: ["Show All Commands"], selection: .constant(nil), icon: { _ in "" }, label: { $0 },
+            value: { _ in shortcut }, uppercased: false
+        )
+        .paletteRows()
+        .frame(width: 520)
     }
 
     /// Mockup 19 A's empty Files tab.
@@ -155,6 +171,16 @@ struct KitParityBatch5RenderTests {
             ).fittingSize.height
         }
         #expect(height(Self.folderEmpty.compact()) < height(Self.folderEmpty))
+    }
+
+    @Test("command-first keycaps draw as the mockup's ⌘⇧P")
+    func commandFirstKeycaps() throws {
+        let apple = try #require(Self.render(Self.palette(shortcut: "⇧⌘P"), width: 560, height: 70))
+        let mockup = try #require(Self.render(Self.palette(shortcut: "⌘⇧P"), width: 560, height: 70))
+        let swapped = try #require(
+            Self.render(Self.palette(shortcut: "⇧⌘P").ainkradCommandFirstKeys(), width: 560, height: 70))
+        #expect(Self.differs(apple, mockup, rows: 0..<70))
+        #expect(!Self.differs(swapped, mockup, rows: 0..<70))
     }
 
     @Test func rendersEveryFixture() {

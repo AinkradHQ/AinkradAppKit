@@ -50,4 +50,14 @@ struct KitParityBatch5Tests {
         #expect(!state.isCompact)
         #expect(state.compact().isCompact)
     }
+
+    @Test("command-first keys move ⌘ ahead of ⇧ only")
+    func commandFirst() {
+        #expect(ainkradCommandFirst("⇧⌘P") == "⌘⇧P")
+        #expect(ainkradCommandFirst("⇧⌘F") == "⌘⇧F")
+        #expect(ainkradCommandFirst("⌥⌘↵") == "⌥⌘↵")
+        #expect(ainkradCommandFirst("⌃⌘O") == "⌃⌘O")
+        #expect(ainkradCommandFirst("⌘K") == "⌘K")
+        #expect(EnvironmentValues().ainkradCommandFirstKeys == false)
+    }
 }
