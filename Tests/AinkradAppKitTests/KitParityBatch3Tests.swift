@@ -13,4 +13,10 @@ struct KitParityBatch3Tests {
         #expect(!AinkradButton(title: "Commit") {}.fillsWidth)
         #expect(AinkradButton(title: "Commit") {}.fullWidth().fillsWidth)
     }
+
+    @Test("an outlined button is opt-in")
+    func buttonOutlined() {
+        #expect(!AinkradButton(title: "Stop", style: .danger) {}.isOutlined)
+        #expect(AinkradButton(title: "Stop", style: .danger) {}.outlined().isOutlined)
+    }
 }

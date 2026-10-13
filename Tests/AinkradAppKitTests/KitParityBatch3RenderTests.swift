@@ -38,7 +38,14 @@ struct KitParityBatch3RenderTests {
                         AinkradButton(title: "Commit & open PR", style: .secondary) {}.fullWidth().secondaryAccent()
                     }
                 }
-            }
+            },
+            fixture("button-outlined-danger", 360, 70) {
+                HStack(spacing: 8) {
+                    AinkradButton(title: "■ Stop", style: .danger) {}.outlined()
+                    AinkradButton(title: "Stop", style: .danger) {}
+                    AinkradButton(title: "Primary", style: .primary) {}.outlined()
+                }
+            },
         ]
     }
 

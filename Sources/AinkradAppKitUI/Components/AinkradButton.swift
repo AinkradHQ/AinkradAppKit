@@ -49,6 +49,8 @@ public struct AinkradButton: View {
     var usesSecondaryAccent = false
     /// Set by `fullWidth()`.
     var fillsWidth = false
+    /// Set by `outlined()`.
+    var isOutlined = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -113,11 +115,25 @@ public struct AinkradButton: View {
         return copy
     }
 
+    /// A `.danger` (or `.primary`) button drawn as an outline instead of a
+    /// solid fill — the mockups' `.btn.danger` "■ Stop": under Neon the text
+    /// and rim in the danger colour on no fill; under Glass Apple's untinted
+    /// glass capsule with a danger rim, as the Glass `.btn.danger` draws it.
+    /// No effect on `.secondary` or `.ghost`, which are already unfilled.
+    public func outlined() -> Self {
+        var copy = self
+        copy.isOutlined = true
+        return copy
+    }
+
+    /// Whether the solid accent fill is drawn: the style's, unless `outlined()`.
+    private var fillsWithAccent: Bool { style.usesAccentFill && !isOutlined }
+
     private var accentColor: Color {
         if usesSecondaryAccent, !style.usesAccentFill { return skin.color(skin.palette.accentSecondary) }
         return skin.color(style.isDanger ? skin.palette.danger : skin.palette.accentPrimary)
     }
-    private var foreground: Color { style.usesAccentFill ? accentColor.contrastingText : accentColor }
+    private var foreground: Color { fillsWithAccent ? accentColor.contrastingText : accentColor }
 
     public var body: some View {
         if #available(macOS 26, *), skin.usesNativeGlass {
@@ -145,6 +161,10 @@ public struct AinkradButton: View {
         // Only the prominent styles take the tint: on `.glass` a tint fills the
         // whole capsule, which would make secondary read as primary.
         switch style {
+        case .primary where isOutlined, .danger where isOutlined:
+            button.buttonStyle(.glass).overlay {
+                Capsule().strokeBorder(accentColor.opacity(skin.opacity.o50), lineWidth: 1).allowsHitTesting(false)
+            }
         case .primary, .danger: button.buttonStyle(.glassProminent).tint(accentColor)
         case .secondary: button.buttonStyle(.glass)
         case .ghost: button.buttonStyle(.borderless).tint(accentColor)
@@ -176,7 +196,7 @@ public struct AinkradButton: View {
             .padding(.horizontal, skin.spacing.lg)
             .padding(.vertical, skin.spacing.sm)
             .background(
-                shape.fill(style.usesAccentFill ? accentColor.opacity(style.fillOpacity) : .clear)
+                shape.fill(fillsWithAccent ? accentColor.opacity(style.fillOpacity) : .clear)
             )
             .overlay(
                 shape.strokeBorder(
