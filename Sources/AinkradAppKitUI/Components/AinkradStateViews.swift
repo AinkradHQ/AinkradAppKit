@@ -27,6 +27,8 @@ public struct AinkradEmptyState: View {
     /// Set by `glyph(_:)` and `iconTint(_:)`.
     var textGlyph: String?
     var tint: Color?
+    /// Set by `glyphSize(_:)`.
+    var glyphSize: CGFloat?
     /// Set by `secondaryAccent()`.
     var usesSecondaryAccent = false
     /// Set by `init(icon:keyHints:)`.
@@ -86,6 +88,15 @@ public struct AinkradEmptyState: View {
         return copy
     }
 
+    /// Draws the icon or glyph at `size` points instead of the skin's display
+    /// size — Grimoire's no-threads ❖ at 40 (mockup 09 B), Forge's empty
+    /// editor ⚒ at 34 (mockup 19). Under Glass too.
+    public func glyphSize(_ size: CGFloat) -> Self {
+        var copy = self
+        copy.glyphSize = size
+        return copy
+    }
+
     /// Draws the buttons with `AinkradButton.secondaryAccent()`: the
     /// secondary button's text and rim in the cyan secondary accent, as
     /// Grimoire's no-threads "Open folder…" (GP44). The primary is unchanged.
@@ -98,10 +109,18 @@ public struct AinkradEmptyState: View {
     @ViewBuilder private var iconView: some View {
         if let textGlyph {
             // A text glyph takes no symbol sizing (Glass): give it the display font.
-            Text(textGlyph).font(skin.font(skin.components.emptyState.glyphFont, typography: typo))
+            Text(textGlyph).font(glyphFont)
+        } else if glyphSize != nil {
+            Image(systemName: icon).font(glyphFont)
         } else {
             Image(systemName: icon)
         }
+    }
+
+    /// `glyphSize(_:)`, or the skin's display font.
+    private var glyphFont: Font {
+        if let glyphSize { return AinkradFontResolver.font(size: glyphSize, typography: typo) }
+        return skin.font(skin.components.emptyState.glyphFont, typography: typo)
     }
 
     /// The secondary + primary buttons, in that order.
@@ -124,7 +143,7 @@ public struct AinkradEmptyState: View {
         } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: Apple's content-unavailable view.
             ContentUnavailableView {
-                if textGlyph == nil, tint == nil {
+                if textGlyph == nil, tint == nil, glyphSize == nil {
                     Label(title, systemImage: icon)
                 } else {
                     Label {

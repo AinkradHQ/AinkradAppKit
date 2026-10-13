@@ -14,4 +14,12 @@ struct KitParityBatch4Tests {
         #expect(KitParityBatch2Tests.composer().textFieldDimmed(true).dimsTextField)
         #expect(!KitParityBatch2Tests.composer().textFieldDimmed(true).textFieldDimmed(false).dimsTextField)
     }
+
+    @Test("an empty state's glyph size is opt-in")
+    func emptyStateGlyphSize() {
+        let plain = AinkradEmptyState(icon: "books.vertical", title: "No threads yet", message: "")
+        #expect(plain.glyphSize == nil)
+        #expect(plain.glyph("❖").glyphSize(40).glyphSize == 40)
+        #expect(AinkradEmptyState(icon: "hammer", keyHints: []).glyphSize(34).glyphSize == 34)
+    }
 }

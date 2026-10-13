@@ -33,7 +33,25 @@ struct KitParityBatch4RenderTests {
                     composer(text: "Now screenshot both themes and attach them to the PR.")
                 }
                 .frame(width: 440)
-            }
+            },
+            fixture("empty-state-glyph-size", 640, 280) {
+                HStack(spacing: 0) {
+                    AinkradEmptyState(
+                        icon: "books.vertical", title: "No threads yet",
+                        message: "Open a project folder and start a thread.", actionTitle: "New thread ⌘N", action: {}
+                    )
+                    .glyph("❖").glyphSize(40)
+                    .iconTint(
+                        AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary).opacity(0.8))
+                    AinkradEmptyState(
+                        icon: "hammer",
+                        keyHints: [.init(keys: "⌘P", label: "open a file"), .init(keys: "⌘⇧P", label: "commands")]
+                    )
+                    .glyph("⚒").glyphSize(34)
+                    .iconTint(
+                        AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary).opacity(0.5))
+                }
+            },
         ]
     }
 
