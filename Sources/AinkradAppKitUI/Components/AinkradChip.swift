@@ -300,16 +300,31 @@ public struct AinkradBadge: View {
 /// Keycap chip — monospaced, bracketed, for displaying a keyboard shortcut.
 public struct AinkradKbd: View {
     private let key: String
+    /// Set by `outlined()`.
+    var isOutlined = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
+    @Environment(\.ainkradTheme) private var theme
 
     public init(_ key: String) {
         self.key = key
     }
 
+    /// The Forge/Grimoire mockups' keycap (`.kbd`): the glyphs with no
+    /// brackets, mono 10, faint text in a 1 pt hairline box with 4 pt corners.
+    /// The hairline is the soft accent under Neon and a white wash under
+    /// Glass. One cap per key: pass a chord as two caps (`⌘K`, `⌘\`).
+    public func outlined() -> Self {
+        var copy = self
+        copy.isOutlined = true
+        return copy
+    }
+
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass {
+        if isOutlined {
+            outlinedBody
+        } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: a plain keycap, the glyphs as menus show them.
             Text(key)
                 .font(.callout)
@@ -323,6 +338,18 @@ public struct AinkradKbd: View {
     }
 
     private var kbd: KbdTokens { skin.components.kbd }
+
+    private var outlinedBody: some View {
+        let hairline =
+            skin.usesNativeGlass
+            ? theme.foreground.opacity(skin.opacity.o07) : theme.accentSecondary.opacity(skin.opacity.o18)
+        return Text(key)
+            .font(AinkradFontResolver.font(size: 10, mono: true, typography: typo))
+            .foregroundStyle(theme.foreground.opacity(skin.opacity.o55))
+            .padding(.horizontal, skin.size.s5)
+            .padding(.vertical, skin.size.s1)
+            .overlay(RoundedRectangle(cornerRadius: skin.size.s4).strokeBorder(hairline, lineWidth: 1))
+    }
 
     private var kitBody: some View {
         let kbd = skin.components.kbd
