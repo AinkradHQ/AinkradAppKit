@@ -78,4 +78,10 @@ struct KitParityBatch3Tests {
         #expect(forge.accessory != nil)
         #expect(forge.isCodeQuery)
     }
+
+    @Test("a compact text field is opt-in")
+    func textFieldCompact() {
+        #expect(!AinkradTextField(text: .constant(""), placeholder: "").isCompact)
+        #expect(AinkradTextField(text: .constant(""), placeholder: "").leadingLabel("include").compact().isCompact)
+    }
 }

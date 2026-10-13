@@ -116,6 +116,16 @@ struct KitParityBatch3RenderTests {
                     AinkradSearchField(text: .constant("thread"), placeholder: "Search threads")
                 }
             },
+            fixture("text-field-compact", 320, 160) {
+                VStack(spacing: 6) {
+                    AinkradTextField(text: .constant("Sources/**, Tests/**"), placeholder: "Sources/**, *.swift")
+                        .leadingLabel("include").compact()
+                    AinkradTextField(text: .constant(""), placeholder: ".build/**")
+                        .leadingLabel("exclude").compact()
+                    AinkradTextField(text: .constant("Sources/**"), placeholder: "").leadingLabel("include")
+                    AinkradTextField(text: .constant("SidebarRow.swift"), placeholder: "")
+                }
+            },
         ]
     }
 

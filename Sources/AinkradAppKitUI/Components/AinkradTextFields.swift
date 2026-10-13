@@ -112,6 +112,8 @@ public struct AinkradTextField: View {
     var selectsBaseName = false
     /// Set by `leadingLabel(_:)`.
     var label: String?
+    /// Set by `compact()`.
+    var isCompact = false
     @Environment(\.ainkradTheme) private var theme
 
     public init(text: Binding<String>, placeholder: String) {
@@ -138,6 +140,18 @@ public struct AinkradTextField: View {
         return copy
     }
 
+    /// The mockup's small field (`.sfield.small`, Forge's include / exclude
+    /// globs, FP56): tighter padding and 12 pt mono text. Under Glass a slim
+    /// glass capsule.
+    public func compact() -> Self {
+        var copy = self
+        copy.isCompact = true
+        return copy
+    }
+
+    /// The text font under `compact()`: 12 pt mono.
+    private var compactFont: Font { AinkradFontResolver.font(size: 12, mono: true, typography: typo) }
+
     @ViewBuilder private var labelView: some View {
         if let label {
             Text(label)
@@ -149,15 +163,18 @@ public struct AinkradTextField: View {
     }
 
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass, label != nil {
+        if #available(macOS 26, *), skin.usesNativeGlass, label != nil || isCompact {
             HStack(spacing: AinkradSpacing.xs) {
                 labelView
                 TextField(placeholder, text: $text)
                     .textFieldStyle(.plain)
+                    .apply { field in
+                        if isCompact { field.font(compactFont) } else { field }
+                    }
                     .focused($isFocused)
             }
-            .padding(.horizontal, AinkradSpacing.md)
-            .padding(.vertical, AinkradSpacing.sm)
+            .padding(.horizontal, isCompact ? skin.size.s10 : AinkradSpacing.md)
+            .padding(.vertical, isCompact ? skin.size.s4 : AinkradSpacing.sm)
             .glassEffect(.regular, in: .capsule)
             .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
         } else if #available(macOS 26, *), skin.usesNativeGlass {
@@ -181,12 +198,12 @@ public struct AinkradTextField: View {
             TextField(placeholder, text: $text)
                 .focused($isFocused)
                 .textFieldStyle(.plain)
-                .font(skin.font(tokens.font, typography: typo))
+                .font(isCompact ? compactFont : skin.font(tokens.font, typography: typo))
                 .foregroundStyle(skin.color(skin.text.primary))
                 .tint(skin.color(skin.palette.accentSecondary))
         }
-        .padding(.horizontal, AinkradSpacing.md)
-        .padding(.vertical, AinkradSpacing.sm)
+        .padding(.horizontal, isCompact ? skin.size.s8 : AinkradSpacing.md)
+        .padding(.vertical, isCompact ? skin.size.s4 : AinkradSpacing.sm)
         .background(shape.fill(skin.color(field.fill)))
         .overlay(
             shape.strokeBorder(
