@@ -68,4 +68,14 @@ struct KitParityBatch3Tests {
         #expect(gated.isOptionDisabled?("Codex") == true)
         #expect(gated.isOptionDisabled?("Claude") == false)
     }
+
+    @Test("a search field's trailing accessory and code query are opt-in")
+    func searchFieldAccessory() {
+        let plain = AinkradSearchField(text: .constant(""), placeholder: "Search")
+        #expect(plain.accessory == nil)
+        #expect(!plain.isCodeQuery)
+        let forge = plain.codeQuery().trailingAccessory { Text("Aa") }
+        #expect(forge.accessory != nil)
+        #expect(forge.isCodeQuery)
+    }
 }

@@ -97,6 +97,25 @@ struct KitParityBatch3RenderTests {
                     AinkradSegmentedPicker(items: ["Ask", "Accept edits", "Plan"], selection: .constant("Ask")) { $0 }
                 }
             },
+            fixture("search-field-accessory", 320, 150) {
+                VStack(spacing: 8) {
+                    AinkradSearchField(text: .constant("isSelected"), placeholder: "Search")
+                        .codeQuery()
+                        .trailingAccessory {
+                            Text("Aa").padding(.horizontal, 5).background(
+                                .blue.opacity(0.4), in: .rect(cornerRadius: 4))
+                            Text("⌶").foregroundStyle(.secondary)
+                            Text("✱").foregroundStyle(.secondary)
+                        }
+                    AinkradSearchField(text: .constant("isActive"), placeholder: "Replace")
+                        .codeQuery()
+                        .trailingAccessory {
+                            Text("AB").foregroundStyle(.secondary)
+                            AinkradButton(title: "Replace All", style: .primary) {}.compact().fixedSize()
+                        }
+                    AinkradSearchField(text: .constant("thread"), placeholder: "Search threads")
+                }
+            },
         ]
     }
 
