@@ -33,6 +33,8 @@ public struct AinkradEmptyState: View {
     var usesSecondaryAccent = false
     /// Set by `init(icon:keyHints:)`.
     var keyHints: [KeyHint] = []
+    /// Set by `compact()`.
+    var isCompact = false
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
@@ -106,6 +108,16 @@ public struct AinkradEmptyState: View {
         return copy
     }
 
+    /// The mockups' sidebar empty state (`.sempty`, mockup 19): a 26 pt
+    /// glyph, a 13 pt bold title, a 12 pt message at 1.5 line height, and
+    /// compact buttons, 8 pt apart, sitting a little above centre. Neon and
+    /// Glass alike — Apple's content-unavailable view has no small size.
+    public func compact() -> Self {
+        var copy = self
+        copy.isCompact = true
+        return copy
+    }
+
     @ViewBuilder private var iconView: some View {
         if let textGlyph {
             // A text glyph takes no symbol sizing (Glass): give it the display font.
@@ -120,6 +132,7 @@ public struct AinkradEmptyState: View {
     /// `glyphSize(_:)`, or the skin's display font.
     private var glyphFont: Font {
         if let glyphSize { return AinkradFontResolver.font(size: glyphSize, typography: typo) }
+        if isCompact { return AinkradFontResolver.font(size: skin.size.s26, typography: typo) }
         return skin.font(skin.components.emptyState.glyphFont, typography: typo)
     }
 
@@ -140,6 +153,8 @@ public struct AinkradEmptyState: View {
     @ViewBuilder public var body: some View {
         if !keyHints.isEmpty {
             keyHintBody
+        } else if isCompact {
+            compactBody
         } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: Apple's content-unavailable view.
             ContentUnavailableView {
@@ -181,6 +196,45 @@ public struct AinkradEmptyState: View {
         }
         .padding(skin.spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var compactBody: some View {
+        let empty = skin.components.emptyState
+        return VStack(spacing: skin.size.s8) {
+            iconView
+                .font(glyphFont)
+                .foregroundStyle(tint ?? skin.color(empty.glyphColor))
+            if !title.isEmpty {
+                Text(title)
+                    .font(AinkradFontResolver.font(size: 13, weight: .bold, typography: typo))
+                    .foregroundStyle(skin.color(skin.text.primary))
+            }
+            if !message.isEmpty {
+                Text(message)
+                    .font(AinkradFontResolver.font(size: 12, typography: typo))
+                    .lineSpacing(skin.size.s4)
+                    .foregroundStyle(skin.color(empty.messageColor))
+                    .multilineTextAlignment(.center)
+            }
+            if hasAction || hasSecondaryAction {
+                HStack(spacing: skin.size.s8) { compactButtons }
+                    .padding(.top, skin.size.s4)
+            }
+        }
+        .padding(.horizontal, skin.size.s22)
+        .padding(.bottom, skin.size.s40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// `actionButtons` as the mockups' small buttons.
+    @ViewBuilder private var compactButtons: some View {
+        if hasSecondaryAction, let secondaryTitle, let secondary {
+            let button = AinkradButton(title: secondaryTitle, style: .secondary, action: secondary).compact()
+            usesSecondaryAccent ? button.secondaryAccent() : button
+        }
+        if hasAction, let actionTitle, let action {
+            AinkradButton(title: actionTitle, style: .primary, action: action).compact()
+        }
     }
 
     private var kitBody: some View {

@@ -54,7 +54,24 @@ struct KitParityBatch5RenderTests {
                 }
                 .frame(width: 260)
             },
+            fixture("empty-state-compact", 600, 300) {
+                HStack(spacing: 0) {
+                    folderEmpty.compact().frame(width: 280)
+                    folderEmpty.frame(width: 280)
+                }
+            },
         ]
+    }
+
+    /// Mockup 19 A's empty Files tab.
+    static var folderEmpty: AinkradEmptyState {
+        AinkradEmptyState(
+            icon: "folder", title: "This folder is empty",
+            message: "Create a file, or drop files here to copy them in.", actionTitle: "New File ⌘N", action: {}
+        )
+        .secondaryAction("New Folder") {}
+        .glyph("▤")
+        .iconTint(AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary).opacity(0.7))
     }
 
     /// Mockup 07's search field with its toggles, 28 pt tall.
@@ -127,6 +144,17 @@ struct KitParityBatch5RenderTests {
         let field = AinkradTextField(text: .constant("isActive"), placeholder: "")
         #expect(Self.differs(try shot(field), try shot(field.chamfered()), rows: 16..<49))
         #expect(!Self.differs(try shot(field), try shot(field.chamfered()), rows: 52..<70))
+    }
+
+    @Test("a compact empty state is shorter")
+    func compactEmptyState() {
+        func height(_ state: AinkradEmptyState) -> CGFloat {
+            NSHostingView(
+                rootView: state.fixedSize(horizontal: false, vertical: true).frame(width: 280)
+                    .ainkradSkin(.standard)
+            ).fittingSize.height
+        }
+        #expect(height(Self.folderEmpty.compact()) < height(Self.folderEmpty))
     }
 
     @Test func rendersEveryFixture() {

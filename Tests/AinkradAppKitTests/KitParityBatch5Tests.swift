@@ -43,4 +43,11 @@ struct KitParityBatch5Tests {
         #expect(search.fieldHeight == nil && !search.isChamfered)
         #expect(search.fieldHeight(28).fieldHeight == 28 && search.chamfered().isChamfered)
     }
+
+    @Test("a compact empty state is opt-in")
+    func emptyStateCompact() {
+        let state = AinkradEmptyState(icon: "folder", title: "This folder is empty", message: "")
+        #expect(!state.isCompact)
+        #expect(state.compact().isCompact)
+    }
 }
