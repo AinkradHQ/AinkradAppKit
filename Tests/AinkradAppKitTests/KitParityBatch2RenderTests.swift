@@ -131,4 +131,18 @@ struct KitParityBatch2RenderTests {
             .frame(width: 420)
         }
     }
+
+    @Test func labelledSend() {
+        Self.shoot("composer-labelled-send", width: 460, height: 170) {
+            AinkradComposer(
+                text: .constant("Make the selection capsule animate in with the motion budget"),
+                placeholder: "Ask", isEditable: true, canSend: true, autoFocus: false,
+                suggestions: { _ in [] }, onPick: { _, _ in }, onDrop: nil, onSend: {},
+                chips: { EmptyView() }, leading: { Text("Grimoire · this workspace").font(.caption) },
+                trailing: { Text("Esc").font(.caption) }
+            )
+            .sendTitle("Ask ⌘↵")
+            .frame(width: 420)
+        }
+    }
 }

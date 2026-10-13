@@ -36,6 +36,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     // Opt-ins set by the modifier methods below (not init params: a defaulted
     // parameter is not ABI-compatible).
     var usesPaletteSuggestionRows = false
+    var sendTitle: String?
 
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
@@ -89,6 +90,15 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         return copy
     }
 
+    /// Send as a labelled primary button (`"Ask ⌘↵"`) instead of the round ↑
+    /// icon, as Forge's ask-an-agent popover draws it. The label follows the
+    /// skin's label case; the shortcut itself stays the caller's.
+    public func sendTitle(_ title: String) -> Self {
+        var copy = self
+        copy.sendTitle = title
+        return copy
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.spacing.sm) {
             chips
@@ -105,7 +115,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 leading
                 Spacer(minLength: 8)
                 trailing
-                AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") { onSend() }
+                sendButton
                     .disabled(!canSend)
                     .opacity(canSend ? 1 : skin.opacity.o40)
             }
@@ -125,6 +135,14 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
             }
         }
         .onChange(of: text) { _, newValue in updateTrigger(newValue) }
+    }
+
+    @ViewBuilder private var sendButton: some View {
+        if let sendTitle {
+            AinkradButton(title: sendTitle, style: .primary) { onSend() }
+        } else {
+            AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") { onSend() }
+        }
     }
 
     /// Re-derives the overlay from the draft. The highlight resets only when

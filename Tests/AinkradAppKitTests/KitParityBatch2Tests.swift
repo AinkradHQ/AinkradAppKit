@@ -63,4 +63,10 @@ struct KitParityBatch2Tests {
         #expect(!Self.composer().usesPaletteSuggestionRows)
         #expect(Self.composer().paletteSuggestionRows().usesPaletteSuggestionRows)
     }
+
+    @Test("a labelled Send is opt-in")
+    func composerSendTitle() {
+        #expect(Self.composer().sendTitle == nil)
+        #expect(Self.composer().sendTitle("Ask ⌘↵").sendTitle == "Ask ⌘↵")
+    }
 }
