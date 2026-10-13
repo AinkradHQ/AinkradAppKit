@@ -48,4 +48,15 @@ struct KitParityBatch3Tests {
         #expect(grimoire.textGlyph == "❖")
         #expect(grimoire.tint != nil)
     }
+
+    @Test("a decision action's detail and the bar's text glyph are opt-in")
+    func decisionBarDetailAndGlyph() {
+        let action = AinkradDecisionBar.Action(title: "Always allow", style: .secondary) {}
+        #expect(action.detail == nil)
+        #expect(action.button.detail == nil)
+        #expect(action.detail("git push *").button.detail == "git push *")
+        let bar = AinkradDecisionBar(icon: "terminal", iconTint: .secondary, caption: "", title: "", actions: [])
+        #expect(bar.textGlyph == nil)
+        #expect(bar.iconGlyph("⌁").textGlyph == "⌁")
+    }
 }

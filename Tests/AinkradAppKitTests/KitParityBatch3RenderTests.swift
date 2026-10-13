@@ -74,6 +74,20 @@ struct KitParityBatch3RenderTests {
                         .glyph("⚒").iconTint(AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary))
                 }
             },
+            fixture("decision-bar-detail-glyph", 800, 90) {
+                AinkradDecisionBar(
+                    icon: "terminal", iconTint: .secondary, caption: "Approval required",
+                    title: "Run git push -u origin feat/glass-sidebar",
+                    actions: [
+                        AinkradDecisionBar.Action(title: "Deny…", style: .ghost) {}.borderless().secondaryAccent(),
+                        AinkradDecisionBar.Action(title: "Always allow", style: .secondary) {}.secondaryAccent()
+                            .detail("git push *"),
+                        AinkradDecisionBar.Action(title: "Allow once ↵", style: .primary) {},
+                    ]
+                )
+                .labelCasedCaption()
+                .iconGlyph("⌁")
+            },
         ]
     }
 

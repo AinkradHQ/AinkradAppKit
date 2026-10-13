@@ -20,6 +20,8 @@ public struct AinkradDecisionBar: View {
         var isBorderless = false
         /// Set by `secondaryAccent()`.
         var usesSecondaryAccent = false
+        /// Set by `detail(_:)`.
+        var detail: String?
 
         public init(title: String, style: AinkradButtonStyle, perform: @escaping () -> Void) {
             self.title = title
@@ -44,11 +46,20 @@ public struct AinkradDecisionBar: View {
             return copy
         }
 
+        /// A faint mono suffix after the title, kept as written — the CLI's
+        /// rule in approval mockup 04's "Always allow `git push *`" (GP23).
+        public func detail(_ text: String) -> Action {
+            var copy = self
+            copy.detail = text
+            return copy
+        }
+
         /// The kit button for this action, its opt-ins applied.
         @MainActor var button: AinkradButton {
             var button = AinkradButton(title: title, style: style, action: perform)
             if isBorderless { button = button.borderless() }
             if usesSecondaryAccent { button = button.secondaryAccent() }
+            button.detail = detail
             return button
         }
     }
@@ -63,6 +74,8 @@ public struct AinkradDecisionBar: View {
     private let actions: [Action]
     /// Set by `labelCasedCaption()`.
     var casesCaption = false
+    /// Set by `iconGlyph(_:)`.
+    var textGlyph: String?
 
     /// `icon` is an SF Symbol name; `caption` is the small accent line
     /// ("Approval required"), `title` the one-line subject under it.
@@ -83,10 +96,25 @@ public struct AinkradDecisionBar: View {
         return copy
     }
 
+    /// Draws a text glyph (`"⌁"`) in place of the SF Symbol `icon`, at the
+    /// approval mockup's 16 pt, in the same `iconTint` (GP28).
+    public func iconGlyph(_ glyph: String) -> Self {
+        var copy = self
+        copy.textGlyph = glyph
+        return copy
+    }
+
+    @ViewBuilder private var iconView: some View {
+        if let textGlyph {
+            Text(textGlyph).font(skin.font(AinkradFontToken(sizeKey: "t16", scaled: false)))
+        } else {
+            Image(systemName: icon).font(skin.font(AinkradFontToken(sizeKey: "t12", scaled: false)))
+        }
+    }
+
     public var body: some View {
         HStack(spacing: skin.size.s10) {
-            Image(systemName: icon)
-                .font(skin.font(AinkradFontToken(sizeKey: "t12", scaled: false)))
+            iconView
                 .foregroundStyle(iconTint == .primary ? theme.accentPrimary : theme.accentSecondary)
             VStack(alignment: .leading, spacing: skin.size.s1) {
                 Text(casesCaption ? skin.labelCased(caption) : caption)

@@ -53,6 +53,9 @@ public struct AinkradButton: View {
     var isOutlined = false
     /// Set by `compact()`.
     var isCompact = false
+    /// A faint mono suffix after the title, as written (`AinkradDecisionBar
+    /// .Action.detail(_:)`) — kit-internal.
+    var detail: String?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -185,7 +188,12 @@ public struct AinkradButton: View {
     }
 
     @ViewBuilder private var nativeLabel: some View {
-        if let icon {
+        if let detail {
+            Text(title)
+                + Text(" " + detail)
+                .font(AinkradFontResolver.font(size: 11, mono: true, typography: typo))
+                .foregroundStyle(skin.color(skin.text.faint))
+        } else if let icon {
             Label(title, systemImage: icon)
         } else {
             Text(title)
@@ -246,6 +254,11 @@ public struct AinkradButton: View {
             Text(skin.labelCased(title))
                 .font(skin.font(btn.labelFont, typography: typo))
                 .tracking(btn.labelFont.tracking ?? 0)
+            if let detail {
+                Text(detail)
+                    .font(AinkradFontResolver.font(size: 11, mono: true, typography: typo))
+                    .foregroundStyle(skin.color(skin.text.faint))
+            }
         }
     }
     private var state: AinkradControlState {
