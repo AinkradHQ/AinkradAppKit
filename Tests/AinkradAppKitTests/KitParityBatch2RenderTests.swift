@@ -258,4 +258,14 @@ struct KitParityBatch2RenderTests {
             .labelCasedCaption()
         }
     }
+
+    @Test func borderlessGhost() {
+        Self.shoot("button-ghost-borderless", width: 320, height: 70) {
+            HStack(spacing: 8) {
+                AinkradButton(title: "Cancel", style: .ghost) {}.borderless()
+                AinkradButton(title: "Start ⌘↵", style: .primary) {}
+                AinkradButton(title: "Cancel", style: .ghost) {}
+            }
+        }
+    }
 }

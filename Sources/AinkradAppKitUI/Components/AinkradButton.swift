@@ -43,6 +43,8 @@ public struct AinkradButton: View {
     /// `init(title:style:icon:action:)` stays byte-unchanged — see the
     /// `isLoading:`-carrying overload below.
     private var isLoading: Bool = false
+    /// Set by `borderless()`.
+    var isBorderless = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -73,6 +75,16 @@ public struct AinkradButton: View {
         self.icon = icon
         self.isLoading = isLoading
         self.action = action
+    }
+
+    /// No rim and no glow: under Neon a `.ghost` button becomes bare accent
+    /// text on a chamfered hit area, as the mockups draw `.btn.ghost` (Cancel
+    /// beside a primary). Glass's ghost is already Apple's borderless button,
+    /// so this changes nothing there.
+    public func borderless() -> Self {
+        var copy = self
+        copy.isBorderless = true
+        return copy
     }
 
     private var accentColor: Color {
@@ -139,12 +151,12 @@ public struct AinkradButton: View {
             )
             .overlay(
                 shape.strokeBorder(
-                    skin.color(btn.stroke.color, tint: accentColor, state: state),
+                    isBorderless ? .clear : skin.color(btn.stroke.color, tint: accentColor, state: state),
                     lineWidth: btn.stroke.width.resolve(state)
                 )
             )
             .shadow(
-                color: skin.color(btn.glow.color, tint: accentColor, state: state),
+                color: isBorderless ? .clear : skin.color(btn.glow.color, tint: accentColor, state: state),
                 radius: btn.glow.radius.resolve(state)
             )
             .contentShape(shape)

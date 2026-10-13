@@ -145,4 +145,11 @@ struct KitParityBatch2Tests {
         #expect(!bar.casesCaption)
         #expect(bar.labelCasedCaption().casesCaption)
     }
+
+    @Test("a borderless button is opt-in")
+    func buttonBorderless() {
+        #expect(!AinkradButton(title: "Cancel", style: .ghost) {}.isBorderless)
+        #expect(AinkradButton(title: "Cancel", style: .ghost) {}.borderless().isBorderless)
+        #expect(AinkradButton(title: "Cancel", style: .ghost, isLoading: false) {}.borderless().isBorderless)
+    }
 }
