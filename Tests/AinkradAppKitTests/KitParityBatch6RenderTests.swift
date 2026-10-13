@@ -30,7 +30,14 @@ struct KitParityBatch6RenderTests {
                     replaceField { KitParityBatch6Tests.replaceAll }
                 }
                 .frame(width: 256)
-            }
+            },
+            fixture("text-field-monospaced", 360, 110) {
+                VStack(alignment: .leading, spacing: 8) {
+                    KitParityBatch6Tests.renameField.fieldHeight(28).chamfered().monospaced()
+                    KitParityBatch6Tests.renameField.fieldHeight(28).chamfered()
+                }
+                .frame(width: 314)
+            },
         ]
     }
 

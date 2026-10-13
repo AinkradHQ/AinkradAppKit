@@ -43,4 +43,30 @@ struct KitParityBatch6Tests {
         // The width is the compact button's: only the height changes.
         #expect(Self.fittingSize(Self.replaceAll.buttonHeight(30)).width == Self.fittingSize(Self.replaceAll).width)
     }
+
+    static var renameField: AinkradTextField { AinkradTextField(text: .constant("isActive"), placeholder: "") }
+
+    @Test("a monospaced text field and its Return hook are opt-in")
+    func textFieldOptIn() {
+        #expect(!Self.renameField.isMonospaced && Self.renameField.returnAction == nil)
+        #expect(Self.renameField.monospaced().isMonospaced)
+        var got: [EventModifiers] = []
+        let hooked = Self.renameField.onReturn { got.append($0) }
+        hooked.returnAction?([])
+        hooked.returnAction?(.shift)
+        #expect(got == [[], .shift])
+    }
+
+    @Test("a monospaced text field changes its text, not its height")
+    func monospacedField() throws {
+        func shot(_ field: AinkradTextField) throws -> NSBitmapImageRep {
+            try #require(KitParityBatch5RenderTests.render(field.frame(width: 260), width: 300, height: 60))
+        }
+        let field = Self.renameField.fieldHeight(28)
+        #expect(KitParityBatch5RenderTests.differs(try shot(field), try shot(field.monospaced()), rows: 16..<44))
+        #expect(Self.fittingSize(field.monospaced()).height == 28)
+        if #available(macOS 26, *) {
+            #expect(Self.fittingSize(field.monospaced(), skin: Self.glass).height == 28)
+        }
+    }
 }
