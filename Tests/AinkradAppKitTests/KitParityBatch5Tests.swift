@@ -69,4 +69,13 @@ struct KitParityBatch5Tests {
         let sized = menu.iconGlyphs(tint: { _ in .orange }, size: 15)
         #expect(sized.glyphSize == 15 && sized.glyphTint != nil)
     }
+
+    @Test("an icon button's sized text glyph and bare look are opt-in")
+    func iconButtonTextGlyph() {
+        let button = AinkradIconButton(systemName: "xmark") {}
+        #expect(button.textGlyph == nil && button.textGlyphSize == nil && !button.isBare)
+        let glyph = button.textGlyph("✕", size: 14)
+        #expect(glyph.textGlyph == "✕" && glyph.textGlyphSize == 14 && !glyph.isBare)
+        #expect(button.bare().isBare)
+    }
 }

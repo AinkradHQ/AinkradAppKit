@@ -14,8 +14,14 @@ public struct AinkradIconButton: View {
     /// A text glyph ("↵") drawn in place of the SF Symbol — set by the kit
     /// (`AinkradComposer.sendGlyph(_:)`), not public.
     var textGlyph: String?
+    /// Set by `textGlyph(_:size:)`.
+    var textGlyphSize: CGFloat?
+    /// Set by `bare()`.
+    var isBare = false
 
     @Environment(\.ainkradSkin) private var skin
+    @Environment(\.ainkradTypography) private var typo
+    @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
 
@@ -58,11 +64,57 @@ public struct AinkradIconButton: View {
     private var glyphSize: CGFloat { size * skin.components.iconButton.glyphRatio }
 
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass {
+        if isBare {
+            bareBody
+        } else if #available(macOS 26, *), skin.usesNativeGlass {
             nativeBody
         } else {
             kitBody
         }
+    }
+
+    /// Draws the text `glyph` (`"⤢"`, `"✕"`, `"▶"`) at `size` points, regular
+    /// weight in the UI font, in place of the SF Symbol — the mockups'
+    /// `.icon-btn` glyphs at 14 (mockup 14's drawer buttons). The button keeps
+    /// its frame, box and tooltip.
+    public func textGlyph(_ glyph: String, size: CGFloat) -> Self {
+        var copy = textGlyph(glyph)
+        copy.textGlyphSize = size
+        return copy
+    }
+
+    /// Only the glyph, in the secondary accent, the foreground on hover — no
+    /// box, rim or glass, centred in the button's frame. Mockup 14's task
+    /// run / stop control: `AinkradIconButton(systemName: "play", size: 20)
+    /// { … }.textGlyph("▶", size: 10).bare()`. Neon and Glass.
+    public func bare() -> Self {
+        var copy = self
+        copy.isBare = true
+        return copy
+    }
+
+    private var bareBody: some View {
+        let button = Button(action: action) {
+            glyph
+                .font(glyphFont(weight: .regular))
+                .foregroundStyle(hovering ? theme.foreground : theme.accentSecondary)
+                .frame(width: size, height: size)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: hovering)
+        return Group {
+            if let tooltip { button.help(tooltip) } else { button }
+        }
+    }
+
+    /// `textGlyph(_:size:)`'s font, else the symbol font scaled off the frame.
+    private func glyphFont(weight: Font.Weight) -> Font {
+        if textGlyph != nil, let textGlyphSize {
+            return AinkradFontResolver.font(size: textGlyphSize, typography: typo)
+        }
+        return .system(size: glyphSize, weight: weight)  // design-lint: allow font-size caller-sized glyph
     }
 
     /// Glass on macOS 26+: an interactive glass circle at the caller's `size`
@@ -72,7 +124,7 @@ public struct AinkradIconButton: View {
     @ViewBuilder private var nativeBody: some View {
         let button = Button(action: action) {
             glyph
-                .font(.system(size: glyphSize, weight: .medium))  // design-lint: allow font-size caller-sized glyph
+                .font(glyphFont(weight: .medium))
                 .frame(width: size, height: size)
                 .contentShape(.circle)
         }
@@ -90,9 +142,7 @@ public struct AinkradIconButton: View {
         let shape = AinkradSkinShape(token: btn.shape)
         let button = Button(action: action) {
             glyph
-                .font(
-                    .system(size: glyphSize, weight: .semibold)  // design-lint: allow font-size caller-sized glyph
-                )
+                .font(glyphFont(weight: .semibold))
                 .foregroundStyle(skin.color(btn.fg, state: state))
                 .frame(width: size, height: size)
                 .background(shape.fill(skin.color(btn.fill, state: state)))

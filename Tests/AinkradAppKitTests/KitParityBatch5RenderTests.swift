@@ -72,6 +72,22 @@ struct KitParityBatch5RenderTests {
                     quickOpen.iconGlyphs { _ in .orange }
                 }
             },
+            fixture("icon-button-text-glyph", 360, 120) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 8) {
+                        AinkradIconButton(systemName: "arrow.up.left.and.arrow.down.right") {}.textGlyph("⤢", size: 14)
+                        AinkradIconButton(systemName: "xmark") {}.textGlyph("✕", size: 14)
+                        AinkradIconButton(systemName: "arrow.up.left.and.arrow.down.right") {}
+                        AinkradIconButton(systemName: "xmark") {}
+                    }
+                    HStack(spacing: 8) {
+                        ForEach(["▶", "■", "↻"], id: \.self) { glyph in
+                            AinkradIconButton(systemName: "play", size: 20) {}.textGlyph(glyph, size: 10).bare()
+                        }
+                        Text("build").font(.system(size: 11.5, design: .monospaced))
+                    }
+                }
+            },
         ]
     }
 
@@ -219,6 +235,18 @@ struct KitParityBatch5RenderTests {
             }
         }
         return false
+    }
+
+    @Test("a bare icon button draws no box")
+    func bareIconButton() throws {
+        func shot(_ button: AinkradIconButton) throws -> NSBitmapImageRep {
+            try #require(Self.render(button, width: 62, height: 62))
+        }
+        let boxed = AinkradIconButton(systemName: "play") {}.textGlyph("▶", size: 10)
+        let blank = try shot(AinkradIconButton(systemName: "play") {}.textGlyph(" ", size: 10).bare())
+        // The box's rim is on the 30 pt frame's edge (y 16); a bare button leaves it background.
+        #expect(Self.differs(try shot(boxed), blank, rows: 16..<18))
+        #expect(!Self.differs(try shot(boxed.bare()), blank, rows: 16..<18))
     }
 
     @Test func rendersEveryFixture() {
