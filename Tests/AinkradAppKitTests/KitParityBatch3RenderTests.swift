@@ -46,6 +46,14 @@ struct KitParityBatch3RenderTests {
                     AinkradButton(title: "Primary", style: .primary) {}.outlined()
                 }
             },
+            fixture("button-compact", 420, 70) {
+                HStack(spacing: 8) {
+                    AinkradButton(title: "Replace All", style: .primary) {}.compact()
+                    AinkradButton(title: "Revert", style: .secondary) {}.compact().secondaryAccent()
+                    AinkradButton(title: "Stage", style: .secondary) {}.compact().secondaryAccent()
+                    AinkradButton(title: "Replace All", style: .primary) {}
+                }
+            },
         ]
     }
 

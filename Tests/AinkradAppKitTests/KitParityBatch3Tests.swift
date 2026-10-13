@@ -19,4 +19,10 @@ struct KitParityBatch3Tests {
         #expect(!AinkradButton(title: "Stop", style: .danger) {}.isOutlined)
         #expect(AinkradButton(title: "Stop", style: .danger) {}.outlined().isOutlined)
     }
+
+    @Test("a compact button is opt-in")
+    func buttonCompact() {
+        #expect(!AinkradButton(title: "Replace All") {}.isCompact)
+        #expect(AinkradButton(title: "Replace All") {}.compact().isCompact)
+    }
 }

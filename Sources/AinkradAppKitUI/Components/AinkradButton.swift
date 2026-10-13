@@ -51,6 +51,8 @@ public struct AinkradButton: View {
     var fillsWidth = false
     /// Set by `outlined()`.
     var isOutlined = false
+    /// Set by `compact()`.
+    var isCompact = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -126,6 +128,15 @@ public struct AinkradButton: View {
         return copy
     }
 
+    /// The mockups' small button (`padding: 3px 10px` — Replace All, the
+    /// peek and commit-card buttons): tighter padding, same label. Under Glass
+    /// Apple's small control size instead of large.
+    public func compact() -> Self {
+        var copy = self
+        copy.isCompact = true
+        return copy
+    }
+
     /// Whether the solid accent fill is drawn: the style's, unless `outlined()`.
     private var fillsWithAccent: Bool { style.usesAccentFill && !isOutlined }
 
@@ -157,7 +168,9 @@ public struct AinkradButton: View {
             .frame(maxWidth: fillsWidth ? .infinity : nil)
         }
         .disabled(isLoading)
-        .controlSize(.large)
+        .controlSize(isCompact ? .small : .large)
+        // Apple's small glass button is a rounded rectangle; the mockup's stays a capsule.
+        .buttonBorderShape(isCompact ? .capsule : .automatic)
         // Only the prominent styles take the tint: on `.glass` a tint fills the
         // whole capsule, which would make secondary read as primary.
         switch style {
@@ -193,8 +206,8 @@ public struct AinkradButton: View {
                     .opacity(isLoading ? 1 : 0)
             }
             .frame(maxWidth: fillsWidth ? .infinity : nil)
-            .padding(.horizontal, skin.spacing.lg)
-            .padding(.vertical, skin.spacing.sm)
+            .padding(.horizontal, isCompact ? skin.size.s10 : skin.spacing.lg)
+            .padding(.vertical, isCompact ? skin.size.s3 : skin.spacing.sm)
             .background(
                 shape.fill(fillsWithAccent ? accentColor.opacity(style.fillOpacity) : .clear)
             )
