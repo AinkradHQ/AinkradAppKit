@@ -4,6 +4,17 @@ import SwiftUI
 /// Centered empty-state placeholder: icon, title, message, and an optional
 /// call-to-action button. Consolidates the various "nothing here yet" views.
 public struct AinkradEmptyState: View {
+    /// One shortcut of a key-hint empty state: a keycap and what it does.
+    public struct KeyHint: Equatable, Sendable {
+        public let keys: String
+        public let label: String
+
+        public init(keys: String, label: String) {
+            self.keys = keys
+            self.label = label
+        }
+    }
+
     private let icon: String
     private let title: String
     private let message: String
@@ -18,6 +29,8 @@ public struct AinkradEmptyState: View {
     var tint: Color?
     /// Set by `secondaryAccent()`.
     var usesSecondaryAccent = false
+    /// Set by `init(icon:keyHints:)`.
+    var keyHints: [KeyHint] = []
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
@@ -31,6 +44,17 @@ public struct AinkradEmptyState: View {
         self.actionTitle = actionTitle
         self.action = action
     }
+    /// No title and no message: the icon over one line of shortcuts, each an
+    /// outlined keycap and its action, joined by `·` — Forge's empty editor
+    /// (mockup 19 A, FP108: `⌘P open a file · ⌘⇧P commands · ⌃⌘O switch
+    /// workspace`). Under Glass the same layout, since Apple's
+    /// content-unavailable view needs a title. Pair with `glyph(_:)` and
+    /// `iconTint(_:)` for the faint ⚒.
+    public init(icon: String, keyHints: [KeyHint]) {
+        self.init(icon: icon, title: "", message: "")
+        self.keyHints = keyHints
+    }
+
     /// Whether a call-to-action button is present.
     public var hasAction: Bool { action != nil && actionTitle != nil }
     /// Whether a secondary button is present.
@@ -95,7 +119,9 @@ public struct AinkradEmptyState: View {
     }
 
     @ViewBuilder public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass {
+        if !keyHints.isEmpty {
+            keyHintBody
+        } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: Apple's content-unavailable view.
             ContentUnavailableView {
                 if textGlyph == nil, tint == nil {
@@ -115,6 +141,27 @@ public struct AinkradEmptyState: View {
         } else {
             kitBody
         }
+    }
+
+    private var keyHintBody: some View {
+        let empty = skin.components.emptyState
+        return VStack(spacing: skin.spacing.sm) {
+            iconView
+                .font(skin.font(empty.glyphFont, typography: typo))
+                .foregroundStyle(tint ?? skin.color(empty.glyphColor))
+            HStack(spacing: skin.size.s4) {
+                ForEach(Array(keyHints.enumerated()), id: \.offset) { index, hint in
+                    if index > 0 { Text("·").padding(.horizontal, skin.size.s2) }
+                    AinkradKbd(hint.keys).outlined()
+                    Text(hint.label)
+                }
+            }
+            .font(AinkradFontResolver.font(size: 12, typography: typo))
+            .foregroundStyle(skin.color(empty.messageColor))
+            .lineLimit(1)
+        }
+        .padding(skin.spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var kitBody: some View {

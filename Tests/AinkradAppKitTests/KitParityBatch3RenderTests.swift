@@ -217,6 +217,18 @@ struct KitParityBatch3RenderTests {
                         }
                 }
             },
+            fixture("empty-state-key-hints", 560, 200) {
+                AinkradEmptyState(
+                    icon: "hammer",
+                    keyHints: [
+                        .init(keys: "⌘P", label: "open a file"), .init(keys: "⌘⇧P", label: "commands"),
+                        .init(keys: "⌃⌘O", label: "switch workspace"),
+                    ]
+                )
+                .glyph("⚒")
+                .iconTint(
+                    AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary).opacity(0.5))
+            },
         ]
     }
 

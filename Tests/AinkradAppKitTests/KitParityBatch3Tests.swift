@@ -143,4 +143,13 @@ struct KitParityBatch3Tests {
         #expect(!plain.usesSecondaryAccent)
         #expect(plain.secondaryAccent().usesSecondaryAccent)
     }
+
+    @Test("a key-hint empty state has no title and keeps its hints")
+    func emptyStateKeyHints() {
+        #expect(AinkradEmptyState(icon: "hammer", title: "No file open", message: "").keyHints.isEmpty)
+        let hints = [AinkradEmptyState.KeyHint(keys: "⌘P", label: "open a file")]
+        let editor = AinkradEmptyState(icon: "hammer", keyHints: hints)
+        #expect(editor.keyHints == hints)
+        #expect(!editor.hasAction)
+    }
 }
