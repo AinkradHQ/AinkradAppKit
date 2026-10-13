@@ -34,8 +34,9 @@ public struct AinkradMenuItem: Identifiable {
 
     /// Starts a new group at this item: the kit menu leaves a small gap above
     /// it (never a line), as the Forge tree menu mockup groups new/rename ·
-    /// copy · reveal · trash. A native Glass menu, which has no gaps, shows
-    /// its standard separator instead. No effect on the first item.
+    /// copy · reveal · trash. Apple's menu under Glass has no gaps and the
+    /// design bar forbids separator lines, so grouping does not show there.
+    /// No effect on the first item.
     public func startingGroup() -> Self {
         var copy = self
         copy.startsGroup = true
@@ -380,8 +381,9 @@ private struct NativeMenuItems: View {
     let items: [AinkradMenuItem]
 
     var body: some View {
-        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-            if ainkradMenuItemStartsGroup(items, at: index) { Divider() }
+        // No group separators: the design bar forbids lines, and Apple's menu
+        // has no gaps, so `startingGroup()` simply doesn't show here.
+        ForEach(items) { item in
             let button = Button(role: item.isDestructive ? .destructive : nil, action: item.action) {
                 if let systemName = item.systemName {
                     Label(item.title, systemImage: systemName)
