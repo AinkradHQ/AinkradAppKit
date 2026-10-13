@@ -189,4 +189,41 @@ struct KitParityBatch2RenderTests {
             .frame(width: 268)
         }
     }
+
+    static let reviewDiff = AinkradDiffEngine.compute(
+        old: """
+            struct SidebarRow: View {
+                let isSelected: Bool
+                var body: some View {
+                    Text(thread.title)
+                        .background(isSelected ? skin.color(skin.accent).opacity(0.2) : .clear)
+                        .accessibilityLabel(thread.title)
+                }
+            }
+            """,
+        new: """
+            struct SidebarRow: View {
+                let isSelected: Bool
+                var body: some View {
+                    Text(thread.title)
+                        .background {
+                            if isSelected { Capsule().glassEffect(.regular) }
+                        }
+                }
+            }
+            """, path: "Sources/SidebarRow.swift", context: 1)
+
+    @Test func diffEditorLines() {
+        Self.shoot("diff-editor-lines", width: 640, height: 230) {
+            AinkradDiffReview(fileDiff: Self.reviewDiff, rejectedHunkIDs: .constant([]))
+                .hidesHeader().keepUndoHunkControls().editorLines()
+        }
+        Self.shoot("diff-editor-lines-syntax", width: 640, height: 230) {
+            AinkradDiffReview(fileDiff: Self.reviewDiff, rejectedHunkIDs: .constant([]))
+                .hidesHeader().keepUndoHunkControls().editorLines().syntaxColoured()
+        }
+        Self.shoot("diff-default", width: 640, height: 230) {
+            AinkradDiffReview(fileDiff: Self.reviewDiff, rejectedHunkIDs: .constant([]))
+        }
+    }
 }

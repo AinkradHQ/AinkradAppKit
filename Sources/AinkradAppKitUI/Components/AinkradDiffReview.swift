@@ -40,6 +40,16 @@ enum AinkradDiffReviewPresentation {
         if keepUndo { return accepted ? "✓ Keep" : "↶ Undo" }
         return accepted ? "Accepted" : "Rejected"
     }
+
+    /// The editor-style hunk header: the new file's lines ("@@ lines 18–20"),
+    /// or the old file's for a pure removal ("@@ line 24 — removed").
+    static func editorHunkTitle(_ hunk: AinkradDiffHunk) -> String {
+        let removed = hunk.newCount == 0
+        let start = max(removed ? hunk.oldStart : hunk.newStart, 1)
+        let count = max(removed ? hunk.oldCount : hunk.newCount, 1)
+        let lines = count == 1 ? "line \(start)" : "lines \(start)–\(start + count - 1)"
+        return "@@ " + lines + (removed ? " — removed" : "")
+    }
 }
 
 /// Rich approval-card diff: a kit latch toggling unified/side-by-side (NO
@@ -59,6 +69,8 @@ public struct AinkradDiffReview: View {
     var showsHeader = true
     var callerSideBySide: Binding<Bool>?
     var keepUndo = false
+    var usesEditorLines = false
+    var usesSyntaxColours = false
 
     public init(fileDiff: AinkradFileDiff, rejectedHunkIDs: Binding<Set<Int>>) {
         self.fileDiff = fileDiff
@@ -90,6 +102,24 @@ public struct AinkradDiffReview: View {
         return copy
     }
 
+    /// Draws lines as the review mockups do: each added or removed line gets
+    /// a full-width wash (success / danger at 12 %) with the text in the
+    /// foreground colour, context lines muted, 11.5 pt mono, and the hunk
+    /// header names the lines ("@@ lines 18–20", "@@ line 24 — removed").
+    public func editorLines() -> Self {
+        var copy = self
+        copy.usesEditorLines = true
+        return copy
+    }
+
+    /// Colours each line's code with the Forge editor's syntax palette
+    /// (Neon or Glass), on either line style.
+    public func syntaxColoured() -> Self {
+        var copy = self
+        copy.usesSyntaxColours = true
+        return copy
+    }
+
     private var splitBinding: Binding<Bool> { callerSideBySide ?? $sideBySide }
 
     public var body: some View {
@@ -116,9 +146,7 @@ public struct AinkradDiffReview: View {
         let rejected = rejectedHunkIDs.contains(hunk.id)
         VStack(alignment: .leading, spacing: skin.size.s3) {
             HStack(spacing: skin.size.s6) {
-                Text("@@ -\(hunk.oldStart),\(hunk.oldCount) +\(hunk.newStart),\(hunk.newCount)")
-                    .font(AinkradFontResolver.font(size: 9, mono: true, typography: typography)).foregroundStyle(
-                        theme.foreground.opacity(skin.opacity.o40))
+                hunkTitle(hunk)
                 Spacer(minLength: 6)
                 if keepUndo {
                     DiffKeepUndoTick(accepted: acceptedBinding(hunk.id))
@@ -128,20 +156,75 @@ public struct AinkradDiffReview: View {
                         title: AinkradDiffReviewPresentation.hunkControlTitle(accepted: !rejected, keepUndo: false))
                 }
             }
+            .padding(.horizontal, usesEditorLines ? skin.size.s10 : 0)
             if splitBinding.wrappedValue { splitRows(hunk) } else { unifiedRows(hunk) }
         }
-        .opacity(rejected ? skin.opacity.o50 : 1)
-        .padding(.horizontal, skin.spacing.sm).padding(.vertical, skin.size.s6)
-        .background(skin.shape(cut: AinkradRadius.sm).fill(theme.background.opacity(skin.opacity.o40)))
+        .opacity(rejected ? (usesEditorLines ? skin.opacity.o55 : skin.opacity.o50) : 1)
+        .padding(.horizontal, usesEditorLines ? 0 : skin.spacing.sm).padding(.vertical, skin.size.s6)
+        .background { hunkBackground }
+    }
+
+    @ViewBuilder private var hunkBackground: some View {
+        if usesEditorLines {
+            RoundedRectangle(cornerRadius: skin.size.s8).fill(skin.color(skin.palette.black).opacity(skin.opacity.o18))
+        } else {
+            skin.shape(cut: AinkradRadius.sm).fill(theme.background.opacity(skin.opacity.o40))
+        }
+    }
+
+    @ViewBuilder private func hunkTitle(_ hunk: AinkradDiffHunk) -> some View {
+        if usesEditorLines {
+            Text(AinkradDiffReviewPresentation.editorHunkTitle(hunk))
+                .font(AinkradFontResolver.font(size: 10.5, mono: true, typography: typography))
+                .foregroundStyle(theme.foreground.opacity(skin.opacity.o35))
+        } else {
+            Text("@@ -\(hunk.oldStart),\(hunk.oldCount) +\(hunk.newStart),\(hunk.newCount)")
+                .font(AinkradFontResolver.font(size: 9, mono: true, typography: typography)).foregroundStyle(
+                    theme.foreground.opacity(skin.opacity.o40))
+        }
+    }
+
+    /// One line's text: the code, syntax-coloured when asked.
+    private func lineText(_ text: String) -> Text {
+        usesSyntaxColours
+            ? Text(ainkradSyntaxAttributed(text, palette: .forge(glass: skin.usesNativeGlass))) : Text(text)
+    }
+
+    /// A line under `editorLines()`: full-width wash, foreground text.
+    private func editorLine(_ line: AinkradDiffLine?, sign: Bool) -> some View {
+        let prefix = sign ? (line?.kind == .insertion ? "+" : (line?.kind == .deletion ? "-" : " ")) : ""
+        return lineText(prefix + (line?.text ?? ""))
+            .font(AinkradFontResolver.font(size: 11.5, mono: true, typography: typography))
+            .foregroundStyle(
+                line?.kind == .context || line == nil
+                    ? theme.foreground.opacity(skin.opacity.o55) : theme.foreground
+            )
+            .textSelection(.enabled)
+            .padding(.horizontal, skin.size.s10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(wash(line))
+    }
+
+    private func wash(_ line: AinkradDiffLine?) -> Color {
+        switch line?.kind {
+        case .insertion: statusColors.success.opacity(skin.opacity.o12)
+        case .deletion: statusColors.danger.opacity(skin.opacity.o12)
+        default: .clear
+        }
     }
 
     @ViewBuilder private func unifiedRows(_ hunk: AinkradDiffHunk) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(hunk.lines.enumerated()), id: \.offset) { _, line in
-                let sign = line.kind == .insertion ? "+" : (line.kind == .deletion ? "-" : " ")
-                Text(sign + line.text).font(AinkradFontResolver.font(size: 11, mono: true, typography: typography))
-                    .foregroundStyle(color(line)).textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if usesEditorLines {
+                    editorLine(line, sign: true)
+                } else {
+                    let sign = line.kind == .insertion ? "+" : (line.kind == .deletion ? "-" : " ")
+                    lineText(sign + line.text)
+                        .font(AinkradFontResolver.font(size: 11, mono: true, typography: typography))
+                        .foregroundStyle(color(line)).textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
     }
@@ -149,17 +232,24 @@ public struct AinkradDiffReview: View {
     @ViewBuilder private func splitRows(_ hunk: AinkradDiffHunk) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(AinkradDiffReviewPresentation.sideBySideRows(hunk).enumerated()), id: \.offset) { _, pair in
-                HStack(alignment: .top, spacing: skin.spacing.sm) {
-                    Text(pair.left?.text ?? "").font(
-                        AinkradFontResolver.font(size: 11, mono: true, typography: typography)
-                    )
-                    .foregroundStyle(pair.left.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(pair.right?.text ?? "").font(
-                        AinkradFontResolver.font(size: 11, mono: true, typography: typography)
-                    )
-                    .foregroundStyle(pair.right.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if usesEditorLines {
+                    HStack(alignment: .top, spacing: 0) {
+                        editorLine(pair.left, sign: false)
+                        editorLine(pair.right, sign: false)
+                    }
+                } else {
+                    HStack(alignment: .top, spacing: skin.spacing.sm) {
+                        lineText(pair.left?.text ?? "").font(
+                            AinkradFontResolver.font(size: 11, mono: true, typography: typography)
+                        )
+                        .foregroundStyle(pair.left.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        lineText(pair.right?.text ?? "").font(
+                            AinkradFontResolver.font(size: 11, mono: true, typography: typography)
+                        )
+                        .foregroundStyle(pair.right.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
         }

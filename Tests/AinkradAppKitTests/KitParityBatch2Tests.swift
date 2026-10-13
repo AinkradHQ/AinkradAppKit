@@ -81,4 +81,51 @@ struct KitParityBatch2Tests {
         #expect(AinkradSearchField(text: .constant(""), placeholder: "").keyHint == nil)
         #expect(AinkradSearchField(text: .constant(""), placeholder: "").keyHint("⌘K").keyHint == "⌘K")
     }
+
+    @Test("editor hunk headers name the lines")
+    func editorHunkTitles() {
+        func hunk(_ oldStart: Int, _ oldCount: Int, _ newStart: Int, _ newCount: Int) -> AinkradDiffHunk {
+            AinkradDiffHunk(
+                id: 0, oldStart: oldStart, oldCount: oldCount, newStart: newStart, newCount: newCount, lines: [])
+        }
+        #expect(AinkradDiffReviewPresentation.editorHunkTitle(hunk(18, 1, 18, 3)) == "@@ lines 18–20")
+        #expect(AinkradDiffReviewPresentation.editorHunkTitle(hunk(7, 1, 7, 1)) == "@@ line 7")
+        #expect(AinkradDiffReviewPresentation.editorHunkTitle(hunk(24, 1, 23, 0)) == "@@ line 24 — removed")
+        #expect(AinkradDiffReviewPresentation.editorHunkTitle(hunk(30, 3, 29, 0)) == "@@ lines 30–32 — removed")
+        // A pure insert at the top (context 0) reports start 0; it is line 1.
+        #expect(AinkradDiffReviewPresentation.editorHunkTitle(hunk(0, 0, 0, 2)) == "@@ lines 1–2")
+    }
+
+    @Test("diff editor lines and syntax colour are opt-in")
+    func diffOptions() {
+        let diff = AinkradDiffEngine.compute(old: "a", new: "b", path: "/f", context: 2)
+        let plain = AinkradDiffReview(fileDiff: diff, rejectedHunkIDs: .constant([]))
+        #expect(!plain.usesEditorLines && !plain.usesSyntaxColours)
+        let editor = plain.editorLines().syntaxColoured()
+        #expect(editor.usesEditorLines && editor.usesSyntaxColours)
+    }
+
+    @Test("the syntax scanner colours keywords, types, calls, strings, numbers and comments")
+    func syntaxRuns() {
+        func kinds(_ line: String) -> [String: AinkradSyntaxKind] {
+            Dictionary(
+                ainkradSyntaxRuns(line).map { ($0.text.trimmingCharacters(in: .whitespaces), $0.kind) },
+                uniquingKeysWith: { first, _ in first })
+        }
+        let swift = kinds("    let isActive: Bool = check(\"x\", 13) // done")
+        #expect(swift["let"] == .keyword)
+        #expect(swift["Bool"] == .type)
+        #expect(swift["check"] == .function)
+        #expect(swift["\"x\""] == .string)
+        #expect(swift["13"] == .number)
+        #expect(swift["// done"] == .comment)
+        let attrs = kinds("@Environment(\\.skin) #expect(a) # a ruby comment")
+        #expect(attrs["@Environment"] == .attribute)
+        #expect(attrs["#expect"] == .attribute)
+        #expect(attrs["# a ruby comment"] == .comment)
+        // Runs always rebuild the line exactly.
+        let line = "x = \"unterminated \\\" str"
+        #expect(ainkradSyntaxRuns(line).map(\.text).joined() == line)
+        #expect(ainkradSyntaxRuns("").isEmpty)
+    }
 }
