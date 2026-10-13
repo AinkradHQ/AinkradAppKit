@@ -38,6 +38,20 @@ struct KitParityBatch6RenderTests {
                 }
                 .frame(width: 314)
             },
+            fixture("icon-button-outline-box", 200, 120) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 4) {
+                        KitParityBatch6Tests.drawerButton("⤢").outlineBox()
+                        KitParityBatch6Tests.drawerButton("✕").outlineBox()
+                    }
+                    HStack(spacing: 4) {
+                        KitParityBatch6Tests.drawerButton("⤢")
+                        KitParityBatch6Tests.drawerButton("✕")
+                    }
+                }
+                .padding(8)
+                .background(Color(red: 0.04, green: 0.055, blue: 0.09))
+            },
         ]
     }
 

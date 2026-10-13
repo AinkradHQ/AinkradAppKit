@@ -69,4 +69,29 @@ struct KitParityBatch6Tests {
             #expect(Self.fittingSize(field.monospaced(), skin: Self.glass).height == 28)
         }
     }
+
+    static func drawerButton(_ glyph: String) -> AinkradIconButton {
+        AinkradIconButton(systemName: "xmark", tooltip: "Hide") {}.textGlyph(glyph, size: 14)
+    }
+
+    @Test("an outline box is opt-in")
+    func outlineBoxOptIn() {
+        #expect(!Self.drawerButton("✕").isOutlineBox)
+        #expect(Self.drawerButton("✕").outlineBox().isOutlineBox)
+    }
+
+    @Test("an outline box changes the rim, fill and glyph, not the frame")
+    func outlineBox() throws {
+        func shot(_ button: AinkradIconButton) throws -> NSBitmapImageRep {
+            try #require(KitParityBatch5RenderTests.render(button, width: 62, height: 62))
+        }
+        let plain = try shot(Self.drawerButton("✕"))
+        let outlined = try shot(Self.drawerButton("✕").outlineBox())
+        // The rim on the 30 pt frame's top edge (y 16), the fill and glyph inside it.
+        #expect(KitParityBatch5RenderTests.differs(plain, outlined, rows: 16..<17))
+        #expect(KitParityBatch5RenderTests.differs(plain, outlined, rows: 20..<42))
+        // Nothing is drawn outside the frame.
+        #expect(!KitParityBatch5RenderTests.differs(plain, outlined, rows: 0..<14))
+        #expect(Self.fittingSize(Self.drawerButton("✕").outlineBox()) == CGSize(width: 30, height: 30))
+    }
 }
