@@ -244,6 +244,8 @@ public struct AinkradSearchField: View {
     /// parent view). `nil` (the default) keeps the field's own internal
     /// `@FocusState` — every existing call site is unaffected.
     private let externalFocus: FocusState<Bool>.Binding?
+    /// Set by `keyHint(_:)`.
+    var keyHint: String?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -261,6 +263,21 @@ public struct AinkradSearchField: View {
 
     private var isFocused: Bool { externalFocus?.wrappedValue ?? internalFocus }
 
+    /// An outlined keycap at the field's trailing edge naming the shortcut that
+    /// focuses it (`"⌘K"`), shown while the field is empty — the clear button
+    /// takes its place once there is text. Grimoire's thread search.
+    public func keyHint(_ keys: String) -> Self {
+        var copy = self
+        copy.keyHint = keys
+        return copy
+    }
+
+    @ViewBuilder private var keyHintCap: some View {
+        if let keyHint, text.isEmpty {
+            AinkradKbd(keyHint).outlined()
+        }
+    }
+
     public var body: some View {
         if #available(macOS 26, *), skin.usesNativeGlass {
             nativeBody
@@ -277,6 +294,7 @@ public struct AinkradSearchField: View {
         HStack(spacing: AinkradSpacing.xs) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
             nativeTextField
+            keyHintCap
             if !text.isEmpty {
                 Button {
                     text = ""
@@ -313,6 +331,8 @@ public struct AinkradSearchField: View {
                 .foregroundStyle(skin.color(search.searchGlyphColor, state: state))
 
             textField
+
+            keyHintCap
 
             if !text.isEmpty {
                 Button {

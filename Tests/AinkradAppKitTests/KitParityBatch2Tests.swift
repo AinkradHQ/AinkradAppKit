@@ -75,4 +75,10 @@ struct KitParityBatch2Tests {
         #expect(AinkradTextField(text: .constant(""), placeholder: "").label == nil)
         #expect(AinkradTextField(text: .constant(""), placeholder: "").leadingLabel("include").label == "include")
     }
+
+    @Test("a search field key hint is opt-in")
+    func searchKeyHint() {
+        #expect(AinkradSearchField(text: .constant(""), placeholder: "").keyHint == nil)
+        #expect(AinkradSearchField(text: .constant(""), placeholder: "").keyHint("⌘K").keyHint == "⌘K")
+    }
 }

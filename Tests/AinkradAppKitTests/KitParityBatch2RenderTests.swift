@@ -156,4 +156,14 @@ struct KitParityBatch2RenderTests {
             .frame(width: 256)
         }
     }
+
+    @Test func searchKeyHint() {
+        Self.shoot("search-field-key-hint", width: 300, height: 120) {
+            VStack(spacing: 8) {
+                AinkradSearchField(text: .constant(""), placeholder: "Search threads").keyHint("⌘K")
+                AinkradSearchField(text: .constant("glass"), placeholder: "Search threads").keyHint("⌘K")
+            }
+            .frame(width: 256)
+        }
+    }
 }
