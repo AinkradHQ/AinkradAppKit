@@ -112,6 +112,20 @@ struct ContractFreezeTests {
         #expect((StubHost() as Any) as? PluginInstanceIdentity == nil)
     }
 
+    @Test("App availability is discovered by cast, not a PluginAppLauncher requirement")
+    @MainActor
+    func appAvailabilityIsOptIn() {
+        // A launcher built before the capability still conforms (StubLauncher
+        // compiling is the proof) and reports "unknown", not "absent".
+        let old: PluginAppLauncher = StubLauncher()
+        #expect(old.appAvailability(appID: "forge") == nil)
+
+        // A host launcher that opts in answers through the same call.
+        let new: PluginAppLauncher = AvailabilityLauncher(available: ["forge"])
+        #expect(new.appAvailability(appID: "forge") == true)
+        #expect(new.appAvailability(appID: "lore") == false)
+    }
+
     // MARK: - Generation window
 
     @Test("The supported range is honest about what can actually load")
@@ -219,6 +233,12 @@ private struct StubLog: PluginLogger {
 @MainActor private struct StubLauncher: PluginAppLauncher {
     func open(appID: String, payload: String?) {}
     func takePendingLaunch() -> String? { nil }
+}
+@MainActor private struct AvailabilityLauncher: PluginAppLauncher, PluginAppAvailability {
+    let available: Set<String>
+    func open(appID: String, payload: String?) {}
+    func takePendingLaunch() -> String? { nil }
+    func isAppAvailable(appID: String) -> Bool { available.contains(appID) }
 }
 @MainActor private struct StubPresentation: PluginPresentationControl {
     var current: PluginPresentation { .pane }

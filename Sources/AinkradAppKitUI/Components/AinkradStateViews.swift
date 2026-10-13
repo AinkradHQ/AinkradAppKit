@@ -9,6 +9,10 @@ public struct AinkradEmptyState: View {
     private let message: String
     private let actionTitle: String?
     private let action: (() -> Void)?
+    // Set by `secondaryAction(_:action:)` — a modifier, not an init parameter,
+    // because a defaulted parameter is not ABI-compatible.
+    var secondaryTitle: String?
+    var secondary: (() -> Void)?
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
@@ -24,6 +28,27 @@ public struct AinkradEmptyState: View {
     }
     /// Whether a call-to-action button is present.
     public var hasAction: Bool { action != nil && actionTitle != nil }
+    /// Whether a secondary button is present.
+    public var hasSecondaryAction: Bool { secondary != nil && secondaryTitle != nil }
+
+    /// Adds a secondary button beside the call-to-action (on its leading side,
+    /// as macOS orders a pair), e.g. "Open folder…" next to "New thread".
+    public func secondaryAction(_ title: String, action: @escaping () -> Void) -> Self {
+        var copy = self
+        copy.secondaryTitle = title
+        copy.secondary = action
+        return copy
+    }
+
+    /// The secondary + primary buttons, in that order.
+    @ViewBuilder private var actionButtons: some View {
+        if hasSecondaryAction, let secondaryTitle, let secondary {
+            AinkradButton(title: secondaryTitle, style: .secondary, action: secondary)
+        }
+        if hasAction, let actionTitle, let action {
+            AinkradButton(title: actionTitle, style: .primary, action: action)
+        }
+    }
 
     @ViewBuilder public var body: some View {
         if #available(macOS 26, *), skin.usesNativeGlass {
@@ -33,9 +58,7 @@ public struct AinkradEmptyState: View {
             } description: {
                 Text(message)
             } actions: {
-                if hasAction, let actionTitle, let action {
-                    AinkradButton(title: actionTitle, style: .primary, action: action)
-                }
+                HStack(spacing: skin.spacing.sm) { actionButtons }
             }
         } else {
             kitBody
@@ -57,8 +80,8 @@ public struct AinkradEmptyState: View {
                     .foregroundStyle(skin.color(empty.messageColor))
                     .multilineTextAlignment(.center)
             }
-            if hasAction, let actionTitle, let action {
-                AinkradButton(title: actionTitle, style: .primary, action: action)
+            if hasAction || hasSecondaryAction {
+                HStack(spacing: skin.spacing.sm) { actionButtons }
                     .padding(.top, skin.spacing.xs)
             }
         }
