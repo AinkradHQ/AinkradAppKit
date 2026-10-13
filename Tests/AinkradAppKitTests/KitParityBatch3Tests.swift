@@ -84,4 +84,11 @@ struct KitParityBatch3Tests {
         #expect(!AinkradTextField(text: .constant(""), placeholder: "").isCompact)
         #expect(AinkradTextField(text: .constant(""), placeholder: "").leadingLabel("include").compact().isCompact)
     }
+
+    @Test("bare diff hunks are opt-in")
+    func diffBareHunks() {
+        let review = AinkradDiffReview(fileDiff: KitParityBatch2RenderTests.reviewDiff, rejectedHunkIDs: .constant([]))
+        #expect(!review.usesBareHunks)
+        #expect(review.bareHunks().usesBareHunks)
+    }
 }

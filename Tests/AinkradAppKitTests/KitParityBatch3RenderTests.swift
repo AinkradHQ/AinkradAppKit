@@ -126,7 +126,28 @@ struct KitParityBatch3RenderTests {
                     AinkradTextField(text: .constant("SidebarRow.swift"), placeholder: "")
                 }
             },
+            fixture("diff-bare-hunks", 640, 300) {
+                AinkradDiffReview(fileDiff: replacePreview, rejectedHunkIDs: .constant([]))
+                    .hidesHeader().editorLines().syntaxColoured().lineNumberGutter().unchangedLineFolds()
+                    .bareHunks()
+            },
         ]
+    }
+
+    /// Mockup 08's replace preview: lines 6–9 and 18–20, nine unchanged between.
+    static var replacePreview: AinkradFileDiff {
+        var old = (1...22).map { "    let line\($0) = \($0)" }
+        old[5] = "    @Environment(\\.skin) private var skin"
+        old[6] = "    let thread: ThreadSummary"
+        old[7] = "    let isSelected: Bool"
+        old[17] = "        .background {"
+        old[18] = "            if isSelected { Capsule().glassEffect(.regular) }"
+        old[19] = "        }"
+        var new = old
+        new[7] = "    let isActive: Bool"
+        new[18] = "            if isActive { Capsule().glassEffect(.regular) }"
+        return AinkradDiffEngine.compute(
+            old: old.joined(separator: "\n"), new: new.joined(separator: "\n"), path: "SidebarRow.swift", context: 1)
     }
 
     static func composer(text: String) -> AinkradComposer<EmptyView, Text, Text> {

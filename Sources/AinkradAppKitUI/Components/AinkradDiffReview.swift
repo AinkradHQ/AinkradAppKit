@@ -89,6 +89,7 @@ public struct AinkradDiffReview: View {
     var usesSyntaxColours = false
     var usesLineGutter = false
     var usesUnchangedFolds = false
+    var usesBareHunks = false
 
     public init(fileDiff: AinkradFileDiff, rejectedHunkIDs: Binding<Set<Int>>) {
         self.fileDiff = fileDiff
@@ -156,10 +157,20 @@ public struct AinkradDiffReview: View {
         return copy
     }
 
+    /// Hunks without their box or their "@@" row — and so without the
+    /// per-hunk control — running straight on from each other, as Forge's
+    /// replace preview reads like the editor (mockup 08, FP61). Pair with
+    /// `editorLines()`, `lineNumberGutter()` and `unchangedLineFolds()`.
+    public func bareHunks() -> Self {
+        var copy = self
+        copy.usesBareHunks = true
+        return copy
+    }
+
     private var splitBinding: Binding<Bool> { callerSideBySide ?? $sideBySide }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: skin.spacing.sm) {
+        VStack(alignment: .leading, spacing: usesBareHunks ? 0 : skin.spacing.sm) {
             if showsHeader { header }
             ForEach(Array(fileDiff.hunks.enumerated()), id: \.element.id) { index, hunk in
                 let unchanged = AinkradDiffReviewPresentation.unchangedLinesBefore(fileDiff.hunks, at: index)
@@ -185,23 +196,29 @@ public struct AinkradDiffReview: View {
     private func hunkBlock(_ hunk: AinkradDiffHunk) -> some View {
         let rejected = rejectedHunkIDs.contains(hunk.id)
         VStack(alignment: .leading, spacing: skin.size.s3) {
-            HStack(spacing: skin.size.s6) {
-                hunkTitle(hunk)
-                Spacer(minLength: 6)
-                if keepUndo {
-                    DiffKeepUndoTick(accepted: acceptedBinding(hunk.id))
-                } else {
-                    AinkradToggleButton(
-                        isOn: acceptedBinding(hunk.id),
-                        title: AinkradDiffReviewPresentation.hunkControlTitle(accepted: !rejected, keepUndo: false))
-                }
-            }
-            .padding(.horizontal, usesEditorLines ? skin.size.s10 : 0)
+            if !usesBareHunks { hunkHeader(hunk, rejected: rejected) }
             if splitBinding.wrappedValue { splitRows(hunk) } else { unifiedRows(hunk) }
         }
         .opacity(rejected ? (usesEditorLines ? skin.opacity.o55 : skin.opacity.o50) : 1)
-        .padding(.horizontal, usesEditorLines ? 0 : skin.spacing.sm).padding(.vertical, skin.size.s6)
-        .background { hunkBackground }
+        .padding(.horizontal, usesEditorLines || usesBareHunks ? 0 : skin.spacing.sm)
+        .padding(.vertical, usesBareHunks ? 0 : skin.size.s6)
+        .background { if !usesBareHunks { hunkBackground } }
+    }
+
+    /// The "@@" title and the per-hunk control.
+    private func hunkHeader(_ hunk: AinkradDiffHunk, rejected: Bool) -> some View {
+        HStack(spacing: skin.size.s6) {
+            hunkTitle(hunk)
+            Spacer(minLength: 6)
+            if keepUndo {
+                DiffKeepUndoTick(accepted: acceptedBinding(hunk.id))
+            } else {
+                AinkradToggleButton(
+                    isOn: acceptedBinding(hunk.id),
+                    title: AinkradDiffReviewPresentation.hunkControlTitle(accepted: !rejected, keepUndo: false))
+            }
+        }
+        .padding(.horizontal, usesEditorLines ? skin.size.s10 : 0)
     }
 
     @ViewBuilder private var hunkBackground: some View {
