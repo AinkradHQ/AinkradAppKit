@@ -31,7 +31,10 @@ struct KitParityBatch5RenderTests {
         [
             fixture("diff-bare-hunks-untickable", 640, 300) {
                 preview(rejected: [1]).bareHunks(untickable: true)
-            }
+            },
+            fixture("diff-line-metrics", 640, 260) {
+                preview(rejected: [1]).bareHunks(untickable: true).lineMetrics(fontSize: 12.5, rowHeight: 20)
+            },
         ]
     }
 
@@ -51,6 +54,20 @@ struct KitParityBatch5RenderTests {
         // From y 16: the first hunk's first row, then its second row.
         #expect(Self.differs(plain, ticked, rows: 16..<30))
         #expect(!Self.differs(plain, ticked, rows: 34..<46))
+    }
+
+    /// The fitting height of `view` at 600 pt wide, in the Neon skin.
+    static func fittingHeight(_ view: some View) -> CGFloat {
+        let host = NSHostingView(rootView: view.frame(width: 600).ainkradSkin(.standard))
+        return host.fittingSize.height
+    }
+
+    @Test("line metrics give every preview row the mockup's 20 pt")
+    func lineMetricsRows() {
+        // Mockup 08's preview: two hunks of four rows and a fold row between.
+        let sized = Self.fittingHeight(Self.preview(rejected: []).bareHunks().lineMetrics(fontSize: 12, rowHeight: 20))
+        #expect(abs(sized - 9 * 20) < 0.5)
+        #expect(Self.fittingHeight(Self.preview(rejected: []).bareHunks()) < 9 * 20)
     }
 
     @Test func rendersEveryFixture() {
