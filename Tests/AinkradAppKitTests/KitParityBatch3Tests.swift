@@ -136,4 +136,11 @@ struct KitParityBatch3Tests {
         #expect(!crumb.usesTextSeparators)
         #expect(crumb.textSeparators().usesTextSeparators)
     }
+
+    @Test("secondary-accent empty-state buttons are opt-in")
+    func emptyStateSecondaryAccent() {
+        let plain = AinkradEmptyState(icon: "books.vertical", title: "No threads yet", message: "")
+        #expect(!plain.usesSecondaryAccent)
+        #expect(plain.secondaryAccent().usesSecondaryAccent)
+    }
 }

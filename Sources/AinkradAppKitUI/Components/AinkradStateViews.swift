@@ -16,6 +16,8 @@ public struct AinkradEmptyState: View {
     /// Set by `glyph(_:)` and `iconTint(_:)`.
     var textGlyph: String?
     var tint: Color?
+    /// Set by `secondaryAccent()`.
+    var usesSecondaryAccent = false
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
@@ -60,6 +62,15 @@ public struct AinkradEmptyState: View {
         return copy
     }
 
+    /// Draws the buttons with `AinkradButton.secondaryAccent()`: the
+    /// secondary button's text and rim in the cyan secondary accent, as
+    /// Grimoire's no-threads "Open folder…" (GP44). The primary is unchanged.
+    public func secondaryAccent() -> Self {
+        var copy = self
+        copy.usesSecondaryAccent = true
+        return copy
+    }
+
     @ViewBuilder private var iconView: some View {
         if let textGlyph {
             // A text glyph takes no symbol sizing (Glass): give it the display font.
@@ -72,7 +83,11 @@ public struct AinkradEmptyState: View {
     /// The secondary + primary buttons, in that order.
     @ViewBuilder private var actionButtons: some View {
         if hasSecondaryAction, let secondaryTitle, let secondary {
-            AinkradButton(title: secondaryTitle, style: .secondary, action: secondary)
+            if usesSecondaryAccent {
+                AinkradButton(title: secondaryTitle, style: .secondary, action: secondary).secondaryAccent()
+            } else {
+                AinkradButton(title: secondaryTitle, style: .secondary, action: secondary)
+            }
         }
         if hasAction, let actionTitle, let action {
             AinkradButton(title: actionTitle, style: .primary, action: action)

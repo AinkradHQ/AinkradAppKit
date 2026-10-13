@@ -69,6 +69,7 @@ struct KitParityBatch3RenderTests {
                         actionTitle: "New thread ⌘N", action: {}
                     )
                     .secondaryAction("Open folder…") {}
+                    .secondaryAccent()
                     .glyph("❖").iconTint(AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary))
                     AinkradEmptyState(icon: "hammer", title: "No file open", message: "⌘P open a file")
                         .glyph("⚒").iconTint(AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary))
