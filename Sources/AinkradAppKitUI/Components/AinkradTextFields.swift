@@ -110,6 +110,9 @@ public struct AinkradTextField: View {
     @FocusState private var isFocused: Bool
     /// Set by `selectsNameWithoutExtension()`.
     var selectsBaseName = false
+    /// Set by `leadingLabel(_:)`.
+    var label: String?
+    @Environment(\.ainkradTheme) private var theme
 
     public init(text: Binding<String>, placeholder: String) {
         self._text = text
@@ -125,8 +128,39 @@ public struct AinkradTextField: View {
         return copy
     }
 
+    /// A small faint label inside the field, before the text (`include`,
+    /// `exclude`), that stays while the field has text — unlike a placeholder.
+    /// Forge's search globs. Under Glass the field becomes a glass capsule
+    /// holding the label, as Apple's rounded field has no room for one.
+    public func leadingLabel(_ label: String) -> Self {
+        var copy = self
+        copy.label = label
+        return copy
+    }
+
+    @ViewBuilder private var labelView: some View {
+        if let label {
+            Text(label)
+                .font(AinkradFontResolver.font(size: 10, typography: typo))
+                .foregroundStyle(theme.foreground.opacity(skin.opacity.o35))
+                .lineLimit(1)
+                .frame(width: skin.size.s46, alignment: .leading)
+        }
+    }
+
     public var body: some View {
-        if #available(macOS 26, *), skin.usesNativeGlass {
+        if #available(macOS 26, *), skin.usesNativeGlass, label != nil {
+            HStack(spacing: AinkradSpacing.xs) {
+                labelView
+                TextField(placeholder, text: $text)
+                    .textFieldStyle(.plain)
+                    .focused($isFocused)
+            }
+            .padding(.horizontal, AinkradSpacing.md)
+            .padding(.vertical, AinkradSpacing.sm)
+            .glassEffect(.regular, in: .capsule)
+            .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
+        } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: Apple's rounded text field.
             TextField(placeholder, text: $text)
                 .textFieldStyle(.roundedBorder)
@@ -142,22 +176,25 @@ public struct AinkradTextField: View {
         let field = skin.roles.field
         let tokens = skin.components.textField
         let shape = AinkradSkinShape(token: field.shape)
-        return TextField(placeholder, text: $text)
-            .focused($isFocused)
-            .textFieldStyle(.plain)
-            .font(skin.font(tokens.font, typography: typo))
-            .foregroundStyle(skin.color(skin.text.primary))
-            .tint(skin.color(skin.palette.accentSecondary))
-            .padding(.horizontal, AinkradSpacing.md)
-            .padding(.vertical, AinkradSpacing.sm)
-            .background(shape.fill(skin.color(field.fill)))
-            .overlay(
-                shape.strokeBorder(
-                    skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
-            )
-            .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
-            .animation(AinkradMotion.hover, value: isFocused)
-            .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
+        return HStack(spacing: AinkradSpacing.xs) {
+            labelView
+            TextField(placeholder, text: $text)
+                .focused($isFocused)
+                .textFieldStyle(.plain)
+                .font(skin.font(tokens.font, typography: typo))
+                .foregroundStyle(skin.color(skin.text.primary))
+                .tint(skin.color(skin.palette.accentSecondary))
+        }
+        .padding(.horizontal, AinkradSpacing.md)
+        .padding(.vertical, AinkradSpacing.sm)
+        .background(shape.fill(skin.color(field.fill)))
+        .overlay(
+            shape.strokeBorder(
+                skin.color(field.stroke.color, state: state), lineWidth: field.stroke.width.resolve(state))
+        )
+        .shadow(color: skin.color(field.glow.color, state: state), radius: field.glow.radius.resolve(state))
+        .animation(AinkradMotion.hover, value: isFocused)
+        .modifier(BaseNameSelection(enabled: selectsBaseName, isFocused: isFocused, text: text))
     }
 
     private var state: AinkradControlState {

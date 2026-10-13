@@ -145,4 +145,15 @@ struct KitParityBatch2RenderTests {
             .frame(width: 420)
         }
     }
+
+    @Test func labelledField() {
+        Self.shoot("text-field-labelled", width: 300, height: 120) {
+            VStack(spacing: 6) {
+                AinkradTextField(text: .constant("Sources/**, Tests/**"), placeholder: "files to include")
+                    .leadingLabel("include")
+                AinkradTextField(text: .constant(""), placeholder: ".build/**").leadingLabel("exclude")
+            }
+            .frame(width: 256)
+        }
+    }
 }

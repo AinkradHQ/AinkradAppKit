@@ -69,4 +69,10 @@ struct KitParityBatch2Tests {
         #expect(Self.composer().sendTitle == nil)
         #expect(Self.composer().sendTitle("Ask ⌘↵").sendTitle == "Ask ⌘↵")
     }
+
+    @Test("a leading field label is opt-in")
+    func textFieldLabel() {
+        #expect(AinkradTextField(text: .constant(""), placeholder: "").label == nil)
+        #expect(AinkradTextField(text: .constant(""), placeholder: "").leadingLabel("include").label == "include")
+    }
 }
