@@ -131,6 +131,21 @@ struct KitParityBatch3RenderTests {
                     .hidesHeader().editorLines().syntaxColoured().lineNumberGutter().unchangedLineFolds()
                     .bareHunks()
             },
+            fixture("command-menu-glyph-icons", 560, 210) {
+                AinkradCommandMenu(
+                    items: ["SidebarRow.swift", "release.yml", "README.md", "Makefile"], selection: .constant(nil),
+                    icon: { name in
+                        name.hasSuffix(".swift") ? "◆" : name.hasSuffix(".yml") ? "≡" : name.hasSuffix(".md") ? "#" : ""
+                    },
+                    label: { $0 }, detail: { _ in "Sources/Ainkrad/Features/Sidebar" }, uppercased: false,
+                    highlight: .constant(0)
+                )
+                .paletteRows()
+                .iconGlyphs { name in
+                    name.hasSuffix(".swift")
+                        ? .orange : name.hasSuffix(".yml") ? .pink : name.hasSuffix(".md") ? .blue : nil
+                }
+            },
         ]
     }
 

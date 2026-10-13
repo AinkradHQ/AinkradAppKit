@@ -62,6 +62,7 @@ public struct AinkradCommandMenu<T: Hashable>: View {
     var usesPaletteRows = false
     var matchedCharacters: ((T) -> [Int])?
     var sectionTitle: ((T) -> String?)?
+    var glyphTint: ((T) -> Color?)?
 
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     /// Starts unset: `emphasized` is `hovering || isHighlighted`, so seeding
@@ -128,6 +129,16 @@ public struct AinkradCommandMenu<T: Hashable>: View {
         return copy
     }
 
+    /// Under `paletteRows()`, draws each `icon` string as a text glyph (`"◆"`,
+    /// `"≡"`, `"#"`) instead of an SF Symbol name, in `tint(item)` — the
+    /// secondary accent when `nil`. Forge's quick open colours each file type
+    /// (mockup 02).
+    public func iconGlyphs(tint: @escaping (T) -> Color?) -> Self {
+        var copy = self
+        copy.glyphTint = tint
+        return copy
+    }
+
     /// The section caption to draw above `items[index]`, if it starts one.
     func sectionStart(at index: Int) -> String? {
         guard let sectionTitle, let title = sectionTitle(items[index]) else { return nil }
@@ -174,7 +185,8 @@ public struct AinkradCommandMenu<T: Hashable>: View {
             AinkradPaletteRow(
                 icon: icon(item), label: label(item), matched: Set(matchedCharacters?(item) ?? []),
                 detail: detail.flatMap { $0(item) }, value: value.flatMap { $0(item) },
-                isHighlighted: index == highlightedIndex, showsReturnKey: true
+                isHighlighted: index == highlightedIndex, showsReturnKey: true,
+                iconIsGlyph: glyphTint != nil, iconTint: glyphTint?(item)
             ) { activate(item) }
         } else {
             AinkradCommandMenuRow(

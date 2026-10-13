@@ -91,4 +91,11 @@ struct KitParityBatch3Tests {
         #expect(!review.usesBareHunks)
         #expect(review.bareHunks().usesBareHunks)
     }
+
+    @Test("glyph palette icons are opt-in")
+    func commandMenuGlyphIcons() {
+        let menu = AinkradCommandMenu(items: ["a"], selection: .constant(nil), icon: { _ in "◆" }, label: { $0 })
+        #expect(menu.glyphTint == nil)
+        #expect(menu.iconGlyphs { _ in .orange }.glyphTint?("a") != nil)
+    }
 }
