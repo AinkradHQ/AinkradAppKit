@@ -41,6 +41,7 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
     var stopTitle: String?
     var onStop: (() -> Void)?
     var dimsTextField = false
+    var keepsSendLit = false
 
     @State private var trigger: AinkradComposerTrigger?
     @State private var isOverlayVisible = false
@@ -112,6 +113,16 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
         return copy
     }
 
+    /// Send drawn at full strength even while `canSend` is `false` — with an
+    /// empty draft a click does nothing, but the button does not read as
+    /// disabled. For the busy composer's queue button (`sendGlyph("↵")`),
+    /// which the mockup draws lit (Grimoire mockup 01).
+    public func sendStaysLit() -> Self {
+        var copy = self
+        copy.keepsSendLit = true
+        return copy
+    }
+
     /// A Stop button just before Send while `action` is non-nil — the
     /// mockups' red outline `"■ Stop"` (`AinkradButton(style: .danger)
     /// .outlined()`), e.g. while the agent works. It stays live when sending
@@ -153,9 +164,11 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
                 if let stopTitle, let onStop {
                     AinkradButton(title: stopTitle, style: .danger, action: onStop).outlined().fixedSize()
                 }
+                // Lit but not sendable: left enabled so Glass does not grey
+                // the glyph; the action checks `canSend` instead.
                 sendButton
-                    .disabled(!canSend)
-                    .opacity(canSend ? 1 : skin.opacity.o40)
+                    .disabled(!canSend && !keepsSendLit)
+                    .opacity(canSend || keepsSendLit ? 1 : skin.opacity.o40)
             }
             .frame(height: Self.controlHeight)
         }
@@ -177,10 +190,12 @@ public struct AinkradComposer<Chips: View, Leading: View, Trailing: View>: View 
 
     @ViewBuilder private var sendButton: some View {
         if let sendTitle {
-            AinkradButton(title: sendTitle, style: .primary) { onSend() }
+            AinkradButton(title: sendTitle, style: .primary) { if canSend { onSend() } }
         } else {
-            AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") { onSend() }
-                .textGlyph(sendGlyph)
+            AinkradIconButton(systemName: "arrow.up", size: Self.controlHeight, tooltip: "Send") {
+                if canSend { onSend() }
+            }
+            .textGlyph(sendGlyph)
         }
     }
 

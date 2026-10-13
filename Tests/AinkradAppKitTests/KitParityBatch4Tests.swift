@@ -22,4 +22,10 @@ struct KitParityBatch4Tests {
         #expect(plain.glyph("❖").glyphSize(40).glyphSize == 40)
         #expect(AinkradEmptyState(icon: "hammer", keyHints: []).glyphSize(34).glyphSize == 34)
     }
+
+    @Test("a lit Send is opt-in")
+    func composerSendStaysLit() {
+        #expect(!KitParityBatch2Tests.composer().keepsSendLit)
+        #expect(KitParityBatch2Tests.composer().sendGlyph("↵").sendStaysLit().keepsSendLit)
+    }
 }
