@@ -38,4 +38,14 @@ struct KitParityBatch3Tests {
         #expect(plain.stopButton("■ Stop", action: nil).onStop == nil)
         #expect(AinkradIconButton(systemName: "arrow.up") {}.textGlyph("↵").textGlyph == "↵")
     }
+
+    @Test("an empty state's text glyph and icon tint are opt-in")
+    func emptyStateGlyph() {
+        let plain = AinkradEmptyState(icon: "books.vertical", title: "No threads yet", message: "")
+        #expect(plain.textGlyph == nil)
+        #expect(plain.tint == nil)
+        let grimoire = plain.glyph("❖").iconTint(.cyan)
+        #expect(grimoire.textGlyph == "❖")
+        #expect(grimoire.tint != nil)
+    }
 }

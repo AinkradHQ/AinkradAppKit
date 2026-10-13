@@ -13,6 +13,9 @@ public struct AinkradEmptyState: View {
     // because a defaulted parameter is not ABI-compatible.
     var secondaryTitle: String?
     var secondary: (() -> Void)?
+    /// Set by `glyph(_:)` and `iconTint(_:)`.
+    var textGlyph: String?
+    var tint: Color?
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
 
@@ -40,6 +43,32 @@ public struct AinkradEmptyState: View {
         return copy
     }
 
+    /// Draws a text glyph (`"❖"`, `"⚒"`) in place of the SF Symbol `icon`,
+    /// as the mockups' `.empty .glyph` (Grimoire's no-threads state, Forge's
+    /// empty editor).
+    public func glyph(_ glyph: String) -> Self {
+        var copy = self
+        copy.textGlyph = glyph
+        return copy
+    }
+
+    /// Colours the icon or glyph — e.g. the secondary accent at 80 %, the
+    /// mockups' cyan glyph — instead of the skin's faint foreground.
+    public func iconTint(_ color: Color) -> Self {
+        var copy = self
+        copy.tint = color
+        return copy
+    }
+
+    @ViewBuilder private var iconView: some View {
+        if let textGlyph {
+            // A text glyph takes no symbol sizing (Glass): give it the display font.
+            Text(textGlyph).font(skin.font(skin.components.emptyState.glyphFont, typography: typo))
+        } else {
+            Image(systemName: icon)
+        }
+    }
+
     /// The secondary + primary buttons, in that order.
     @ViewBuilder private var actionButtons: some View {
         if hasSecondaryAction, let secondaryTitle, let secondary {
@@ -54,7 +83,15 @@ public struct AinkradEmptyState: View {
         if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: Apple's content-unavailable view.
             ContentUnavailableView {
-                Label(title, systemImage: icon)
+                if textGlyph == nil, tint == nil {
+                    Label(title, systemImage: icon)
+                } else {
+                    Label {
+                        Text(title)
+                    } icon: {
+                        iconView.foregroundStyle(tint ?? .secondary)
+                    }
+                }
             } description: {
                 Text(message)
             } actions: {
@@ -68,9 +105,9 @@ public struct AinkradEmptyState: View {
     private var kitBody: some View {
         let empty = skin.components.emptyState
         return VStack(spacing: skin.spacing.md) {
-            Image(systemName: icon)
+            iconView
                 .font(skin.font(empty.glyphFont, typography: typo))
-                .foregroundStyle(skin.color(empty.glyphColor))
+                .foregroundStyle(tint ?? skin.color(empty.glyphColor))
             VStack(spacing: skin.spacing.xs) {
                 Text(title)
                     .font(skin.font(empty.titleFont, typography: typo))

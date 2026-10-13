@@ -61,6 +61,19 @@ struct KitParityBatch3RenderTests {
                 }
                 .frame(width: 440)
             },
+            fixture("empty-state-glyph", 640, 280) {
+                HStack(spacing: 0) {
+                    AinkradEmptyState(
+                        icon: "books.vertical", title: "No threads yet",
+                        message: "Open a project folder and start a thread — or keep using the terminal;",
+                        actionTitle: "New thread ⌘N", action: {}
+                    )
+                    .secondaryAction("Open folder…") {}
+                    .glyph("❖").iconTint(AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary))
+                    AinkradEmptyState(icon: "hammer", title: "No file open", message: "⌘P open a file")
+                        .glyph("⚒").iconTint(AinkradSkin.standard.color(AinkradSkin.standard.palette.accentSecondary))
+                }
+            },
         ]
     }
 
