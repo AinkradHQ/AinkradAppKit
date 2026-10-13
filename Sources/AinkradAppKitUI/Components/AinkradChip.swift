@@ -306,6 +306,7 @@ public struct AinkradKbd: View {
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradTheme) private var theme
+    @Environment(\.ainkradCommandFirstKeys) private var commandFirst
 
     public init(_ key: String) {
         self.key = key
@@ -321,12 +322,15 @@ public struct AinkradKbd: View {
         return copy
     }
 
+    /// The glyphs drawn: `key`, ⌘ first under `ainkradCommandFirstKeys()`.
+    private var keys: String { commandFirst ? ainkradCommandFirst(key) : key }
+
     public var body: some View {
         if isOutlined {
             outlinedBody
         } else if #available(macOS 26, *), skin.usesNativeGlass {
             // Glass on macOS 26+: a plain keycap, the glyphs as menus show them.
-            Text(key)
+            Text(keys)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, kbd.paddingH)
@@ -343,7 +347,7 @@ public struct AinkradKbd: View {
         let hairline =
             skin.usesNativeGlass
             ? theme.foreground.opacity(skin.opacity.o07) : theme.accentSecondary.opacity(skin.opacity.o18)
-        return Text(key)
+        return Text(keys)
             .font(AinkradFontResolver.font(size: 10, mono: true, typography: typo))
             .foregroundStyle(theme.foreground.opacity(skin.opacity.o55))
             .padding(.horizontal, skin.size.s5)
@@ -354,7 +358,7 @@ public struct AinkradKbd: View {
     private var kitBody: some View {
         let kbd = skin.components.kbd
         let shape = AinkradSkinShape(token: kbd.shape)
-        return Text("[\(key)]")
+        return Text("[\(keys)]")
             .font(skin.font(kbd.font, typography: typo))
             .foregroundStyle(skin.color(kbd.color))
             .padding(.horizontal, kbd.paddingH)
@@ -366,4 +370,24 @@ public struct AinkradKbd: View {
                 )
             )
     }
+}
+
+extension EnvironmentValues {
+    /// Set by `ainkradCommandFirstKeys()`.
+    @Entry public var ainkradCommandFirstKeys = false
+}
+
+extension View {
+    /// Writes every `AinkradKbd` keycap below with ⌘ ahead of ⇧ — "⌘⇧P", as
+    /// the Forge mockups do, instead of Apple's "⇧⌘P" — including the
+    /// palette's shortcut caps and empty-state key hints. ⌥⌘ and ⌃⌘ keep
+    /// Apple's order, as the mockups write them.
+    public func ainkradCommandFirstKeys() -> some View {
+        environment(\.ainkradCommandFirstKeys, true)
+    }
+}
+
+/// `keys` with every "⇧⌘" written "⌘⇧" ("⇧⌘P" → "⌘⇧P"); everything else as given.
+public func ainkradCommandFirst(_ keys: String) -> String {
+    keys.replacingOccurrences(of: "⇧⌘", with: "⌘⇧")
 }

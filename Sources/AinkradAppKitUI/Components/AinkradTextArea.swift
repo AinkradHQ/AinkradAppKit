@@ -21,6 +21,8 @@ public struct AinkradTextArea: View {
     /// When set, plain Return SUBMITS (calls this) instead of inserting a
     /// newline; Option+Return still inserts a newline. Auto-grow composers only.
     private let onSubmit: (() -> Void)?
+    /// Set by `fontSize(_:)`.
+    var fontSize: CGFloat?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -93,6 +95,21 @@ public struct AinkradTextArea: View {
         self.onSubmit = onSubmit
     }
 
+    /// Draws the text and the placeholder at `size` points instead of the
+    /// body size — Forge's Ask card, 12.5 pt (mockup 17). Both editor modes,
+    /// Neon and Glass.
+    public func fontSize(_ size: CGFloat) -> Self {
+        var copy = self
+        copy.fontSize = size
+        return copy
+    }
+
+    /// The placeholder font: `fontSize(_:)`, else the skin's.
+    private var placeholderFont: Font {
+        if let fontSize { return AinkradFontResolver.font(size: fontSize, typography: typo) }
+        return skin.font(skin.components.textArea.placeholderFont, typography: typo)
+    }
+
     /// Whether the focus ring should read as active — the AppKit editing flag in
     /// auto-grow mode, the SwiftUI focus state otherwise.
     private var focusRingActive: Bool { maxHeight == nil ? isFocused : nsFocused }
@@ -150,7 +167,7 @@ public struct AinkradTextArea: View {
                     // exactly where typed text will. `allowsHitTesting(false)`
                     // lets clicks fall through to the editor.
                     Text(placeholder)
-                        .font(skin.font(area.placeholderFont, typography: typo))
+                        .font(placeholderFont)
                         .foregroundStyle(skin.color(area.placeholderColor))
                         .padding(.horizontal, area.placeholderPadHAutoGrow)
                         .padding(.vertical, AinkradSpacing.sm)
@@ -184,7 +201,9 @@ public struct AinkradTextArea: View {
     }
 
     private var nsBodyFont: NSFont {
-        let size = AinkradFontResolver.pointSize(.body, typography: typo)
+        let size =
+            fontSize.map { AinkradFontResolver.pointSize($0, typography: typo) }
+            ?? AinkradFontResolver.pointSize(.body, typography: typo)
         if let family = typo.fontFamilyName, let f = NSFont(name: family, size: size) { return f }
         return NSFont.systemFont(ofSize: size)  // design-lint: allow font-size AppKit fallback at runtime size
     }
@@ -192,7 +211,7 @@ public struct AinkradTextArea: View {
     private var placeholderText: some View {
         let area = skin.components.textArea
         return Text(placeholder)
-            .font(skin.font(area.placeholderFont, typography: typo))
+            .font(placeholderFont)
             .foregroundStyle(skin.color(area.placeholderColor))
             .padding(.horizontal, area.placeholderPadHLegacy)
             .padding(.vertical, area.placeholderPadVLegacy)
@@ -203,7 +222,10 @@ public struct AinkradTextArea: View {
         TextEditor(text: $text)
             .focused($isFocused)
             .scrollContentBackground(.hidden)
-            .font(AinkradFontResolver.font(.body, typography: typo))
+            .font(
+                fontSize.map { AinkradFontResolver.font(size: $0, typography: typo) }
+                    ?? AinkradFontResolver.font(.body, typography: typo)
+            )
             .foregroundStyle(skin.color(skin.text.primary))
             .tint(skin.color(skin.palette.accentSecondary))
             .padding(.horizontal, AinkradSpacing.md)

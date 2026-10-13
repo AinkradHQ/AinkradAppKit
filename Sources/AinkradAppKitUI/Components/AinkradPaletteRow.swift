@@ -40,6 +40,8 @@ struct AinkradPaletteRow: View {
     /// rather than SF Symbols, each in its own colour.
     var iconIsGlyph = false
     var iconTint: Color?
+    /// The glyph's size; the row's 13 pt when `nil`.
+    var iconGlyphSize: CGFloat?
     /// Forge's symbol rows lead with the symbol's kind (`struct`, `func`) in
     /// place of the icon, in the type colour unless `kindTint` is set.
     var kind: String?
@@ -94,7 +96,15 @@ struct AinkradPaletteRow: View {
     /// A glyph sits at the row's 13 pt, as the mockup's `.ic` inherits it.
     @ViewBuilder private var iconView: some View {
         if iconIsGlyph {
-            Text(icon).font(AinkradFontResolver.font(size: 13, typography: typo))
+            let glyph = Text(icon).font(AinkradFontResolver.font(size: 13, typography: typo))
+            if let iconGlyphSize {
+                // Sized over the 13 pt glyph's room, so the row keeps its height.
+                glyph.hidden().overlay {
+                    Text(icon).font(AinkradFontResolver.font(size: iconGlyphSize, typography: typo)).fixedSize()
+                }
+            } else {
+                glyph
+            }
         } else {
             Image(systemName: icon).font(AinkradFontResolver.font(size: 11, typography: typo))
         }

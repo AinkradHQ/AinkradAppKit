@@ -90,6 +90,9 @@ public struct AinkradDiffReview: View {
     var usesLineGutter = false
     var usesUnchangedFolds = false
     var usesBareHunks = false
+    var bareHunksUntickable = false
+    var lineFontSize: CGFloat?
+    var lineRowHeight: CGFloat?
 
     public init(fileDiff: AinkradFileDiff, rejectedHunkIDs: Binding<Set<Int>>) {
         self.fileDiff = fileDiff
@@ -165,6 +168,32 @@ public struct AinkradDiffReview: View {
         var copy = self
         copy.usesBareHunks = true
         return copy
+    }
+
+    /// `bareHunks()`, keeping each hunk's ✓ Keep / ↶ Undo tick when
+    /// `untickable`: the small text tick at the end of the hunk's first row,
+    /// no box, as Forge's replace and rename previews let a change be
+    /// unticked (mockups 08 and 11). An unticked hunk dims to 55 %.
+    public func bareHunks(untickable: Bool) -> Self {
+        var copy = bareHunks()
+        copy.bareHunksUntickable = untickable
+        return copy
+    }
+
+    /// Draws each line's code (and the fold row) at `fontSize` pt mono, each
+    /// row at least `rowHeight` pt tall — the editor metrics of Forge's
+    /// previews (`.code`: 12.5 px mono, 20 px rows; mockups 08 and 11), where
+    /// the default rows are ~16 pt. The gutter numbers follow the font.
+    public func lineMetrics(fontSize: CGFloat, rowHeight: CGFloat) -> Self {
+        var copy = self
+        copy.lineFontSize = fontSize
+        copy.lineRowHeight = rowHeight
+        return copy
+    }
+
+    /// A line's mono font: `lineMetrics(fontSize:rowHeight:)`'s, else `base`.
+    private func lineFont(_ base: CGFloat) -> Font {
+        AinkradFontResolver.font(size: lineFontSize ?? base, mono: true, typography: typography)
     }
 
     private var splitBinding: Binding<Bool> { callerSideBySide ?? $sideBySide }
@@ -261,9 +290,10 @@ public struct AinkradDiffReview: View {
                 )
                 .textSelection(.enabled)
         }
-        .font(AinkradFontResolver.font(size: 11.5, mono: true, typography: typography))
+        .font(lineFont(11.5))
         .padding(.horizontal, usesLineGutter ? 0 : skin.size.s10)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(DiffRowHeight(height: lineRowHeight))
         .background(alignment: .leading) {
             if usesLineGutter, let bar = changeBar(line) {
                 Rectangle().fill(bar).frame(width: skin.size.s3).padding(.leading, gutterNumberWidth)
@@ -298,9 +328,10 @@ public struct AinkradDiffReview: View {
             Text("⋯ \(count) unchanged line\(count == 1 ? "" : "s")")
                 .foregroundStyle(theme.foreground.opacity(skin.opacity.o35))
         }
-        .font(AinkradFontResolver.font(size: usesEditorLines ? 11.5 : 11, mono: true, typography: typography))
+        .font(lineFont(usesEditorLines ? 11.5 : 11))
         .padding(.horizontal, usesLineGutter ? 0 : skin.size.s10)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(DiffRowHeight(height: lineRowHeight))
     }
 
     private func wash(_ line: AinkradDiffLine?) -> Color {
@@ -313,43 +344,61 @@ public struct AinkradDiffReview: View {
 
     @ViewBuilder private func unifiedRows(_ hunk: AinkradDiffHunk) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(hunk.lines.enumerated()), id: \.offset) { _, line in
-                if usesEditorLines {
-                    editorLine(line, sign: true)
-                } else {
-                    let sign = line.kind == .insertion ? "+" : (line.kind == .deletion ? "-" : " ")
-                    lineText(sign + line.text)
-                        .font(AinkradFontResolver.font(size: 11, mono: true, typography: typography))
-                        .foregroundStyle(color(line)).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            ForEach(Array(hunk.lines.enumerated()), id: \.offset) { index, line in
+                Group {
+                    if usesEditorLines {
+                        editorLine(line, sign: true)
+                    } else {
+                        let sign = line.kind == .insertion ? "+" : (line.kind == .deletion ? "-" : " ")
+                        lineText(sign + line.text)
+                            .font(lineFont(11))
+                            .foregroundStyle(color(line)).textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .modifier(DiffRowHeight(height: lineRowHeight))
+                    }
                 }
+                .overlay(alignment: .trailing) { bareTick(hunk, row: index) }
             }
         }
     }
 
     @ViewBuilder private func splitRows(_ hunk: AinkradDiffHunk) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(AinkradDiffReviewPresentation.sideBySideRows(hunk).enumerated()), id: \.offset) { _, pair in
-                if usesEditorLines {
-                    HStack(alignment: .top, spacing: 0) {
-                        editorLine(pair.left, sign: false)
-                        editorLine(pair.right, sign: false)
-                    }
-                } else {
-                    HStack(alignment: .top, spacing: skin.spacing.sm) {
-                        lineText(pair.left?.text ?? "").font(
-                            AinkradFontResolver.font(size: 11, mono: true, typography: typography)
-                        )
-                        .foregroundStyle(pair.left.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        lineText(pair.right?.text ?? "").font(
-                            AinkradFontResolver.font(size: 11, mono: true, typography: typography)
-                        )
-                        .foregroundStyle(pair.right.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
+            ForEach(Array(AinkradDiffReviewPresentation.sideBySideRows(hunk).enumerated()), id: \.offset) {
+                index, pair in
+                splitRow(pair).overlay(alignment: .trailing) { bareTick(hunk, row: index) }
             }
+        }
+    }
+
+    /// Under `bareHunks(untickable: true)`, the hunk's tick at the end of its
+    /// first row.
+    @ViewBuilder private func bareTick(_ hunk: AinkradDiffHunk, row: Int) -> some View {
+        if usesBareHunks, bareHunksUntickable, row == 0 {
+            DiffKeepUndoTick(accepted: acceptedBinding(hunk.id)).padding(.trailing, skin.size.s10)
+        }
+    }
+
+    @ViewBuilder private func splitRow(_ pair: (left: AinkradDiffLine?, right: AinkradDiffLine?)) -> some View {
+        if usesEditorLines {
+            HStack(alignment: .top, spacing: 0) {
+                editorLine(pair.left, sign: false)
+                editorLine(pair.right, sign: false)
+            }
+        } else {
+            HStack(alignment: .top, spacing: skin.spacing.sm) {
+                lineText(pair.left?.text ?? "").font(
+                    lineFont(11)
+                )
+                .foregroundStyle(pair.left.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                lineText(pair.right?.text ?? "").font(
+                    lineFont(11)
+                )
+                .foregroundStyle(pair.right.map(color) ?? theme.foreground.opacity(skin.opacity.o20))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .modifier(DiffRowHeight(height: lineRowHeight))
         }
     }
 
@@ -369,6 +418,16 @@ public struct AinkradDiffReview: View {
         case .deletion: return statusColors.danger
         case .context: return theme.foreground.opacity(skin.opacity.o60)
         }
+    }
+}
+
+/// `lineMetrics(fontSize:rowHeight:)`'s row height, content centred; no
+/// frame at all without one, so default rows are untouched.
+private struct DiffRowHeight: ViewModifier {
+    let height: CGFloat?
+
+    func body(content: Content) -> some View {
+        if let height { content.frame(minHeight: height) } else { content }
     }
 }
 

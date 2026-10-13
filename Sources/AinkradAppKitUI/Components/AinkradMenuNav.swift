@@ -63,6 +63,7 @@ public struct AinkradCommandMenu<T: Hashable>: View {
     var matchedCharacters: ((T) -> [Int])?
     var sectionTitle: ((T) -> String?)?
     var glyphTint: ((T) -> Color?)?
+    var glyphSize: CGFloat?
     var kind: ((T) -> String?)?
     var kindTint: ((T) -> Color?)?
 
@@ -141,6 +142,14 @@ public struct AinkradCommandMenu<T: Hashable>: View {
         return copy
     }
 
+    /// `iconGlyphs(tint:)` with the glyphs drawn at `size` points instead of
+    /// the row's 13 — the mockups' `◆` reads a little larger (mockup 02).
+    public func iconGlyphs(tint: @escaping (T) -> Color?, size: CGFloat) -> Self {
+        var copy = iconGlyphs(tint: tint)
+        copy.glyphSize = size
+        return copy
+    }
+
     /// Under `paletteRows()`, leads a row with `kind(item)` — the symbol's
     /// kind, `"struct"` or `"func"` — in place of its icon, drawn in
     /// `tint(item)`, or the editor's type colour when `nil`, as Forge's quick
@@ -199,7 +208,7 @@ public struct AinkradCommandMenu<T: Hashable>: View {
                 icon: icon(item), label: label(item), matched: Set(matchedCharacters?(item) ?? []),
                 detail: detail.flatMap { $0(item) }, value: value.flatMap { $0(item) },
                 isHighlighted: index == highlightedIndex, showsReturnKey: true,
-                iconIsGlyph: glyphTint != nil, iconTint: glyphTint?(item),
+                iconIsGlyph: glyphTint != nil, iconTint: glyphTint?(item), iconGlyphSize: glyphSize,
                 kind: kind?(item), kindTint: kindTint?(item)
             ) { activate(item) }
         } else {
