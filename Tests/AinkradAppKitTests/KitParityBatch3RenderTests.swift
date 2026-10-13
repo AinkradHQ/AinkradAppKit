@@ -163,6 +163,21 @@ struct KitParityBatch3RenderTests {
                     AinkradBreadcrumb(items: ["Sources", "SidebarRow.swift"]).preservesCase()
                 }
             },
+            fixture("breadcrumb-text-separators", 620, 60) {
+                AinkradBreadcrumb(
+                    items: ["Sources", "Ainkrad", "Features", "Sidebar", "SidebarRow.swift", "SidebarRow", "body"]
+                )
+                .preservesCase()
+                .textSeparators()
+                .icon(at: 4) { Text("◆").foregroundStyle(.orange) }
+                .segmentColors { index in
+                    switch index {
+                    case 4: AinkradSkin.standard.color(AinkradSkin.standard.palette.foreground)
+                    case 5: .cyan
+                    default: nil
+                    }
+                }
+            },
             fixture("tabs-text", 330, 110) {
                 VStack(alignment: .leading, spacing: 12) {
                     AinkradTabs(tabs: ["Files", "Changes 2", "Search", "Issues 5"], selection: .constant("Files")) {

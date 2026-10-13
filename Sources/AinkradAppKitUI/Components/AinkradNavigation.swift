@@ -189,6 +189,8 @@ public struct AinkradBreadcrumb: View {
     var segmentIcon: (index: Int, view: AnyView)?
     /// Set by `segmentColors(_:)`.
     var segmentColor: ((Int) -> Color?)?
+    /// Set by `textSeparators()`.
+    var usesTextSeparators = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -225,14 +227,25 @@ public struct AinkradBreadcrumb: View {
         return copy
     }
 
+    /// A faint `›` between crumbs instead of the glowing chevron glyph, at the
+    /// crumbs' own size and 6 pt apart — Forge's editor breadcrumb (mockup
+    /// 01's `.crumb .s`).
+    public func textSeparators() -> Self {
+        var copy = self
+        copy.usesTextSeparators = true
+        return copy
+    }
+
     public var body: some View {
         let bread = skin.components.breadcrumb
-        HStack(spacing: skin.spacing.xs) {
+        HStack(spacing: usesTextSeparators ? skin.size.s6 : skin.spacing.xs) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                 let isLast = index == items.count - 1
                 if let segmentIcon, segmentIcon.index == index { segmentIcon.view }
                 crumb(item, isLast: isLast, index: index, bread: bread)
-                if !isLast {
+                if !isLast, usesTextSeparators {
+                    Text("›").font(skin.font(bread.font, typography: typo)).foregroundStyle(skin.color(skin.text.faint))
+                } else if !isLast {
                     Image(systemName: "chevron.compact.right")
                         .font(skin.font(bread.chevronFont, typography: typo))
                         .foregroundStyle(skin.color(bread.chevronColor))

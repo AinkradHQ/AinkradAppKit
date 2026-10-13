@@ -129,4 +129,11 @@ struct KitParityBatch3Tests {
         binding.wrappedValue.toggle()
         #expect(isOn)
     }
+
+    @Test("text breadcrumb separators are opt-in")
+    func breadcrumbTextSeparators() {
+        let crumb = AinkradBreadcrumb(items: ["Sources", "SidebarRow.swift"])
+        #expect(!crumb.usesTextSeparators)
+        #expect(crumb.textSeparators().usesTextSeparators)
+    }
 }
