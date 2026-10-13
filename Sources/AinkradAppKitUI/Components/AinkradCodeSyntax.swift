@@ -175,3 +175,13 @@ func ainkradSyntaxAttributed(_ line: String, palette: AinkradSyntaxPalette) -> A
     }
     return out
 }
+
+/// A multi-line `code` coloured line by line (the scanner never spans lines).
+func ainkradSyntaxAttributed(lines code: String, palette: AinkradSyntaxPalette) -> AttributedString {
+    var out = AttributedString()
+    for (index, line) in code.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
+        if index > 0 { out += AttributedString("\n") }
+        out += ainkradSyntaxAttributed(String(line), palette: palette)
+    }
+    return out
+}

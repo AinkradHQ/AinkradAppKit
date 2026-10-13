@@ -128,4 +128,13 @@ struct KitParityBatch2Tests {
         #expect(ainkradSyntaxRuns(line).map(\.text).joined() == line)
         #expect(ainkradSyntaxRuns("").isEmpty)
     }
+
+    @Test("markdown reply style is opt-in and colours code by line")
+    func markdownReplyStyle() {
+        #expect(!AinkradMarkdownText(text: "x").usesReplyStyle)
+        #expect(AinkradMarkdownText(text: "x").replyStyle().usesReplyStyle)
+        #expect(!AinkradCodeBlock("x").usesReplyStyle)
+        let code = "let a = 1\n\nlet b = \"two\""
+        #expect(String(ainkradSyntaxAttributed(lines: code, palette: .reply).characters) == code)
+    }
 }

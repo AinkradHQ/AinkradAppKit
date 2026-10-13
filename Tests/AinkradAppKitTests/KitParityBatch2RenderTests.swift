@@ -226,4 +226,22 @@ struct KitParityBatch2RenderTests {
             AinkradDiffReview(fileDiff: Self.reviewDiff, rejectedHunkIDs: .constant([]))
         }
     }
+
+    static let replyMarkdown = """
+        The caret now lands on the first placeholder (`Snippet.parse`):
+
+        ```swift
+        let call = Snippet.parse("greet(times: ${1:Int})")
+        #expect(call.selection == NSRange(location: 13, length: 3))
+        ```
+        """
+
+    @Test func markdownReply() {
+        Self.shoot("markdown-reply-style", width: 560, height: 170) {
+            AinkradMarkdownText(text: Self.replyMarkdown).replyStyle()
+        }
+        Self.shoot("markdown-default", width: 560, height: 190) {
+            AinkradMarkdownText(text: Self.replyMarkdown)
+        }
+    }
 }
