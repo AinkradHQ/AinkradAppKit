@@ -67,6 +67,28 @@ enum SkinParityFixturesCitadel {
                         title: "Velocity", bars: velocity,
                         threshold: AinkradChartThreshold(value: 29, label: "avg 29", tone: .muted)
                     ).frame(height: 150))),
+            // A month of days: no two x labels may touch.
+            SkinParityFixture(
+                name: "chart-bar-dense31",
+                view: AnyView(
+                    AinkradBarChart(
+                        title: "Per day",
+                        bars: (1...31).map {
+                            AinkradChartBar(label: "Oct \($0)", value: Double(($0 * 7) % 23 + 4))
+                        },
+                        threshold: AinkradChartThreshold(value: 24, label: "daily warn $48")
+                    ).frame(height: 150))),
+            // A low first bar under the threshold, the rest over it: the line stays on top, its label clear of bars.
+            SkinParityFixture(
+                name: "chart-bar-lowFirstBar",
+                view: AnyView(
+                    AinkradBarChart(
+                        title: "Velocity",
+                        bars: [("S0", 12.0), ("S1", 33), ("S2", 34), ("S3", 31), ("S4", 30)].map {
+                            AinkradChartBar(label: $0.0, value: $0.1)
+                        },
+                        threshold: AinkradChartThreshold(value: 29, label: "avg 29", tone: .muted)
+                    ).frame(height: 150))),
             SkinParityFixture(
                 name: "chart-line-burndown",
                 view: AnyView(

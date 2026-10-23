@@ -29,6 +29,9 @@ struct AinkradChartsTests {
         let entries = chartLegendEntries([("Priced", .accentSecondary), ("Unpriced", .warning), ("Priced", .danger)])
         #expect(entries.map(\.name) == ["Priced", "Unpriced"])
         #expect(entries.first?.tone == .accentSecondary)
+        // A one-value bar is unnamed: a chart of them has no legend, however many bars.
+        let bars = (1...31).map { AinkradChartBar(label: "Oct \($0)", value: 1) }
+        #expect(chartLegendEntries(bars.flatMap { $0.segments.map { ($0.name, $0.tone) } }).isEmpty)
     }
 
     @Test("every tone reads a skin colour, so a theme recolours it")

@@ -83,7 +83,7 @@ public struct AinkradLineChart: View {
                     chart
                 }
             }
-            .chartYAxis(.hidden)
+            .chartThresholdAxis(threshold)
             .chartAxisLabels(axisLabels)
             .chartReveal(progress)
         }
@@ -149,17 +149,18 @@ public struct AinkradBarChart: View {
                         )
                         .foregroundStyle(segment.tone.color(skin))
                         .cornerRadius(skin.usesNativeGlass ? skin.size.s2 : 0)
-                        .accessibilityLabel("\(bar.label), \(segment.name)")
+                        .accessibilityLabel(segment.name.isEmpty ? bar.label : "\(bar.label), \(segment.name)")
                         .accessibilityValue(format(segment.value))
                     }
                 }
                 ChartThresholdMark(threshold: threshold, format: format, skin: skin)
             }
             .chartYScale(domain: 0...yMax)
-            .chartYAxis(.hidden)
+            .chartThresholdAxis(threshold)
             .chartXAxis {
                 AxisMarks { _ in
-                    AxisValueLabel()
+                    // Greedy: a label that would touch its neighbour is dropped, so dense bars never read "Oct 10Oct 11".
+                    AxisValueLabel(collisionResolution: .greedy(minimumSpacing: skin.size.s6))
                         .font(skin.font(AinkradFontToken(sizeKey: "t10", mono: "family")))
                         .foregroundStyle(skin.color(skin.text.faint))
                 }
@@ -218,14 +219,16 @@ public struct AinkradScatterChart: View {
                     chart
                 }
             }
-            .chartYAxis(.hidden)
+            .chartThresholdAxis(threshold)
             .chartAxisLabels(axisLabels)
             .chartReveal(progress)
         }
     }
 }
 
-/// The dashed threshold rule, labelled under its leading end (the mockups' "warn $48").
+/// The dashed threshold rule, drawn above every mark. Its label is not
+/// annotated in the plot, where a mark can cover it: `chartThresholdAxis`
+/// puts it in the trailing gutter, level with the line.
 private struct ChartThresholdMark: ChartContent {
     let threshold: AinkradChartThreshold?
     let format: @Sendable (Double) -> String
@@ -236,13 +239,7 @@ private struct ChartThresholdMark: ChartContent {
             RuleMark(y: .value("threshold", threshold.value))
                 .foregroundStyle(threshold.tone.color(skin))
                 .lineStyle(StrokeStyle(lineWidth: skin.size.s1, dash: [skin.size.s4, skin.size.s4]))
-                .annotation(position: .bottom, alignment: .leading, spacing: skin.size.s2) {
-                    if let label = threshold.label {
-                        Text(label)
-                            .font(skin.font(AinkradFontToken(sizeKey: "t10", mono: "family")))
-                            .foregroundStyle(skin.color(skin.text.faint))
-                    }
-                }
+                .zIndex(1)
                 .accessibilityLabel(threshold.label ?? "Threshold")
                 .accessibilityValue(format(threshold.value))
         }
@@ -250,6 +247,16 @@ private struct ChartThresholdMark: ChartContent {
 }
 
 extension View {
+    /// No y axis — except the threshold's label, as the one mark of a trailing
+    /// axis: Swift Charts reserves its gutter, so the label never sits on a mark.
+    @ViewBuilder fileprivate func chartThresholdAxis(_ threshold: AinkradChartThreshold?) -> some View {
+        if let threshold, let label = threshold.label {
+            modifier(ChartThresholdAxis(value: threshold.value, label: label))
+        } else {
+            chartYAxis(.hidden)
+        }
+    }
+
     /// The x axis of a line or scatter chart: just `labels`, mono and faint;
     /// hidden when there are none.
     @ViewBuilder fileprivate func chartAxisLabels(_ labels: [AinkradChartAxisLabel]) -> some View {
@@ -257,6 +264,24 @@ extension View {
             chartXAxis(.hidden)
         } else {
             modifier(ChartAxisLabels(labels: labels))
+        }
+    }
+}
+
+private struct ChartThresholdAxis: ViewModifier {
+    let value: Double
+    let label: String
+    @Environment(\.ainkradSkin) private var skin
+
+    func body(content: Content) -> some View {
+        content.chartYAxis {
+            AxisMarks(position: .trailing, values: [value]) { _ in
+                AxisValueLabel(horizontalSpacing: skin.size.s6) {
+                    Text(label)
+                        .font(skin.font(AinkradFontToken(sizeKey: "t10", mono: "family")))
+                        .foregroundStyle(skin.color(skin.text.faint))
+                }
+            }
         }
     }
 }
@@ -272,7 +297,7 @@ private struct ChartAxisLabels: ViewModifier {
                 // The end labels hug the plot's edges, as the mockups' "Oct 13 … Oct 24".
                 let anchor: UnitPoint =
                     x == labels.map(\.x).min() ? .topLeading : x == labels.map(\.x).max() ? .topTrailing : .top
-                AxisValueLabel(anchor: anchor) {
+                AxisValueLabel(anchor: anchor, collisionResolution: .greedy(minimumSpacing: skin.size.s6)) {
                     Text(labels.first { $0.x == x }?.text ?? "")
                         .font(skin.font(AinkradFontToken(sizeKey: "t10", mono: "family")))
                         .foregroundStyle(skin.color(skin.text.faint))

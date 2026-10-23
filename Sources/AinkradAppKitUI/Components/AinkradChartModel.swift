@@ -103,9 +103,9 @@ public struct AinkradChartBar: Equatable, Sendable {
         self.segments = segments
     }
 
-    /// A bar of one value.
+    /// A bar of one value. Its segment is unnamed, so it adds no legend entry.
     public init(label: String, value: Double, tone: AinkradChartTone = .accentSecondary) {
-        self.init(label: label, segments: [AinkradBarSegment(name: label, value: value, tone: tone)])
+        self.init(label: label, segments: [AinkradBarSegment(name: "", value: value, tone: tone)])
     }
 }
 
@@ -126,12 +126,12 @@ func chartXDomain(_ series: [AinkradChartSeries], labels: [AinkradChartAxisLabel
     return low...high
 }
 
-/// One legend entry per distinct name, in first-seen order.
+/// One legend entry per distinct non-empty name, in first-seen order.
 typealias ChartLegendEntry = (name: String, tone: AinkradChartTone)
 
 func chartLegendEntries(_ entries: [ChartLegendEntry]) -> [ChartLegendEntry] {
     var seen = Set<String>()
-    return entries.filter { seen.insert($0.name).inserted }
+    return entries.filter { !$0.name.isEmpty && seen.insert($0.name).inserted }
 }
 
 /// What every kit chart shares: the legend row, the empty state, the
