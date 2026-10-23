@@ -46,8 +46,8 @@ public struct AinkradQuestionCard<Avatar: View>: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: skin.size.s8) {
-            HStack(alignment: .firstTextBaseline, spacing: skin.size.s8) {
-                avatar.alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + skin.size.s4 }
+            HStack(spacing: skin.size.s8) {
+                avatar
                 fromLine
                 Spacer(minLength: skin.size.s8)
                 if let age {
