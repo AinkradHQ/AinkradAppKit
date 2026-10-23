@@ -20,6 +20,21 @@ public struct AinkradCard<Content: View>: View {
         self.onTap = onTap
         self.content = content()
     }
+    /// Set by `rimTint(_:)`.
+    var rimTone: AinkradChartTone?
+
+    /// Draws the card's rim in `tone` — amber for a run waiting on you, red
+    /// for a stalled one, violet for the CEO and CTO (Citadel 02, 03). The
+    /// selected outline still wins.
+    public func rimTint(_ tone: AinkradChartTone) -> Self {
+        var copy = self
+        copy.rimTone = tone
+        return copy
+    }
+
+    /// The tinted rim, at the mockups' 60 %.
+    private var rimColor: Color? { rimTone.map { $0.color(skin).opacity(skin.opacity.o60) } }
+
     /// Whether the card routes taps (drives accessibility + hit testing).
     public var isInteractive: Bool { onTap != nil }
 
@@ -44,7 +59,8 @@ public struct AinkradCard<Content: View>: View {
                     if isSelected {
                         shape.strokeBorder(skin.color(skin.palette.accentPrimary), lineWidth: 2)
                     } else {
-                        shape.strokeBorder(foreground.opacity(skin.opacity.o12), lineWidth: skin.size.s1)
+                        shape.strokeBorder(
+                            rimColor ?? foreground.opacity(skin.opacity.o12), lineWidth: skin.size.s1)
                     }
                 }
                 .animation(AinkradMotion.hover, value: hovering)
@@ -65,7 +81,10 @@ public struct AinkradCard<Content: View>: View {
             .background(shape.fill(skin.color(card.fill)))
             .overlay(
                 shape.strokeBorder(
-                    skin.color(card.stroke.color, state: state), lineWidth: card.stroke.width.resolve(state))
+                    isSelected
+                        ? skin.color(card.stroke.color, state: state)
+                        : rimColor ?? skin.color(card.stroke.color, state: state),
+                    lineWidth: card.stroke.width.resolve(state))
             )
             .apply {
                 hovering && !reduceMotion
