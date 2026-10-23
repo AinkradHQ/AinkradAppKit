@@ -7,6 +7,15 @@ import SwiftUI
 struct SkinParityFixture {
     let name: String
     let view: AnyView
+    /// The native sweep's window, when 400 × 200 is too small (an open menu).
+    var sweepSize = CGSize(width: 400, height: 200)
+    /// What the native sweep does before it shoots (hover, click); goldens ignore it.
+    var interaction: SweepInteraction?
+}
+
+enum SweepInteraction {
+    case hover(CGPoint)
+    case click(CGPoint)
 }
 
 @MainActor
@@ -173,6 +182,7 @@ enum SkinParityFixtures {
         list.append(contentsOf: SkinParityFixturesExtended.fixtures)
         list.append(contentsOf: SkinParityFixturesMissing.fixtures)
         list.append(contentsOf: SkinParityFixturesCitadel.fixtures)
+        list.append(contentsOf: SkinParityFixturesCitadelKit.fixtures)
         return list
     }
 }
