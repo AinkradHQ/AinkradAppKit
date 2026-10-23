@@ -178,6 +178,21 @@ enum SkinParityFixturesCitadel {
                     ) {
                         Circle().stroke(.orange, lineWidth: 1.5).frame(width: 22, height: 22)
                     })),
-        ]
+        ] + agentFigures
+    }
+
+    /// Every agent-figure state at 64 / 32 / 24 / 16 — key frames, since the
+    /// parity renderer runs under the frozen motion budget.
+    static var agentFigures: [SkinParityFixture] {
+        AinkradFigureState.allCases.map { state in
+            SkinParityFixture(
+                name: "agentFigure-\(state.rawValue)",
+                view: AnyView(
+                    HStack(alignment: .bottom, spacing: 24) {
+                        ForEach([64.0, 32, 24, 16], id: \.self) { size in
+                            AinkradAgentFigure(name: "Mira", state: state, harness: .claude, size: size)
+                        }
+                    }))
+        }
     }
 }
