@@ -141,10 +141,13 @@ public struct AinkradBarChart: View {
             isEmpty: bars.isEmpty, emptyMessage: emptyMessage, value: bars
         ) { progress in
             Chart {
-                ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
+                ForEach(Array(bars.enumerated()), id: \.offset) { index, bar in
                     ForEach(Array(bar.segments.enumerated()), id: \.offset) { _, segment in
+                        // Keyed by position, not label: two bars sharing a label ("T" for
+                        // Tuesday and Thursday) stacked into one bar taller than the y scale,
+                        // which drew up over the legend.
                         BarMark(
-                            x: .value("bar", bar.label), y: .value("value", max(segment.value, 0) * progress),
+                            x: .value("bar", chartBarKey(index)), y: .value("value", max(segment.value, 0) * progress),
                             width: .ratio(0.6)
                         )
                         .foregroundStyle(segment.tone.color(skin))
@@ -158,15 +161,26 @@ public struct AinkradBarChart: View {
             .chartYScale(domain: 0...yMax)
             .chartThresholdAxis(threshold)
             .chartXAxis {
-                AxisMarks { _ in
+                AxisMarks { value in
                     // Greedy: a label that would touch its neighbour is dropped, so dense bars never read "Oct 10Oct 11".
-                    AxisValueLabel(collisionResolution: .greedy(minimumSpacing: skin.size.s6))
-                        .font(skin.font(AinkradFontToken(sizeKey: "t10", mono: "family")))
-                        .foregroundStyle(skin.color(skin.text.faint))
+                    AxisValueLabel(collisionResolution: .greedy(minimumSpacing: skin.size.s6)) {
+                        Text(chartBarLabel(value.as(String.self), bars: bars))
+                    }
+                    .font(skin.font(AinkradFontToken(sizeKey: "t10", mono: "family")))
+                    .foregroundStyle(skin.color(skin.text.faint))
                 }
             }
         }
     }
+}
+
+/// A bar's x category: its position, so bars that share a label stay apart.
+func chartBarKey(_ index: Int) -> String { "\(index)" }
+
+/// The axis text for a bar's category key.
+func chartBarLabel(_ key: String?, bars: [AinkradChartBar]) -> String {
+    guard let key, let index = Int(key), bars.indices.contains(index) else { return "" }
+    return bars[index].label
 }
 
 /// A scatter chart — cycle vs lead time, one dot colour per series, with a

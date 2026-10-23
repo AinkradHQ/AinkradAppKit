@@ -12,6 +12,19 @@ public struct AinkradStatusRun: Equatable, Sendable {
     }
 }
 
+/// One run in an `AinkradStackedStatusBar` drawn in a chart tone rather than
+/// a status colour: a share of spend (priced / unpriced / subscription) or of
+/// time (a run's stage timings). `value` is any non-negative amount.
+public struct AinkradToneRun: Equatable, Sendable {
+    public var value: Double
+    public var tone: AinkradChartTone
+
+    public init(value: Double, tone: AinkradChartTone) {
+        self.value = value
+        self.tone = tone
+    }
+}
+
 /// A set of things in mixed states as one proportional bar — "19 running,
 /// 28 exited, 1 created" in a glance.
 ///
@@ -34,6 +47,8 @@ public struct AinkradStatusRun: Equatable, Sendable {
 /// Moved here from Thrall's `StateRibbon`.
 public struct AinkradStackedStatusBar: View {
     private let runs: [AinkradStatusRun]
+    /// Set by `init(toneRuns:)`: drawn in the caller's order, in chart tones.
+    private var toneRuns: [AinkradToneRun]?
 
     @Environment(\.ainkradSkin) private var skin
 
@@ -41,19 +56,31 @@ public struct AinkradStackedStatusBar: View {
         self.runs = runs
     }
 
+    /// Runs in chart tones, drawn in the order given (not severity order) —
+    /// the spend split and the stage timings of Citadel 02, 05 and 09.
+    /// Empty and negative runs are skipped; the 2 pt minimum still holds.
+    public init(toneRuns: [AinkradToneRun]) {
+        self.runs = []
+        self.toneRuns = toneRuns
+    }
+
     public var body: some View {
         let bar = skin.components.stackedStatusBar
-        let ordered = orderedStatusRuns(runs)
+        let segments: [(value: Double, color: Color)] =
+            toneRuns.map { runs in runs.filter { $0.value > 0 }.map { ($0.value, $0.tone.color(skin)) } }
+            ?? orderedStatusRuns(runs).map {
+                (
+                    Double($0.count),
+                    $0.status.color(in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
+                )
+            }
         GeometryReader { geometry in
-            let widths = statusRunWidths(
-                for: ordered.map { $0.count }, in: geometry.size.width, spacing: bar.gap, minimum: bar.minRun)
+            let widths = runWidths(
+                for: segments.map(\.value), in: geometry.size.width, spacing: bar.gap, minimum: bar.minRun)
             HStack(spacing: bar.gap) {
-                ForEach(Array(zip(ordered, widths).enumerated()), id: \.offset) { _, segment in
+                ForEach(Array(zip(segments, widths).enumerated()), id: \.offset) { _, segment in
                     Rectangle()
-                        .fill(
-                            segment.0.status.color(
-                                in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
-                        )
+                        .fill(segment.0.color)
                         .frame(width: segment.1)
                 }
             }
@@ -102,6 +129,14 @@ func statusSeverity(_ status: AinkradStatus) -> Int {
 /// 1 dead in 64 pt left the dead run about 0.06 pt of the 2 pt it was given.
 func statusRunWidths(
     for counts: [Int], in width: CGFloat, spacing: CGFloat = stackedStatusBarSpacing,
+    minimum: CGFloat = 2
+) -> [CGFloat] {
+    runWidths(for: counts.map(Double.init), in: width, spacing: spacing, minimum: minimum)
+}
+
+/// `statusRunWidths` for any non-negative amounts — tone runs are seconds or dollars.
+func runWidths(
+    for counts: [Double], in width: CGFloat, spacing: CGFloat = stackedStatusBarSpacing,
     minimum: CGFloat = 2
 ) -> [CGFloat] {
     guard counts.reduce(0, +) > 0 else { return [] }

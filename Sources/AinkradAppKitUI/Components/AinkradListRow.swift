@@ -78,6 +78,8 @@ public struct AinkradStatRow: View {
     private let label: String
     private let value: String
     private let status: AinkradStatus
+    /// Set by `sentenceCaseLabel()`.
+    var usesSentenceCaseLabel = false
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -88,6 +90,15 @@ public struct AinkradStatRow: View {
         self.status = status
     }
 
+    /// The label as written, in the body face at 12 pt — not the skin's
+    /// caption label (upper-case and tracked under Neon). The run rail's
+    /// key/value lines ("Input", "Cap at this rate", Citadel 05).
+    public func sentenceCaseLabel() -> Self {
+        var copy = self
+        copy.usesSentenceCaseLabel = true
+        return copy
+    }
+
     private var color: Color {
         status.color(in: HostThemeTokens(skin: skin), statusColors: AinkradStatusColors(skin: skin))
     }
@@ -95,9 +106,13 @@ public struct AinkradStatRow: View {
     public var body: some View {
         let row = skin.components.statRow
         HStack {
-            Text(skin.labelCased(label))
-                .font(skin.font(row.labelFont, typography: typo))
-                .tracking(row.labelFont.tracking ?? 0)
+            Text(usesSentenceCaseLabel ? label : skin.labelCased(label))
+                .font(
+                    usesSentenceCaseLabel
+                        ? skin.font(AinkradFontToken(sizeKey: "t12"), typography: typo)
+                        : skin.font(row.labelFont, typography: typo)
+                )
+                .tracking(usesSentenceCaseLabel ? 0 : row.labelFont.tracking ?? 0)
                 .foregroundStyle(skin.color(row.labelColor))
             Spacer(minLength: skin.spacing.md)
             Text(value)

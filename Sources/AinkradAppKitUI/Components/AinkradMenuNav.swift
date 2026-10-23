@@ -350,8 +350,17 @@ public struct AinkradNavList<T: Hashable>: View {
     @Binding private var selection: T
     private let icon: (T) -> String?
     private let label: (T) -> String
+    /// Set by `counts(_:)`.
+    var count: ((T) -> AinkradNavCount?)?
 
     @Environment(\.ainkradReduceMotion) private var reduceMotion
+
+    /// A trailing count or badge per row; `nil` shows none for that row.
+    public func counts(_ count: @escaping (T) -> AinkradNavCount?) -> Self {
+        var copy = self
+        copy.count = count
+        return copy
+    }
 
     public init(items: [T], selection: Binding<T>, icon: @escaping (T) -> String?, label: @escaping (T) -> String) {
         self.items = items
@@ -363,7 +372,9 @@ public struct AinkradNavList<T: Hashable>: View {
     public var body: some View {
         VStack(spacing: AinkradSpacing.xs / 2) {
             ForEach(navListRows(items: items, selected: selection), id: \.item) { row in
-                AinkradNavListRow(icon: icon(row.item), label: label(row.item), isSelected: row.isSelected) {
+                AinkradNavListRow(
+                    icon: icon(row.item), label: label(row.item), count: count?(row.item), isSelected: row.isSelected
+                ) {
                     if reduceMotion {
                         selection = row.item
                     } else {
@@ -378,6 +389,7 @@ public struct AinkradNavList<T: Hashable>: View {
 private struct AinkradNavListRow: View {
     let icon: String?
     let label: String
+    let count: AinkradNavCount?
     let isSelected: Bool
     let action: () -> Void
 
@@ -385,6 +397,21 @@ private struct AinkradNavListRow: View {
     @Environment(\.ainkradTypography) private var typo
     @Environment(\.ainkradReduceMotion) private var reduceMotion
     @State private var hovering = false
+
+    @ViewBuilder private var countView: some View {
+        if let count {
+            let font = skin.font(
+                AinkradFontToken(sizeKey: "t10", weight: count.tone == nil ? nil : "semibold", mono: "family"))
+            if let tone = count.tone {
+                let fill = tone.color(skin)
+                Text(count.text).font(font).foregroundStyle(fill.contrastingText)
+                    .padding(.horizontal, skin.size.s6)
+                    .background(fill, in: Capsule())
+            } else {
+                Text(count.text).font(font).foregroundStyle(skin.color(skin.text.faint))
+            }
+        }
+    }
 
     var body: some View {
         let nav = skin.components.navListRow
@@ -411,6 +438,7 @@ private struct AinkradNavListRow: View {
                 Text(label)
                     .font(skin.font(isSelected ? nav.bodySelectedFont : nav.bodyFont, typography: typo))
                 Spacer(minLength: 0)
+                countView
             }
             .foregroundStyle(
                 skin.usesNativeGlass

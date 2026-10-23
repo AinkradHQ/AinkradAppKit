@@ -170,6 +170,9 @@ public struct AinkradBanner: View {
     private let message: String
     private let status: AinkradStatus
     private let onDismiss: (() -> Void)?
+    /// Set by `init(message:status:actionTitle:action:onDismiss:)`.
+    private var actionTitle: String?
+    private var action: (() -> Void)?
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -178,6 +181,24 @@ public struct AinkradBanner: View {
         self.message = message
         self.status = status
         self.onDismiss = onDismiss
+    }
+
+    /// A banner with a trailing action — the account warning's "Accounts →"
+    /// (Citadel 02): a borderless button in the secondary accent, before the
+    /// dismiss affordance.
+    public init(
+        message: String, status: AinkradStatus = .neutral, actionTitle: String, action: @escaping () -> Void,
+        onDismiss: (() -> Void)? = nil
+    ) {
+        self.init(message: message, status: status, onDismiss: onDismiss)
+        self.actionTitle = actionTitle
+        self.action = action
+    }
+
+    @ViewBuilder private var actionButton: some View {
+        if let actionTitle, let action {
+            AinkradButton(title: actionTitle, style: .ghost, action: action).borderless().secondaryAccent().compact()
+        }
     }
 
     private var color: Color {
@@ -192,6 +213,7 @@ public struct AinkradBanner: View {
                 Image(systemName: status.iconName).foregroundStyle(color)
                 Text(message).fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
+                actionButton
                 if let onDismiss {
                     Button(action: onDismiss) { Image(systemName: "xmark") }
                         .buttonStyle(.borderless)
@@ -218,6 +240,7 @@ public struct AinkradBanner: View {
                 .foregroundStyle(skin.color(banner.bodyColor))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
+            actionButton
             if let onDismiss {
                 Image(systemName: "xmark")
                     .font(skin.font(banner.closeFont, typography: typo))

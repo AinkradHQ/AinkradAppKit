@@ -95,8 +95,8 @@ public struct AinkradBarSegment: Equatable, Sendable {
     }
 }
 
-/// One bar of a bar chart. `label` is its category on the x axis, so labels
-/// must be unique within a chart.
+/// One bar of a bar chart. `label` is what the x axis shows under it; two bars
+/// may share one ("T" for Tuesday and Thursday) and still draw apart.
 public struct AinkradChartBar: Equatable, Sendable {
     public var label: String
     public var segments: [AinkradBarSegment]
