@@ -274,6 +274,7 @@ struct KitMenuRow<Content: View>: View {
     let isSelected: Bool
     let action: () -> Void
     @ViewBuilder let content: Content
+    @FocusState private var focused: Bool
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTheme) private var theme
     @Environment(\.ainkradReduceMotion) private var reduceMotion
@@ -290,12 +291,15 @@ struct KitMenuRow<Content: View>: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: isHighlighted)
+        // The keyboard focus lifts the row like a hover instead of drawing the system ring.
+        .focusEffectDisabled()
+        .focused($focused)
+        .animation(reduceMotion ? nil : skin.animation(skin.motion.hover), value: isHighlighted || focused)
     }
 
     private var fill: Color {
-        if isSelected { return theme.accentPrimary.opacity(skin.opacity.o22) }
-        return isHighlighted ? skin.color(skin.palette.white).opacity(skin.opacity.o06) : .clear
+        if isSelected { return theme.accentPrimary.opacity(focused ? skin.opacity.o30 : skin.opacity.o22) }
+        return isHighlighted || focused ? skin.color(skin.palette.white).opacity(skin.opacity.o06) : .clear
     }
 }
 

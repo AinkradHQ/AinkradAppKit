@@ -21,7 +21,7 @@ struct SkinParityTests {
         }
 
         for fixture in SkinParityFixtures.allFixtures {
-            guard let rep = SkinParityRenderer.render(fixture.view) else {
+            guard let rep = SkinParityRenderer.render(fixture.view, width: max(400, fixture.sweepSize.width)) else {
                 Issue.record("Failed to render fixture \(fixture.name)")
                 continue
             }

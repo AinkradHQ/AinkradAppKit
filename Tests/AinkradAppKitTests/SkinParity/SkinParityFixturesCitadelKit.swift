@@ -74,6 +74,19 @@ enum SkinParityFixturesCitadelKit {
             id: "opt", name: "Optimus", kind: .client, tint: .purple, detail: "6 agents · 1 project"),
     ]
 
+    static var scopedRows: some View {
+        VStack(spacing: 10) {
+            AinkradScopedValue(
+                label: "Stall after", bounds: "1–120 min", value: .constant("10 min"),
+                scope: .overridden(at: "project", inheritedValue: "company 15 min"), onReset: {})
+            AinkradScopedValue(
+                label: "WIP per agent", bounds: "1–10", value: .constant("3"), scope: .inherited(from: "company"))
+            AinkradScopedValue(
+                label: "Approval deadline", bounds: "1 h–7 d", value: .constant("8 h"), suffix: "then to PO",
+                scope: .inherited(from: "company"))
+        }
+    }
+
     static var fixtures: [SkinParityFixture] {
         [
             SkinParityFixture(
@@ -182,20 +195,73 @@ enum SkinParityFixturesCitadelKit {
                     AinkradReorderList(items: .constant(chain), isNumbered: true, current: "a", dimmed: ["c"]) {
                         chainRow($0)
                     }.frame(width: 340))),
+            // The mockups' width: the override chip shows its whole chain.
             SkinParityFixture(
-                name: "scopedValue",
-                view: AnyView(
-                    VStack(spacing: 10) {
-                        AinkradScopedValue(
-                            label: "Stall after", bounds: "1–120 min", value: .constant("10 min"),
-                            scope: .overridden(at: "project", inheritedValue: "company 15 min"), onReset: {})
-                        AinkradScopedValue(
-                            label: "WIP per agent", bounds: "1–10", value: .constant("3"),
-                            scope: .inherited(from: "company"))
-                        AinkradScopedValue(
-                            label: "Approval deadline", bounds: "1 h–7 d", value: .constant("8 h"),
-                            suffix: "then to PO", scope: .inherited(from: "company"))
-                    }.frame(width: 368))),
+                name: "scopedValue", view: AnyView(scopedRows.frame(width: 448)),
+                sweepSize: CGSize(width: 480, height: 200)),
+            // Too narrow for the chain: "● project ↺" and "↳", never a mid-text ellipsis.
+            SkinParityFixture(name: "scopedValue-narrow", view: AnyView(scopedRows.frame(width: 300))),
         ]
     }
+
+    /// Interaction states, shot by the native sweep only (no goldens): the
+    /// sweep hovers or clicks the point given, in window points, before it shoots.
+    static var interactionFixtures: [SkinParityFixture] {
+        let proposal = fixtures.first { $0.name == "proposalCard-change" }
+        let thumbnails = fixtures.first { $0.name == "fileThumbnail-doc" }
+        let chainList = fixtures.first { $0.name == "reorderList-chain" }
+        let pills = fixtures.first { $0.name == "pointsPill" }
+        let scoped = fixtures.first { $0.name == "scopedValue" }
+        return [
+            SkinParityFixture(
+                name: "proposalCard-hoverAccept", view: proposal?.view ?? AnyView(EmptyView()),
+                interaction: .hover(CGPoint(x: 336, y: 138))),
+            SkinParityFixture(
+                name: "fileThumbnail-hover", view: thumbnails?.view ?? AnyView(EmptyView()),
+                interaction: .hover(CGPoint(x: 295, y: 100))),
+            SkinParityFixture(
+                name: "reorderList-hoverRow", view: chainList?.view ?? AnyView(EmptyView()),
+                interaction: .hover(CGPoint(x: 200, y: 100))),
+            // Codex dragged down past Claude: the list already shows the new order, the dragged card dimmed.
+            SkinParityFixture(
+                name: "reorderList-midDrag",
+                view: AnyView(
+                    AinkradReorderList(
+                        items: .constant([chain[1], chain[0], chain[2]]), isNumbered: true, current: "a",
+                        dimmed: ["c"], previewDragging: "a"
+                    ) {
+                        chainRow($0)
+                    }.frame(width: 340))),
+            SkinParityFixture(
+                name: "pointsPill-hover", view: pills?.view ?? AnyView(EmptyView()),
+                interaction: .hover(CGPoint(x: 140, y: 100))),
+            SkinParityFixture(
+                name: "pointsPill-editing", view: AnyView(KitEditingPill()),
+                interaction: .click(CGPoint(x: 200, y: 100))),
+            // Opened by a click on the trigger: the menu is the switcher's own floating panel.
+            SkinParityFixture(
+                name: "workspaceSwitcher-open",
+                view: AnyView(
+                    AinkradWorkspaceSwitcher(
+                        workspaces: companies, selection: .constant("aink"), subtitle: "Citadel · 2 other companies",
+                        header: "Companies on citadel.ainkrad.io",
+                        footnote: "Accounts, runners and cost are per company.", onNew: {}
+                    )
+                    .frame(width: 260)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)),
+                sweepSize: CGSize(width: 400, height: 400), interaction: .click(CGPoint(x: 140, y: 40))),
+            SkinParityFixture(
+                name: "scopedValue-hoverValue", view: scoped?.view ?? AnyView(EmptyView()),
+                sweepSize: CGSize(width: 480, height: 200), interaction: .hover(CGPoint(x: 174, y: 61))),
+            SkinParityFixture(
+                name: "scopedValue-hoverReset", view: scoped?.view ?? AnyView(EmptyView()),
+                sweepSize: CGSize(width: 480, height: 200), interaction: .hover(CGPoint(x: 454, y: 61))),
+        ]
+    }
+}
+
+/// A points pill with a live binding, so a click opens its editor.
+private struct KitEditingPill: View {
+    @State private var points: Int? = 8
+    var body: some View { AinkradPointsPill(points: $points) }
 }

@@ -69,12 +69,15 @@ public struct AinkradScopedValue: View {
                     text: $value, accessibilityLabel: label, isInvalid: $isInvalid,
                     validate: validate)
                 if let suffix {
+                    // Wraps rather than cuts in a narrow row.
                     Text(suffix)
                         .font(skin.font(AinkradFontToken(sizeKey: "t12")))
                         .foregroundStyle(skin.color(skin.text.muted))
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            // The value and its suffix are sized first; the scope chip goes compact before they cut.
+            .layoutPriority(2)
             Spacer(minLength: skin.size.s8)
             scopeChip
                 .layoutPriority(1)
@@ -85,25 +88,53 @@ public struct AinkradScopedValue: View {
         .accessibilityElement(children: .contain)
     }
 
+    /// The chip sized to its content, never cut mid-text. When the row is too
+    /// narrow for the full chain an overridden chip drops to "● project ↺"
+    /// and an inherited one to "↳"; the full chain stays in the tooltip and
+    /// in what VoiceOver reads.
     private var scopeChip: some View {
-        let overridden: Bool
+        ViewThatFits(in: .horizontal) {
+            chip(compact: false)
+            chip(compact: true)
+        }
+        .help(scopeText)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(scopeAccessibilityLabel)
+    }
+
+    private var isOverridden: Bool {
+        if case .overridden = scope { return true }
+        return false
+    }
+
+    /// The full chain: "↳ company", "project · company 15 min".
+    private var scopeText: String {
+        switch scope {
+        case .inherited(let from): "↳ \(from)"
+        case .overridden(let at, let inheritedValue): inheritedValue.map { "\(at) · \($0)" } ?? at
+        }
+    }
+
+    private var scopeAccessibilityLabel: String {
+        switch scope {
+        case .inherited(let from): "Inherited from \(from)"
+        case .overridden: "Overridden here, \(scopeText)"
+        }
+    }
+
+    private func chip(compact: Bool) -> some View {
+        let color = isOverridden ? theme.accentSecondary : skin.color(skin.text.faint)
         let text: String
         switch scope {
-        case .inherited(let from):
-            overridden = false
-            text = "↳ \(from)"
-        case .overridden(let at, let inheritedValue):
-            overridden = true
-            text = inheritedValue.map { "\(at) · \($0)" } ?? at
+        case .inherited: text = compact ? "↳" : scopeText
+        case .overridden(let at, _): text = compact ? at : scopeText
         }
-        let color = overridden ? theme.accentSecondary : skin.color(skin.text.faint)
         return HStack(spacing: skin.size.s5) {
-            if overridden {
+            if isOverridden {
                 Circle().fill(color).frame(width: skin.size.s6, height: skin.size.s6)
             }
-            // Gives way first in a narrow row, keeping both ends.
-            Text(text).lineLimit(1).truncationMode(.middle)
-            if overridden, let onReset {
+            Text(text).lineLimit(1)
+            if isOverridden, let onReset {
                 KitResetButton(action: onReset, help: resetHelp)
             }
         }
@@ -112,13 +143,11 @@ public struct AinkradScopedValue: View {
         .padding(.horizontal, skin.size.s6)
         .padding(.vertical, skin.size.s1)
         .background(
-            overridden ? color.opacity(skin.opacity.o12) : skin.color(skin.palette.white).opacity(skin.opacity.o05),
+            isOverridden ? color.opacity(skin.opacity.o12) : skin.color(skin.palette.white).opacity(skin.opacity.o05),
             in: skin.usesNativeGlass
                 ? AnyShape(Capsule(style: .continuous)) : AnyShape(RoundedRectangle(cornerRadius: skin.size.s4))
         )
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(overridden ? "Overridden here, \(text)" : "Inherited from \(text.dropFirst(2))")
+        .fixedSize()
     }
 
     private var resetHelp: String {
@@ -156,8 +185,10 @@ struct KitInlineValueField: View {
     var validate: (String) -> Bool = { _ in true }
     var minWidth: CGFloat?
     var display: Text?
+    var reserve: String?
     var displayColor: Color?
     var fill: Color?
+    var horizontalPadding: CGFloat?
     @State private var isEditing = false
     @State private var draft = ""
     @State private var hovering = false
@@ -172,32 +203,39 @@ struct KitInlineValueField: View {
             cornerRadius: skin.usesNativeGlass ? skin.size.s6 : skin.size.s4, style: .continuous)
         Group {
             if isEditing {
-                TextField("", text: $draft)  // design-lint: allow raw-control inline value editor
-                    .textFieldStyle(.plain)
-                    .focused($focused)
-                    .fixedSize()
-                    .frame(minWidth: minWidth ?? skin.size.s24)
-                    .onSubmit(commit)
-                    .onKeyPress(.escape) {
-                        cancel()
-                        return .handled
-                    }
-                    .onChange(of: focused) { _, isFocused in
-                        if !isFocused, isEditing { commit() }
-                    }
+                ZStack {
+                    if let reserve { Text(reserve).hidden() }
+                    TextField("", text: $draft)  // design-lint: allow raw-control inline value editor
+                        .textFieldStyle(.plain)
+                        .multilineTextAlignment(reserve == nil ? .leading : .center)
+                        .focused($focused)
+                        .fixedSize()
+                }
+                .frame(minWidth: minWidth ?? skin.size.s24)
+                .onSubmit(commit)
+                .onKeyPress(.escape) {
+                    cancel()
+                    return .handled
+                }
+                .onChange(of: focused) { _, isFocused in
+                    if !isFocused, isEditing { commit() }
+                }
             } else {
                 Button(action: begin) {  // design-lint: allow raw-control the value is its own edit button
-                    (display ?? Text(text))
-                        .foregroundStyle(displayColor ?? theme.foreground)
-                        .frame(minWidth: minWidth, alignment: .center)
-                        .contentShape(Rectangle())
+                    // `reserve` (the pill's "Edit") holds the width, so a hover never moves the neighbours.
+                    ZStack {
+                        if let reserve { Text(reserve).hidden() }
+                        (display ?? Text(text)).foregroundStyle(displayColor ?? theme.foreground)
+                    }
+                    .frame(minWidth: minWidth, alignment: .center)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .onHover { hovering = $0 }
             }
         }
         .font(skin.font(AinkradFontToken(sizeKey: "t11", mono: "family")))
-        .padding(.horizontal, skin.size.s8)
+        .padding(.horizontal, horizontalPadding ?? skin.size.s8)
         .padding(.vertical, skin.size.s2)
         .background(
             shape.fill(
@@ -291,9 +329,9 @@ public struct AinkradPointsPill: View {
                     accessibilityLabel: "Points", isInvalid: $isInvalid,
                     validate: { $0.isEmpty || (Int($0).map { $0 >= 0 } ?? false) },
                     minWidth: skin.size.s14,
-                    display: Text(hovering ? "Edit" : label),
+                    display: Text(hovering ? "Edit" : label), reserve: "Edit",
                     displayColor: unestimated && !hovering ? statusColors.warning : theme.foreground,
-                    fill: fill
+                    fill: fill, horizontalPadding: skin.size.s4
                 )
                 .onHover { hovering = $0 }
             } else {

@@ -43,6 +43,16 @@ public struct AinkradReorderList<Item: Identifiable, Row: View>: View {
         self.row = row
     }
 
+    /// Kit-internal: starts with `previewDragging` mid-drag, so the native
+    /// sweep can shoot a drag the window server cannot be made to perform.
+    init(
+        items: Binding<[Item]>, isNumbered: Bool = false, current: Item.ID? = nil, dimmed: Set<Item.ID> = [],
+        previewDragging: Item.ID?, @ViewBuilder row: @escaping (Item) -> Row
+    ) {
+        self.init(items: items, isNumbered: isNumbered, current: current, dimmed: dimmed, row: row)
+        self._dragging = State(initialValue: previewDragging)
+    }
+
     public var body: some View {
         VStack(spacing: skin.size.s6) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in

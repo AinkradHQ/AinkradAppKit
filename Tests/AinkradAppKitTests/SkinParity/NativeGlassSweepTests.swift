@@ -34,6 +34,7 @@ struct NativeGlassSweepTests {
         // AINKRAD_SWEEP_ONLY=button,toggle shoots only fixtures with those name prefixes.
         let only = env["AINKRAD_SWEEP_ONLY"]?.split(separator: ",").map(String.init) ?? []
         for fixture in SkinParityFixtures.allFixtures + Self.panelFixtures
+            + SkinParityFixturesCitadelKit.interactionFixtures
         where only.isEmpty || only.contains(where: { fixture.name.hasPrefix($0) }) {
             for (name, skin) in [("neon", AinkradSkin.standard), ("glass", glass)] {
                 let size = fixture.sweepSize
@@ -44,7 +45,8 @@ struct NativeGlassSweepTests {
                     .ainkradSkin(skin)
                     .environment(\.colorScheme, .dark)
                 try LiveGlassCapture.shoot(
-                    view, size: size,
+                    view, size: size, interaction: fixture.interaction,
+                    background: NSColor(skin.color(skin.palette.background)),
                     to: URL(fileURLWithPath: out).appendingPathComponent("\(fixture.name)-\(name).png"))
             }
         }
@@ -145,7 +147,10 @@ enum LiveGlassCapture {
         @objc var _hasActiveAppearanceIgnoringKeyFocus: Bool { true }
     }
 
-    static func shoot(_ view: some View, size: CGSize, to url: URL) throws {
+    static func shoot(
+        _ view: some View, size: CGSize, interaction: SweepInteraction? = nil, background: NSColor? = nil,
+        to url: URL
+    ) throws {
         let panel = KeyAppearancePanel(
             contentRect: NSRect(origin: CGPoint(x: 200, y: 200), size: size),
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
@@ -153,21 +158,98 @@ enum LiveGlassCapture {
         panel.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopWindow)))
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         panel.hasShadow = false
+        // No fade-in: a shot taken mid-fade comes out washed-out grey.
+        panel.animationBehavior = .none
         panel.contentView = NSHostingView(
             rootView:
                 view
                 .environment(\.ainkradMotionBudget, .frozen)
                 .environment(\.controlActiveState, .key)
                 .frame(width: size.width, height: size.height))
+        let before = Set(NSApp.windows.map(\.windowNumber))
         panel.orderFrontRegardless()
         defer { panel.orderOut(nil) }
         RunLoop.main.run(until: Date().addingTimeInterval(0.35))
+        if let interaction {
+            perform(interaction, in: panel)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        }
 
+        // `screencapture -l` takes the window with its child windows, so a
+        // floating panel the interaction opened is in the same shot.
+        // Now and then the window server hands back a washed-out frame (the
+        // window mid-composite): its corner is not the fixture's background.
+        // Shoot again until it is, at most three times.
+        for attempt in 1...3 {
+            try capture(panel.windowNumber, to: url)
+            guard let background, attempt < 3, !cornerMatches(url, background) else { break }
+            RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        }
+        for window in NSApp.windows where window.isVisible && !before.contains(window.windowNumber) {
+            window.orderOut(nil)
+        }
+    }
+
+    /// Whether the shot's top-left pixel is `expected`, within a small tolerance.
+    private static func cornerMatches(_ url: URL, _ expected: NSColor) -> Bool {
+        guard let rep = NSBitmapImageRep(data: (try? Data(contentsOf: url)) ?? Data()),
+            let corner = rep.colorAt(x: 2, y: 2)?.usingColorSpace(.sRGB),
+            let want = expected.usingColorSpace(.sRGB)
+        else { return true }
+        let delta =
+            [
+                corner.redComponent - want.redComponent, corner.greenComponent - want.greenComponent,
+                corner.blueComponent - want.blueComponent,
+            ].map(abs).max() ?? 0
+        return delta < 0.08
+    }
+
+    private static func capture(_ windowNumber: Int, to url: URL) throws {
         let capture = Process()
         capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        capture.arguments = ["-x", "-o", "-l", String(panel.windowNumber), url.path]
+        capture.arguments = ["-x", "-o", "-l", String(windowNumber), url.path]
         try capture.run()
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0, "screencapture failed for \(url.lastPathComponent)")
+    }
+
+    /// Hover: a mouse-moved event, then mouse-entered to every tracking area
+    /// under the point, carrying that area (the window server sends those only
+    /// for the real cursor, so the user's cursor is never moved). Click: mouse down and up. `point` is in window points, top-left origin.
+    private static func perform(_ interaction: SweepInteraction, in window: NSWindow) {
+        guard let root = window.contentView else { return }
+        let point: CGPoint
+        switch interaction {
+        case .hover(let p), .click(let p): point = p
+        }
+        let location = NSPoint(x: point.x, y: root.bounds.height - point.y)
+        func event(_ type: NSEvent.EventType) -> NSEvent? {
+            NSEvent.mouseEvent(
+                with: type, location: location, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)
+        }
+        switch interaction {
+        case .hover:
+            window.acceptsMouseMovedEvents = true
+            if let moved = event(.mouseMoved) { window.sendEvent(moved) }
+            var views = [root]
+            while let view = views.popLast() {
+                views += view.subviews
+                for area in view.trackingAreas where area.rect.contains(view.convert(location, from: nil)) {
+                    if let entered = NSEvent.enterExitEvent(
+                        with: .mouseEntered, location: location, modifierFlags: [],
+                        timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                        context: nil, eventNumber: 0, trackingNumber: unsafeBitCast(area, to: Int.self), userData: nil)
+                    {
+                        (area.owner as? NSResponder)?.mouseEntered(with: entered)
+                        if let moved = event(.mouseMoved) { (area.owner as? NSResponder)?.mouseMoved(with: moved) }
+                    }
+                }
+            }
+            if let moved = event(.mouseMoved) { window.sendEvent(moved) }
+        case .click:
+            if let down = event(.leftMouseDown) { window.sendEvent(down) }
+            if let up = event(.leftMouseUp) { window.sendEvent(up) }
+        }
     }
 }
