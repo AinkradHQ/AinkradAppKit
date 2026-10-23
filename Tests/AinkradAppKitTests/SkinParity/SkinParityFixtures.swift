@@ -183,6 +183,7 @@ enum SkinParityFixtures {
         list.append(contentsOf: SkinParityFixturesMissing.fixtures)
         list.append(contentsOf: SkinParityFixturesCitadel.fixtures)
         list.append(contentsOf: SkinParityFixturesCitadelKit.fixtures)
+        list.append(contentsOf: SkinParityFixturesCitadelOptions.fixtures)
         return list
     }
 }
