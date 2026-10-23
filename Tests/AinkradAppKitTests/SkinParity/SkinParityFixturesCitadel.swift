@@ -89,6 +89,26 @@ enum SkinParityFixturesCitadel {
                         },
                         threshold: AinkradChartThreshold(value: 29, label: "avg 29", tone: .muted)
                     ).frame(height: 150))),
+            // The agent rail's week (Citadel 04): narrow weekday labels repeat (S, T). Bars sharing a
+            // label stacked into one, past the y scale and up over the legend.
+            SkinParityFixture(
+                name: "chart-bar-sharedLabels",
+                view: AnyView(
+                    AinkradBarChart(
+                        title: "Runs this week",
+                        bars: [
+                            ("S", 0, 0, 0), ("M", 1, 0, 0), ("T", 0, 1, 1), ("W", 1, 0, 0), ("T", 0, 1, 0),
+                            ("F", 1, 0, 0), ("S", 1, 0, 0),
+                        ].map {
+                            AinkradChartBar(
+                                label: $0.0,
+                                segments: [
+                                    AinkradBarSegment(name: "succeeded", value: $0.1, tone: .accentSecondary),
+                                    AinkradBarSegment(name: "cap hit", value: $0.2, tone: .warning),
+                                    AinkradBarSegment(name: "failed", value: $0.3, tone: .danger),
+                                ])
+                        }
+                    ).frame(width: 268, height: 140))),
             SkinParityFixture(
                 name: "chart-line-burndown",
                 view: AnyView(
