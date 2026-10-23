@@ -7,6 +7,8 @@ import SwiftUI
 /// series that should recede).
 public enum AinkradChartTone: String, CaseIterable, Sendable {
     case accentPrimary, accentSecondary, accentTertiary, success, warning, danger, muted
+    /// Subscription spend, the Lead role.
+    case accentViolet
 
     func color(_ skin: AinkradSkin) -> Color {
         switch self {
@@ -17,6 +19,7 @@ public enum AinkradChartTone: String, CaseIterable, Sendable {
         case .warning: skin.color(skin.palette.warning)
         case .danger: skin.color(skin.palette.danger)
         case .muted: skin.color(skin.text.faint)
+        case .accentViolet: skin.color(skin.palette.accentViolet)
         }
     }
 }

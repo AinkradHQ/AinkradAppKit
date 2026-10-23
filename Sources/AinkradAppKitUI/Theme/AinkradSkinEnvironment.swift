@@ -79,7 +79,7 @@ extension AinkradStatusColors {
 func overlaidSkinPalette(
     base: AinkradSkinPalette, theme: HostThemeTokens, status: AinkradStatusColors
 ) -> AinkradSkinPalette {
-    AinkradSkinPalette(
+    var palette = AinkradSkinPalette(
         background: skinColorToken(from: theme.background),
         surface: skinColorToken(from: theme.surface),
         surfaceElevated: skinColorToken(from: theme.surfaceElevated),
@@ -93,6 +93,8 @@ func overlaidSkinPalette(
         black: base.black,
         white: base.white
     )
+    palette.accentViolet = base.accentViolet
+    return palette
 }
 
 /// Encodes a `Color` as a literal-hex palette token via its sRGB components.
@@ -137,6 +139,7 @@ func skinBaseColor(_ token: AinkradColorToken, in palette: AinkradSkinPalette) -
         case "accentPrimary": referenced = palette.accentPrimary
         case "accentSecondary": referenced = palette.accentSecondary
         case "accentTertiary": referenced = palette.accentTertiary
+        case "accentViolet": referenced = palette.accentViolet
         case "foreground": referenced = palette.foreground
         case "success": referenced = palette.success
         case "warning": referenced = palette.warning

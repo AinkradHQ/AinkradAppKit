@@ -113,6 +113,7 @@ private func colorForPaletteKey(_ key: String, palette: AinkradSkinPalette) -> C
     case "accentPrimary": return colorFromToken(palette.accentPrimary)
     case "accentSecondary": return colorFromToken(palette.accentSecondary)
     case "accentTertiary": return colorFromToken(palette.accentTertiary)
+    case "accentViolet": return colorFromToken(palette.accentViolet)
     case "foreground": return colorFromToken(palette.foreground)
     case "success": return colorFromToken(palette.success)
     case "warning": return colorFromToken(palette.warning)
