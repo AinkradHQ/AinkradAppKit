@@ -142,6 +142,7 @@ let ainkradAddedKeyPaths: [[String]] = [
     ["syntax", "callout"],
     ["colors"],
     ["material", "kind"],
+    ["palette", "accentViolet"],
 ]
 
 func ainkradBackfillAddedKeys(_ merged: inout [String: Any], standard: [String: Any]) {
@@ -271,7 +272,7 @@ func ainkradValidateSemanticRules(_ skin: AinkradSkin) throws {
     // Palette valid keys
     let paletteKeys: Set<String> = [
         "background", "surface", "surfaceElevated", "surfaceHover", "surfacePressed", "surfaceSelected",
-        "accentPrimary", "accentSecondary", "accentTertiary", "border", "borderSubtle", "borderFocus",
+        "accentPrimary", "accentSecondary", "accentTertiary", "accentViolet", "border", "borderSubtle", "borderFocus",
         "foreground", "foregroundMuted", "foregroundFaint", "success", "warning", "danger", "black", "white",
     ]
 

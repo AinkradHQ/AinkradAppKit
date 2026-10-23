@@ -14,6 +14,9 @@ public struct AinkradSkinPalette: Codable, Equatable, Sendable {
     public var danger: AinkradColorToken
     public var black: AinkradColorToken
     public var white: AinkradColorToken
+    /// Subscription spend, the Lead role. Added after the other keys, so the
+    /// init leaves it at Neon's violet; a theme file sets it (format 3).
+    public var accentViolet: AinkradColorToken = AinkradSkinPalette.neonViolet
 
     public init(
         background: AinkradColorToken,
@@ -42,4 +45,7 @@ public struct AinkradSkinPalette: Codable, Equatable, Sendable {
         self.black = black
         self.white = white
     }
+
+    /// Neon's violet, #A78BFA (the Citadel mockups' `--violet`).
+    static let neonViolet = AinkradColorToken.hex(0xA7 / 255.0, 0x8B / 255.0, 0xFA / 255.0, 1.0)
 }

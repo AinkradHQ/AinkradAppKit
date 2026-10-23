@@ -17,7 +17,7 @@ enum SkinParityFixturesCitadel {
             segments: [
                 AinkradBarSegment(name: "Priced", value: spend.0, tone: .accentSecondary),
                 AinkradBarSegment(name: "Unpriced", value: spend.1, tone: .warning),
-                AinkradBarSegment(name: "Subscription", value: spend.2, tone: .accentTertiary),
+                AinkradBarSegment(name: "Subscription", value: spend.2, tone: .accentViolet),
             ])
     }
 
