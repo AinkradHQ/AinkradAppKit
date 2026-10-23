@@ -7,6 +7,8 @@ import SwiftUI
 struct SkinParityFixture {
     let name: String
     let view: AnyView
+    /// The native sweep's window, when 400 × 200 is too small (an open menu).
+    var sweepSize = CGSize(width: 400, height: 200)
 }
 
 @MainActor
@@ -173,6 +175,7 @@ enum SkinParityFixtures {
         list.append(contentsOf: SkinParityFixturesExtended.fixtures)
         list.append(contentsOf: SkinParityFixturesMissing.fixtures)
         list.append(contentsOf: SkinParityFixturesCitadel.fixtures)
+        list.append(contentsOf: SkinParityFixturesCitadelKit.fixtures)
         return list
     }
 }

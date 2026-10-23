@@ -24,19 +24,27 @@ struct NativeGlassSweepTests {
         let glass = try Self.glassSkin(themes: URL(fileURLWithPath: themes))
         #expect(glass.usesNativeGlass)
         try FileManager.default.createDirectory(atPath: out, withIntermediateDirectories: true)
+        // AINKRAD_FONTS_DIR (the host's Resources/Fonts) draws the kit's JetBrains Mono as the app does.
+        if let fonts = env["AINKRAD_FONTS_DIR"] {
+            for file in try FileManager.default.contentsOfDirectory(atPath: fonts) where file.hasSuffix(".ttf") {
+                let url = URL(fileURLWithPath: fonts).appendingPathComponent(file)
+                CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+            }
+        }
         // AINKRAD_SWEEP_ONLY=button,toggle shoots only fixtures with those name prefixes.
         let only = env["AINKRAD_SWEEP_ONLY"]?.split(separator: ",").map(String.init) ?? []
         for fixture in SkinParityFixtures.allFixtures + Self.panelFixtures
         where only.isEmpty || only.contains(where: { fixture.name.hasPrefix($0) }) {
             for (name, skin) in [("neon", AinkradSkin.standard), ("glass", glass)] {
+                let size = fixture.sweepSize
                 let view = fixture.view
                     .padding(16)
-                    .frame(width: 400, height: 200)
+                    .frame(width: size.width, height: size.height)
                     .background(skin.color(skin.palette.background))
                     .ainkradSkin(skin)
                     .environment(\.colorScheme, .dark)
                 try LiveGlassCapture.shoot(
-                    view, size: CGSize(width: 400, height: 200),
+                    view, size: size,
                     to: URL(fileURLWithPath: out).appendingPathComponent("\(fixture.name)-\(name).png"))
             }
         }
