@@ -28,6 +28,15 @@ struct AinkradFloatingDrawerTests {
         #expect(PromotedRender.draws(form.frame(width: 320, height: 320), height: 340))
     }
 
+    @Test("an untitled section and a trailing-less hero draw")
+    func plainCardsDraw() {
+        let view = VStack {
+            AinkradDrawerHero(tint: .blue, title: "hetzner-3", subtitle: "server · linux") { Text("◆") }
+            AinkradDrawerSection { AinkradDrawerHint("Only the card") }
+        }
+        #expect(PromotedRender.draws(view, width: 320, height: 220))
+    }
+
     @Test("a presented drawer draws over its host")
     func hostDraws() {
         func host(_ shown: Bool) -> some View {

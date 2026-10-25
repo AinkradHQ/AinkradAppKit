@@ -50,7 +50,15 @@ public struct AinkradDrawerHero<Leading: View, Trailing: View>: View {
     }
 }
 
-/// A drawer section card: a bold title with a faint right-hand hint, then its content.
+extension AinkradDrawerHero where Trailing == EmptyView {
+    /// A hero with nothing on its right.
+    public init(tint: Color, title: String, subtitle: String, @ViewBuilder leading: () -> Leading) {
+        self.init(tint: tint, title: title, subtitle: subtitle, leading: leading, trailing: { EmptyView() })
+    }
+}
+
+/// A drawer section card: a bold title with a faint right-hand hint, then its content. Without a title (and with no
+/// hint) it is just the card.
 public struct AinkradDrawerSection<Hint: View, Content: View>: View {
     private let title: String
     private let hint: Hint
@@ -66,10 +74,12 @@ public struct AinkradDrawerSection<Hint: View, Content: View>: View {
     public var body: some View {
         let shape = RoundedRectangle(cornerRadius: skin.size.s16, style: .continuous)
         VStack(alignment: .leading, spacing: skin.size.s10) {
-            HStack(alignment: .firstTextBaseline, spacing: skin.size.s10) {
-                Text(title).kitFont("t13", weight: "bold").foregroundStyle(skin.color(skin.text.primary))
-                Spacer(minLength: skin.size.s8)
-                hint.kitFont("t11").foregroundStyle(skin.color(skin.text.faint))
+            if !title.isEmpty || Hint.self != EmptyView.self {
+                HStack(alignment: .firstTextBaseline, spacing: skin.size.s10) {
+                    Text(title).kitFont("t13", weight: "bold").foregroundStyle(skin.color(skin.text.primary))
+                    Spacer(minLength: skin.size.s8)
+                    hint.kitFont("t11").foregroundStyle(skin.color(skin.text.faint))
+                }
             }
             content
         }
@@ -83,6 +93,13 @@ public struct AinkradDrawerSection<Hint: View, Content: View>: View {
 extension AinkradDrawerSection where Hint == Text {
     public init(title: String, hint: String = "", @ViewBuilder content: () -> Content) {
         self.init(title: title, hint: { Text(hint) }, content: content)
+    }
+}
+
+extension AinkradDrawerSection where Hint == EmptyView {
+    /// A card with no heading row.
+    public init(@ViewBuilder content: () -> Content) {
+        self.init(title: "", hint: { EmptyView() }, content: content)
     }
 }
 
