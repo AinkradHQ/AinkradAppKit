@@ -14,6 +14,15 @@ public struct AinkradCommandField: View {
     private let onArrow: (AinkradArrow) -> Bool
     private let onSubmit: () -> Void
     private let onEscape: () -> Void
+    /// Set by `onKey(_:)`: sees every key first (⇥ scope cycling, ⌘↵ second action).
+    var keyHook: ((KeyPress) -> KeyPress.Result)?
+
+    /// A handler that sees each key press before the field's own keys; return `.handled` to consume it.
+    public func onKey(_ hook: @escaping (KeyPress) -> KeyPress.Result) -> Self {
+        var copy = self
+        copy.keyHook = hook
+        return copy
+    }
 
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTypography) private var typo
@@ -69,6 +78,7 @@ public struct AinkradCommandField: View {
                 .foregroundStyle(skin.color(tokens.foreground))
                 .tint(skin.color(tokens.tint))
                 .focused(focus)
+                .onKeyPress(phases: .down) { press in keyHook?(press) ?? .ignored }
                 .onKeyPress(.escape) {
                     onEscape()
                     return .handled
