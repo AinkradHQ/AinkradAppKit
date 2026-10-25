@@ -1,16 +1,24 @@
 import SwiftUI
 
-/// A mono value pill; a click turns it into a field, Return commits (the caller checks and refuses), focus loss
-/// cancels.
+/// A mono value pill; a click turns it into a field, Return commits a changed value (the caller checks and refuses), focus loss
+/// and Esc cancel. `editable(false)` makes it a plain readout; `validating` refuses a draft the check rejects: the
+/// field shakes and rings red (and `onRefuse` hears it) instead of clamping or committing.
 public struct AinkradValuePill: View {
     private let text: String
     private let help: String?
     private let tint: Color?
     private let commit: (String) -> Void
+    private var isEditable = true
+    private var validate: (String) -> Bool = { _ in true }
+    private var onRefuse: (String) -> Void = { _ in }
     @State private var editing = false
     @State private var draft = ""
+    @State private var refused = false
+    @State private var shake: CGFloat = 0
     @FocusState private var focused: Bool
     @Environment(\.ainkradSkin) private var skin
+    @Environment(\.ainkradReduceMotion) private var reduceMotion
+    @Environment(\.ainkradStatusColors) private var status
 
     public init(text: String, help: String? = nil, tint: Color? = nil, commit: @escaping (String) -> Void) {
         self.text = text
@@ -19,22 +27,60 @@ public struct AinkradValuePill: View {
         self.commit = commit
     }
 
+    /// Whether a click edits the value (default on); off, it is a readout.
+    public func editable(_ on: Bool) -> Self {
+        var copy = self
+        copy.isEditable = on
+        return copy
+    }
+
+    /// Return commits only a draft `check` accepts; a refused one shakes the field, rings it red and calls `onRefuse`.
+    public func validating(_ check: @escaping (String) -> Bool, onRefuse: @escaping (String) -> Void = { _ in })
+        -> Self
+    {
+        var copy = self
+        copy.validate = check
+        copy.onRefuse = onRefuse
+        return copy
+    }
+
+    private func submit() {
+        guard validate(draft) else {
+            refused = true
+            onRefuse(draft)
+            guard !reduceMotion else { return }
+            // Knocked aside, then a loose spring wobbles it back.
+            shake = skin.size.s6
+            withAnimation(skin.animation(AinkradAnimationToken(curve: "spring", response: 0.3, damping: 0.15))) {
+                shake = 0
+            }
+            return
+        }
+        editing = false
+        if draft != text { commit(draft) }
+    }
+
     public var body: some View {
         if editing {
             AinkradTextField(text: $draft, placeholder: text, focus: $focused)
                 .monospaced().compact()
-                .onReturn { _ in
-                    editing = false
-                    commit(draft)
-                }
+                .onReturn { _ in submit() }
                 .frame(width: skin.size.s90)
+                .overlay(
+                    RoundedRectangle(cornerRadius: skin.size.s5, style: .continuous)
+                        .strokeBorder(status.danger, lineWidth: refused ? skin.size.s1_5 : 0)
+                )
+                .offset(x: shake)
+                .onExitCommand { editing = false }
+                .onChange(of: draft) { _, _ in refused = false }
                 .onAppear {
                     draft = text
+                    refused = false
                     focused = true
                 }
                 .onChange(of: focused) { _, now in if !now { editing = false } }
         } else {
-            AinkradTapArea(help: help, action: { editing = true }) {
+            AinkradTapArea(help: help, action: { if isEditable { editing = true } }) {
                 Text(text).kitFont("t11", mono: true)
                     .foregroundStyle(tint ?? skin.color(skin.text.muted))
                     .padding(.horizontal, skin.size.s6)
@@ -57,6 +103,7 @@ public struct AinkradScopeChip: View {
     private let text: String
     private let overridden: Bool
     private let reset: (() -> Void)?
+    private var tooltip: String?
     @Environment(\.ainkradSkin) private var skin
     @Environment(\.ainkradTheme) private var theme
 
@@ -64,6 +111,13 @@ public struct AinkradScopeChip: View {
         self.text = text
         self.overridden = overridden
         self.reset = reset
+    }
+
+    /// A hover tooltip for the chip (what it inherits from, or where it was set).
+    public func tooltip(_ text: String?) -> Self {
+        var copy = self
+        copy.tooltip = text
+        return copy
     }
 
     public var body: some View {
@@ -80,7 +134,10 @@ public struct AinkradScopeChip: View {
         .padding(.vertical, skin.size.s1)
         .background(
             (overridden ? tint.opacity(skin.opacity.o12) : skin.color(.palette("foreground", skin.opacity.o05))),
-            in: RoundedRectangle(cornerRadius: skin.size.s5, style: .continuous))
+            in: RoundedRectangle(cornerRadius: skin.size.s5, style: .continuous)
+        )
+        .help(tooltip ?? "")
+        .fixedSize()
     }
 }
 
