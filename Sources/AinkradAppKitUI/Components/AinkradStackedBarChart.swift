@@ -126,6 +126,15 @@ private struct BarColumn: View {
                 grown = true
             }
         }
+        .onChange(of: bar.segments.map(\.value)) { _, _ in
+            guard !reduceMotion else { return }
+            ainkradRegrow(
+                reset: { grown = false },
+                grow: {
+                    let curve = skin.animation(AinkradAnimationToken(curve: "easeOut", duration: 0.55))
+                    withAnimation(curve.delay(delay)) { grown = true }
+                })
+        }
     }
 }
 

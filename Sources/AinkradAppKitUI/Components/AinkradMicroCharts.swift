@@ -174,6 +174,28 @@ private struct DonutArc: View {
                     shown = 1
                 }
             }
+            .onChange(of: [from, length]) { _, _ in
+                guard !reduceMotion else { return }
+                ainkradRegrow(
+                    reset: { shown = 0 },
+                    grow: {
+                        let curve = skin.animation(AinkradAnimationToken(curve: "easeOut", duration: 1))
+                        withAnimation(curve.delay(delay)) { shown = 1 }
+                    })
+            }
+    }
+}
+
+/// Re-runs a grow-in when a chart's data changes: `reset` collapses it without animating, then `grow` plays one
+/// frame later so the collapse is drawn first.
+@MainActor
+func ainkradRegrow(reset: () -> Void, grow: @escaping @MainActor () -> Void) {
+    var transaction = Transaction()
+    transaction.disablesAnimations = true
+    withTransaction(transaction, reset)
+    Task {
+        try? await Task.sleep(for: .milliseconds(16))
+        grow()
     }
 }
 

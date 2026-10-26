@@ -8,6 +8,16 @@ extension View {
     }
 }
 
+extension View {
+    /// Staggers by position: `index * stagger` seconds of delay (60 ms apart by default). `distance` defaults to 8 pt.
+    /// Shown at once under Reduce Motion.
+    public func ainkradRiseIn(index: Int, stagger: Double = 0.06, distance: CGFloat? = nil) -> some View {
+        ainkradRiseIn(delay: ainkradStaggerDelay(index: index, stagger: stagger), distance: distance)
+    }
+}
+
+func ainkradStaggerDelay(index: Int, stagger: Double) -> Double { Double(index) * stagger }
+
 private struct RiseIn: ViewModifier {
     let delay: Double
     let distance: CGFloat?

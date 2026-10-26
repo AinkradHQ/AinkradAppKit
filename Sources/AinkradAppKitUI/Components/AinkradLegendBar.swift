@@ -63,6 +63,12 @@ public struct AinkradLegendBar: View {
             }
         }
         .onAppear { grown = true }
+        .onChange(of: segments.map(\.value)) { _, _ in
+            guard !reduceMotion else { return }
+            ainkradRegrow(
+                reset: { grown = false },
+                grow: { grown = true })
+        }
     }
 }
 
