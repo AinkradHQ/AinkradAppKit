@@ -44,4 +44,12 @@ struct AinkradMotionPresetsTests {
         _ = AinkradHoverTapArea(help: "Open", action: {}) { Text("row") }
         _ = Text("row").ainkradHoverFocus(cornerRadius: 6)
     }
+
+    @Test("a chart regrows only when its segment set changes, not when values alone change")
+    func regrowDecision() {
+        #expect(!ainkradShouldRegrow(from: ["a", "b"], to: ["a", "b"]))
+        #expect(ainkradShouldRegrow(from: ["a", "b"], to: ["a", "b", "c"]))
+        #expect(ainkradShouldRegrow(from: ["a", "b"], to: ["a", "c"]))
+        #expect(ainkradShouldRegrow(from: [1, 2], to: [2, 1]))
+    }
 }

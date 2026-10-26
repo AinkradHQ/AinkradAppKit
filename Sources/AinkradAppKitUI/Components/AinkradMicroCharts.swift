@@ -107,7 +107,9 @@ public struct AinkradSegmentDonut<Center: View>: View {
     private let lineWidth: CGFloat
     private let gap: CGFloat
     private let center: Center
+    @State private var epoch = 0
     @Environment(\.ainkradSkin) private var skin
+    @Environment(\.ainkradReduceMotion) private var reduceMotion
 
     public init(
         segments: [AinkradDonutSegment], diameter: CGFloat, lineWidth: CGFloat, gap: CGFloat = 2,
@@ -127,12 +129,17 @@ public struct AinkradSegmentDonut<Center: View>: View {
             ForEach(Array(arcs.enumerated()), id: \.element.segment.id) { index, arc in
                 DonutArc(
                     color: arc.segment.color, from: arc.from, length: arc.length, lineWidth: lineWidth,
-                    delay: Double(index) * 0.12)
+                    delay: Double(index) * 0.12
+                )
+                .id(epoch)
             }
             center
         }
         .frame(width: diameter, height: diameter)
         .padding(lineWidth / 2)
+        .onChange(of: segments.map(\.id)) { old, new in
+            if !reduceMotion, ainkradShouldRegrow(from: old, to: new) { epoch += 1 }
+        }
     }
 
     /// Where each arc starts and how long it is, as fractions of the ring, less a `gap` along the ring between arcs.
@@ -174,17 +181,13 @@ private struct DonutArc: View {
                     shown = 1
                 }
             }
-            .onChange(of: [from, length]) { _, _ in
-                guard !reduceMotion else { return }
-                ainkradRegrow(
-                    reset: { shown = 0 },
-                    grow: {
-                        let curve = skin.animation(AinkradAnimationToken(curve: "easeOut", duration: 1))
-                        withAnimation(curve.delay(delay)) { shown = 1 }
-                    })
-            }
+            .animation(reduceMotion ? nil : skin.animation(.arrive), value: [from, length])
     }
 }
+
+/// Whether a chart replays its grow-in: only when the set of segments changes (count, identity or order). A change
+/// of values alone is animated in place instead, so a live feed does not flash.
+func ainkradShouldRegrow<ID: Equatable>(from old: [ID], to new: [ID]) -> Bool { old != new }
 
 /// Re-runs a grow-in when a chart's data changes: `reset` collapses it without animating, then `grow` plays one
 /// frame later so the collapse is drawn first.
