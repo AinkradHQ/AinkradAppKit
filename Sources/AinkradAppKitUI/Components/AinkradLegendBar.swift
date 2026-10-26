@@ -41,6 +41,7 @@ public struct AinkradLegendBar: View {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, segment in
                         Rectangle().fill(segment.color)
                             .frame(width: max(0, (geo.size.width - gaps) * segment.value / total))
+                            .animation(reduceMotion ? nil : skin.animation(.arrive), value: segment.value)
                             .scaleEffect(x: grown || reduceMotion ? 1 : 0, anchor: .leading)
                             .animation(
                                 skin.animation(AinkradAnimationToken(curve: "easeOut", duration: 0.7))
@@ -63,6 +64,12 @@ public struct AinkradLegendBar: View {
             }
         }
         .onAppear { grown = true }
+        .onChange(of: segments.map(\.id)) { old, new in
+            guard !reduceMotion, ainkradShouldRegrow(from: old, to: new) else { return }
+            ainkradRegrow(
+                reset: { grown = false },
+                grow: { grown = true })
+        }
     }
 }
 
